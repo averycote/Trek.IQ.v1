@@ -106,3 +106,7 @@ playwright/.cache/
 # Server data (if any large files)
 server/data/*.geojson
 !server/data/sample*.geojson
+
+# Large backup files
+server/data/backup/**/*.geojson
+server/data/backup/**/*.db
