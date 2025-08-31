@@ -1,0 +1,496 @@
+/* Mobile Routing Verification Component Styles */
+
+.mobile-routing-verification {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.mobile-routing-verification-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.mobile-routing-verification-container {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 600px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-routing-verification-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.mobile-routing-verification-header h2 {
+  margin: 0;
+  color: #111827;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.mobile-routing-verification-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* Device Information */
+.device-info {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.device-info h3 {
+  margin: 0 0 12px 0;
+  color: #1e293b;
+}
+
+.device-info .grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.device-info .grid > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.device-info .font-medium {
+  font-weight: 500;
+  color: #374151;
+}
+
+.device-info .text-xs {
+  font-size: 0.75rem;
+}
+
+.device-info .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+/* Test Controls */
+.test-controls {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.run-tests-button,
+.generate-report-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px;
+}
+
+.run-tests-button {
+  background: #3b82f6;
+  color: white;
+}
+
+.run-tests-button:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.run-tests-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.generate-report-button {
+  background: #10b981;
+  color: white;
+}
+
+.generate-report-button:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+/* Current Test Status */
+.current-test-status {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.current-test-status .animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Overall Status */
+.overall-status {
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.overall-status.running {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+}
+
+.overall-status.completed {
+  background: #d1fae5;
+  border: 1px solid #10b981;
+  color: #065f46;
+}
+
+.overall-status.failed {
+  background: #fee2e2;
+  border: 1px solid #ef4444;
+  color: #991b1b;
+}
+
+.overall-status .font-semibold {
+  font-weight: 600;
+}
+
+/* Test Results */
+.test-results {
+  margin-top: 24px;
+}
+
+.test-results h3 {
+  margin: 0 0 16px 0;
+  color: #1e293b;
+}
+
+.test-result {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.test-result.passed {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.test-result.failed {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.test-result-header {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.8);
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.test-result.passed .test-result-header {
+  background: rgba(16, 185, 129, 0.1);
+  border-bottom-color: #10b981;
+}
+
+.test-result.failed .test-result-header {
+  background: rgba(239, 68, 68, 0.1);
+  border-bottom-color: #ef4444;
+}
+
+.test-result-header .font-medium {
+  font-weight: 500;
+  color: #374151;
+}
+
+.test-result-details {
+  padding: 16px;
+}
+
+.test-detail {
+  margin-bottom: 12px;
+  padding: 8px 0;
+}
+
+.test-detail:last-child {
+  margin-bottom: 0;
+}
+
+.test-detail .flex {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.test-detail .text-sm {
+  font-size: 0.875rem;
+}
+
+.test-detail .font-medium {
+  font-weight: 500;
+  color: #374151;
+}
+
+.test-detail .text-xs {
+  font-size: 0.75rem;
+}
+
+.test-detail .text-gray-600 {
+  color: #4b5563;
+}
+
+.test-detail .text-gray-500 {
+  color: #6b7280;
+}
+
+.test-detail .ml-6 {
+  margin-left: 1.5rem;
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+  .mobile-routing-verification {
+    padding: 16px;
+  }
+
+  .mobile-routing-verification-container {
+    width: 100%;
+    max-width: 100%;
+    max-height: 95vh;
+  }
+
+  .mobile-routing-verification-header {
+    padding: 16px 20px;
+  }
+
+  .mobile-routing-verification-content {
+    padding: 20px;
+  }
+
+  .device-info .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .test-controls {
+    flex-direction: column;
+  }
+
+  .run-tests-button,
+  .generate-report-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .test-result-header {
+    padding: 10px 12px;
+  }
+
+  .test-result-details {
+    padding: 12px;
+  }
+
+  .test-detail .ml-6 {
+    margin-left: 1rem;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .mobile-routing-verification-container {
+    background: #1f2937;
+    color: #f9fafb;
+  }
+
+  .mobile-routing-verification-header {
+    background: #374151;
+    border-bottom-color: #4b5563;
+  }
+
+  .mobile-routing-verification-header h2 {
+    color: #f9fafb;
+  }
+
+  .close-button {
+    color: #9ca3af;
+  }
+
+  .close-button:hover {
+    background: #4b5563;
+    color: #f9fafb;
+  }
+
+  .device-info {
+    background: #374151;
+    border-color: #4b5563;
+  }
+
+  .device-info h3 {
+    color: #f9fafb;
+  }
+
+  .device-info .font-medium {
+    color: #d1d5db;
+  }
+
+  .test-result {
+    border-color: #4b5563;
+    background: #374151;
+  }
+
+  .test-result.passed {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+  }
+
+  .test-result.failed {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .test-result-header {
+    background: rgba(55, 65, 81, 0.8);
+    border-bottom-color: #4b5563;
+  }
+
+  .test-result.passed .test-result-header {
+    background: rgba(16, 185, 129, 0.2);
+    border-bottom-color: #10b981;
+  }
+
+  .test-result.failed .test-result-header {
+    background: rgba(239, 68, 68, 0.2);
+    border-bottom-color: #ef4444;
+  }
+
+  .test-result-header .font-medium {
+    color: #f9fafb;
+  }
+
+  .test-detail .font-medium {
+    color: #f9fafb;
+  }
+
+  .test-detail .text-gray-600 {
+    color: #d1d5db;
+  }
+
+  .test-detail .text-gray-500 {
+    color: #9ca3af;
+  }
+}
+
+/* Accessibility Improvements */
+.mobile-routing-verification-container:focus-within {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.run-tests-button:focus,
+.generate-report-button:focus,
+.close-button:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .mobile-routing-verification-container {
+    border: 2px solid #000;
+  }
+
+  .mobile-routing-verification-header {
+    border-bottom: 2px solid #000;
+  }
+
+  .test-result {
+    border-width: 2px;
+  }
+
+  .test-result-header {
+    border-bottom-width: 2px;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .run-tests-button:hover,
+  .generate-report-button:hover {
+    transform: none;
+  }
+
+  .current-test-status .animate-spin {
+    animation: none;
+  }
+
+  .overall-status .animate-spin {
+    animation: none;
+  }
+}

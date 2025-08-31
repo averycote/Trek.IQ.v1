@@ -1,0 +1,102 @@
+{
+  "timestamp": "2025-08-26T18:05:14.217Z",
+  "originalFiles": [
+    {
+      "name": "Accessible_Parking.geojson",
+      "size": 0
+    },
+    {
+      "name": "Accessible_Parking_Spots_-8108737058942968370.geojson",
+      "size": 0
+    },
+    {
+      "name": "Active_Travelways.geojson",
+      "size": 11.13
+    },
+    {
+      "name": "Active_Travelways_-4200371894220343912.geojson",
+      "size": 0
+    },
+    {
+      "name": "Bike_Infrastructure_and_Suggested_Routes_-8768028288468156838.geojson",
+      "size": 1.92
+    },
+    {
+      "name": "Bus_Stops_2_9086297843420881686.geojson",
+      "size": 1.65
+    },
+    {
+      "name": "CivicAddresses_-5590432719903009914.geojson",
+      "size": 102.17
+    },
+    {
+      "name": "HRM_Public_Washrooms_8937353538278970153.geojson",
+      "size": 0.03
+    },
+    {
+      "name": "Sidewalk Closures.geojson",
+      "size": 0.16
+    },
+    {
+      "name": "Steps_577353981712784942.geojson",
+      "size": 0.26
+    },
+    {
+      "name": "Street_Closures.geojson",
+      "size": 0.19
+    },
+    {
+      "name": "Street_Junctions.geojson",
+      "size": 0.05
+    },
+    {
+      "name": "Street_Lights_-8646609400635809433.geojson",
+      "size": 21.73
+    },
+    {
+      "name": "Traffic_Control.geojson",
+      "size": 0.01
+    },
+    {
+      "name": "Transit_Bus_Routes.geojson",
+      "size": 0.02
+    },
+    {
+      "name": "Transit_Bus_Snow_Routes_2846831489590635221.geojson",
+      "size": 2.63
+    },
+    {
+      "name": "Transit_Shelters_1139561051208148127.geojson",
+      "size": 0.33
+    }
+  ],
+  "optimizedFiles": [
+    {
+      "name": "trek-iq-amenities.json",
+      "size": 0.02,
+      "unit": "MB"
+    },
+    {
+      "name": "trek-iq-core.json",
+      "size": 30.92,
+      "unit": "MB"
+    },
+    {
+      "name": "trek-iq-spatial.db",
+      "size": 56,
+      "unit": "KB"
+    },
+    {
+      "name": "trek-iq-transit.json",
+      "size": 0.04,
+      "unit": "MB"
+    }
+  ],
+  "databaseFiles": [],
+  "directoryStructure": {
+    "dynamic": "Frequently updated data",
+    "static": "Rarely changed data",
+    "backup": "Original files backup",
+    "optimized": "Optimized data files"
+  }
+}

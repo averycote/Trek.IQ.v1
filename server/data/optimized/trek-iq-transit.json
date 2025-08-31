@@ -1,0 +1,2021 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58214128,
+          44.63905583
+        ]
+      },
+      "properties": {
+        "id": 1,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58323551,
+          44.63263978
+        ]
+      },
+      "properties": {
+        "id": 2,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58685374,
+          44.64038476
+        ]
+      },
+      "properties": {
+        "id": 3,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.53911471,
+          44.67027408
+        ]
+      },
+      "properties": {
+        "id": 4,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.62170584,
+          44.648677
+        ]
+      },
+      "properties": {
+        "id": 5,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.62170584,
+          44.648677
+        ]
+      },
+      "properties": {
+        "id": 6,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.66953901,
+          44.63510298
+        ]
+      },
+      "properties": {
+        "id": 7,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57636045,
+          44.66753102
+        ]
+      },
+      "properties": {
+        "id": 8,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.64753081,
+          44.74915439
+        ]
+      },
+      "properties": {
+        "id": 9,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.48083324,
+          44.65498791
+        ]
+      },
+      "properties": {
+        "id": 10,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.63634205,
+          44.59559041
+        ]
+      },
+      "properties": {
+        "id": 11,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.59453484,
+          44.58993044
+        ]
+      },
+      "properties": {
+        "id": 12,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5735198,
+          44.66990174
+        ]
+      },
+      "properties": {
+        "id": 13,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6576313,
+          44.6621274
+        ]
+      },
+      "properties": {
+        "id": 14,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58214128,
+          44.63905583
+        ]
+      },
+      "properties": {
+        "id": 15,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6633853,
+          44.66097026
+        ]
+      },
+      "properties": {
+        "id": 16,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.50603158,
+          44.67042449
+        ]
+      },
+      "properties": {
+        "id": 17,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.61503007,
+          44.64549076
+        ]
+      },
+      "properties": {
+        "id": 18,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58214128,
+          44.63905583
+        ]
+      },
+      "properties": {
+        "id": 19,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.49440015,
+          44.61172357
+        ]
+      },
+      "properties": {
+        "id": 20,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.4643765,
+          44.73856188
+        ]
+      },
+      "properties": {
+        "id": 21,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58333123,
+          44.64133377
+        ]
+      },
+      "properties": {
+        "id": 22,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.66316327,
+          44.75383577
+        ]
+      },
+      "properties": {
+        "id": 23,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.50603158,
+          44.67042449
+        ]
+      },
+      "properties": {
+        "id": 24,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58214128,
+          44.63905583
+        ]
+      },
+      "properties": {
+        "id": 25,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.70805477,
+          44.70853104
+        ]
+      },
+      "properties": {
+        "id": 26,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.62007666,
+          44.66397943
+        ]
+      },
+      "properties": {
+        "id": 27,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58214128,
+          44.63905583
+        ]
+      },
+      "properties": {
+        "id": 28,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.56843727,
+          44.68530277
+        ]
+      },
+      "properties": {
+        "id": 29,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5895936,
+          44.68450183
+        ]
+      },
+      "properties": {
+        "id": 30,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.56904299,
+          44.66483097
+        ]
+      },
+      "properties": {
+        "id": 31,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5892262,
+          44.65869185
+        ]
+      },
+      "properties": {
+        "id": 32,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.47040357,
+          44.61353669
+        ]
+      },
+      "properties": {
+        "id": 33,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5892262,
+          44.65869185
+        ]
+      },
+      "properties": {
+        "id": 34,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.66316327,
+          44.75383577
+        ]
+      },
+      "properties": {
+        "id": 35,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.56944818,
+          44.66513541
+        ]
+      },
+      "properties": {
+        "id": 36,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.56843727,
+          44.68530277
+        ]
+      },
+      "properties": {
+        "id": 37,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.69521527,
+          44.77574465
+        ]
+      },
+      "properties": {
+        "id": 38,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6633853,
+          44.66097026
+        ]
+      },
+      "properties": {
+        "id": 39,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.53370734,
+          44.66449719
+        ]
+      },
+      "properties": {
+        "id": 40,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.69879799,
+          44.76785437
+        ]
+      },
+      "properties": {
+        "id": 41,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.61630149,
+          44.67212264
+        ]
+      },
+      "properties": {
+        "id": 42,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58214128,
+          44.63905583
+        ]
+      },
+      "properties": {
+        "id": 43,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.56904299,
+          44.66483097
+        ]
+      },
+      "properties": {
+        "id": 44,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58895258,
+          44.6589759
+        ]
+      },
+      "properties": {
+        "id": 45,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.69521527,
+          44.77574465
+        ]
+      },
+      "properties": {
+        "id": 46,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.50603158,
+          44.67042449
+        ]
+      },
+      "properties": {
+        "id": 47,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.66955395,
+          44.65915985
+        ]
+      },
+      "properties": {
+        "id": 48,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57636045,
+          44.66753102
+        ]
+      },
+      "properties": {
+        "id": 49,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.53911471,
+          44.67027408
+        ]
+      },
+      "properties": {
+        "id": 50,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57336103,
+          44.6697398
+        ]
+      },
+      "properties": {
+        "id": 51,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.69879799,
+          44.76785437
+        ]
+      },
+      "properties": {
+        "id": 52,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5892262,
+          44.65869185
+        ]
+      },
+      "properties": {
+        "id": 53,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58103758,
+          44.65048351
+        ]
+      },
+      "properties": {
+        "id": 54,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.61782023,
+          44.61300492
+        ]
+      },
+      "properties": {
+        "id": 55,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.73949804,
+          44.79699102
+        ]
+      },
+      "properties": {
+        "id": 56,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58333123,
+          44.64133377
+        ]
+      },
+      "properties": {
+        "id": 57,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.54723342,
+          44.64905303
+        ]
+      },
+      "properties": {
+        "id": 58,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.60181104,
+          44.60430803
+        ]
+      },
+      "properties": {
+        "id": 59,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.67747516,
+          44.68260972
+        ]
+      },
+      "properties": {
+        "id": 60,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.55489829,
+          44.59749588
+        ]
+      },
+      "properties": {
+        "id": 61,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58214128,
+          44.63905583
+        ]
+      },
+      "properties": {
+        "id": 62,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.69879799,
+          44.76785437
+        ]
+      },
+      "properties": {
+        "id": 63,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58214128,
+          44.63905583
+        ]
+      },
+      "properties": {
+        "id": 64,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.69498509,
+          44.77555073
+        ]
+      },
+      "properties": {
+        "id": 65,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.65443765,
+          44.64363477
+        ]
+      },
+      "properties": {
+        "id": 66,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58214128,
+          44.63905583
+        ]
+      },
+      "properties": {
+        "id": 67,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58333123,
+          44.64133377
+        ]
+      },
+      "properties": {
+        "id": 68,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.56824603,
+          44.57032188
+        ]
+      },
+      "properties": {
+        "id": 69,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.67881993,
+          44.64558948
+        ]
+      },
+      "properties": {
+        "id": 70,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57425484,
+          44.67340338
+        ]
+      },
+      "properties": {
+        "id": 71,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.54723342,
+          44.64905303
+        ]
+      },
+      "properties": {
+        "id": 72,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5892262,
+          44.65869185
+        ]
+      },
+      "properties": {
+        "id": 73,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.69172248,
+          44.78219126
+        ]
+      },
+      "properties": {
+        "id": 74,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.50603158,
+          44.67042449
+        ]
+      },
+      "properties": {
+        "id": 75,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58565058,
+          44.63814819
+        ]
+      },
+      "properties": {
+        "id": 76,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.63575406,
+          44.64547119
+        ]
+      },
+      "properties": {
+        "id": 77,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.50603158,
+          44.67042449
+        ]
+      },
+      "properties": {
+        "id": 78,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.61959676,
+          44.64760285
+        ]
+      },
+      "properties": {
+        "id": 79,
+        "source": "Transit_Bus_Routes"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57976248,
+          44.6422886
+        ]
+      },
+      "properties": {
+        "id": 13,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58611556,
+          44.652831
+        ]
+      },
+      "properties": {
+        "id": 19,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57407367,
+          44.64724445
+        ]
+      },
+      "properties": {
+        "id": 28,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57156038,
+          44.64792136
+        ]
+      },
+      "properties": {
+        "id": 34,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57915316,
+          44.64107418
+        ]
+      },
+      "properties": {
+        "id": 62,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58255511,
+          44.65142947
+        ]
+      },
+      "properties": {
+        "id": 83,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57424527,
+          44.65030659
+        ]
+      },
+      "properties": {
+        "id": 98,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57488254,
+          44.64361016
+        ]
+      },
+      "properties": {
+        "id": 104,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57254028,
+          44.64421634
+        ]
+      },
+      "properties": {
+        "id": 115,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.56876802,
+          44.64241497
+        ]
+      },
+      "properties": {
+        "id": 136,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58390873,
+          44.65239042
+        ]
+      },
+      "properties": {
+        "id": 140,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57454302,
+          44.64815338
+        ]
+      },
+      "properties": {
+        "id": 144,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.59222311,
+          44.65444168
+        ]
+      },
+      "properties": {
+        "id": 152,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58152719,
+          44.65397975
+        ]
+      },
+      "properties": {
+        "id": 153,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57331489,
+          44.64963656
+        ]
+      },
+      "properties": {
+        "id": 164,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57773267,
+          44.6485932
+        ]
+      },
+      "properties": {
+        "id": 168,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57151088,
+          44.64503856
+        ]
+      },
+      "properties": {
+        "id": 187,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57232054,
+          44.64892578
+        ]
+      },
+      "properties": {
+        "id": 208,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57720521,
+          44.64755251
+        ]
+      },
+      "properties": {
+        "id": 225,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5735703,
+          44.64626338
+        ]
+      },
+      "properties": {
+        "id": 233,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.59075699,
+          44.65105013
+        ]
+      },
+      "properties": {
+        "id": 235,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58333123,
+          44.64133377
+        ]
+      },
+      "properties": {
+        "id": 259,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57620347,
+          44.64558416
+        ]
+      },
+      "properties": {
+        "id": 266,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57506649,
+          44.6492101
+        ]
+      },
+      "properties": {
+        "id": 283,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57579717,
+          44.64903483
+        ]
+      },
+      "properties": {
+        "id": 284,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57893717,
+          44.64492036
+        ]
+      },
+      "properties": {
+        "id": 288,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57128646,
+          44.6417534
+        ]
+      },
+      "properties": {
+        "id": 303,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58813939,
+          44.65147865
+        ]
+      },
+      "properties": {
+        "id": 335,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58518635,
+          44.64948744
+        ]
+      },
+      "properties": {
+        "id": 350,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57108464,
+          44.64689448
+        ]
+      },
+      "properties": {
+        "id": 365,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58685374,
+          44.64038476
+        ]
+      },
+      "properties": {
+        "id": 373,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57330742,
+          44.64854388
+        ]
+      },
+      "properties": {
+        "id": 375,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58550255,
+          44.65137829
+        ]
+      },
+      "properties": {
+        "id": 378,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.59044246,
+          44.64724298
+        ]
+      },
+      "properties": {
+        "id": 410,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57380425,
+          44.64951301
+        ]
+      },
+      "properties": {
+        "id": 411,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57785989,
+          44.64280784
+        ]
+      },
+      "properties": {
+        "id": 418,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57997866,
+          44.64919548
+        ]
+      },
+      "properties": {
+        "id": 427,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5728032,
+          44.64755953
+        ]
+      },
+      "properties": {
+        "id": 436,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.59234271,
+          44.65081703
+        ]
+      },
+      "properties": {
+        "id": 437,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58082461,
+          44.64444216
+        ]
+      },
+      "properties": {
+        "id": 440,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57387512,
+          44.65041727
+        ]
+      },
+      "properties": {
+        "id": 473,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57056011,
+          44.64529513
+        ]
+      },
+      "properties": {
+        "id": 480,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58103758,
+          44.65048351
+        ]
+      },
+      "properties": {
+        "id": 494,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58235036,
+          44.653441
+        ]
+      },
+      "properties": {
+        "id": 505,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57536205,
+          44.64211762
+        ]
+      },
+      "properties": {
+        "id": 509,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.59141641,
+          44.64891019
+        ]
+      },
+      "properties": {
+        "id": 522,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58970009,
+          44.64587558
+        ]
+      },
+      "properties": {
+        "id": 533,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58658128,
+          44.6506937
+        ]
+      },
+      "properties": {
+        "id": 537,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58602551,
+          44.64680101
+        ]
+      },
+      "properties": {
+        "id": 550,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.59020843,
+          44.65303293
+        ]
+      },
+      "properties": {
+        "id": 560,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58690962,
+          44.65232553
+        ]
+      },
+      "properties": {
+        "id": 562,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57640871,
+          44.65175551
+        ]
+      },
+      "properties": {
+        "id": 592,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58507908,
+          44.64086369
+        ]
+      },
+      "properties": {
+        "id": 593,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58848484,
+          44.64353161
+        ]
+      },
+      "properties": {
+        "id": 594,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58930763,
+          44.64496452
+        ]
+      },
+      "properties": {
+        "id": 595,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57897639,
+          44.65101841
+        ]
+      },
+      "properties": {
+        "id": 597,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5694909,
+          44.64362819
+        ]
+      },
+      "properties": {
+        "id": 604,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57230151,
+          44.64658514
+        ]
+      },
+      "properties": {
+        "id": 605,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57002257,
+          44.64208258
+        ]
+      },
+      "properties": {
+        "id": 616,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58534551,
+          44.65337217
+        ]
+      },
+      "properties": {
+        "id": 640,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.58815935,
+          44.64841638
+        ]
+      },
+      "properties": {
+        "id": 641,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57671672,
+          44.64657447
+        ]
+      },
+      "properties": {
+        "id": 648,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57556401,
+          44.65016981
+        ]
+      },
+      "properties": {
+        "id": 659,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57596344,
+          44.64331305
+        ]
+      },
+      "properties": {
+        "id": 660,
+        "source": "Traffic_Control"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.57388212,
+          44.64387644
+        ]
+      },
+      "properties": {
+        "id": 667,
+        "source": "Traffic_Control"
+      }
+    }
+  ]
+}

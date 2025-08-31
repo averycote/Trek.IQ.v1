@@ -1,0 +1,33 @@
+{
+  "name": "trek-iq-server",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "morgan": "^1.10.0",
+    "zod": "^3.21.4",
+    "lru-cache": "^10.0.1",
+    "node-fetch": "^3.3.2",
+    "compression": "^1.7.4",
+    "sqlite3": "^5.1.6",
+    "nodemailer": "^6.9.7",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.1",
+    "express-rate-limit": "^7.1.5",
+    "axios": "^1.6.2",
+    "cheerio": "^1.0.0-rc.12",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "jest": "^29.7.0"
+  }
+}

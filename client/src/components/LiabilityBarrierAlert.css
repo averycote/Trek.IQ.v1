@@ -1,0 +1,329 @@
+/* Enhanced Liability Barrier Alert Styles */
+
+/* Liability Warning Section */
+.liability-warning {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.liability-warning-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #92400e;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.liability-warning-text {
+  color: #78350f;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Acknowledgment Checkbox */
+.acknowledgment-checkbox {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.acknowledgment-text {
+  color: #1e293b;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.acknowledgment-time {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+/* Action Buttons */
+.liability-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.liability-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  border: none;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.liability-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.liability-button.primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+.liability-button.primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.4);
+}
+
+.liability-button.danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3);
+}
+
+.liability-button.danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(239, 68, 68, 0.4);
+}
+
+.liability-button.secondary {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(107, 114, 128, 0.3);
+}
+
+.liability-button.secondary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(107, 114, 128, 0.4);
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  .liability-warning {
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  .liability-warning-header {
+    font-size: 12px;
+  }
+
+  .liability-warning-text {
+    font-size: 13px;
+  }
+
+  .acknowledgment-checkbox {
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  .acknowledgment-text {
+    font-size: 13px;
+  }
+
+  .liability-button {
+    padding: 14px 16px;
+    font-size: 14px;
+    min-height: 48px;
+  }
+
+  .liability-actions {
+    gap: 8px;
+  }
+}
+
+/* Accessibility improvements */
+.liability-button:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.liability-button:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .liability-warning {
+    background: #ffff00;
+    border-color: #000000;
+  }
+
+  .liability-warning-header,
+  .liability-warning-text {
+    color: #000000;
+  }
+
+  .acknowledgment-checkbox {
+    background: #ffffff;
+    border-color: #000000;
+  }
+
+  .acknowledgment-text {
+    color: #000000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .liability-button {
+    transition: none;
+  }
+
+  .liability-button:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .liability-warning {
+    background: linear-gradient(135deg, #451a03 0%, #78350f 100%);
+    border-color: #f59e0b;
+  }
+
+  .liability-warning-header {
+    color: #fbbf24;
+  }
+
+  .liability-warning-text {
+    color: #fde68a;
+  }
+
+  .acknowledgment-checkbox {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .acknowledgment-text {
+    color: #f9fafb;
+  }
+
+  .acknowledgment-time {
+    color: #9ca3af;
+  }
+}
+
+/* Photo modal styles */
+.photo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.photo-modal-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 32rem;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.photo-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.photo-modal-body {
+  padding: 16px;
+}
+
+.photo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 16rem;
+  background: #f3f4f6;
+  border-radius: 8px;
+  color: #6b7280;
+}
+
+/* Severity color indicators */
+.severity-critical {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.severity-high {
+  color: #ea580c;
+  background: #fff7ed;
+}
+
+.severity-medium {
+  color: #ca8a04;
+  background: #fefce8;
+}
+
+.severity-low {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+/* Animation for modal appearance */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.liability-barrier-alert {
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+/* Responsive grid for desktop */
+@media (min-width: 768px) {
+  .liability-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .liability-button {
+    width: 100%;
+  }
+}
+
+/* Print styles */
+@media print {
+  .liability-barrier-alert {
+    position: static;
+    background: white;
+    box-shadow: none;
+    border: 2px solid #000;
+  }
+
+  .liability-button {
+    display: none;
+  }
+}

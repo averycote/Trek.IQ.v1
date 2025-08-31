@@ -1,0 +1,907 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5751,
+          44.6475
+        ]
+      },
+      "properties": {
+        "id": "parking-1",
+        "name": "Halifax Central Library Parking",
+        "features": [
+          "Wheelchair accessible",
+          "Wide spaces",
+          "Ramp access",
+          "Security cameras"
+        ],
+        "type": "accessible_parking"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5756,
+          44.648
+        ]
+      },
+      "properties": {
+        "id": "parking-2",
+        "name": "Spring Garden Road Parking",
+        "features": [
+          "Wheelchair accessible",
+          "Covered parking",
+          "Security cameras",
+          "Well-lit"
+        ],
+        "type": "accessible_parking"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.575,
+          44.647
+        ]
+      },
+      "properties": {
+        "id": "parking-3",
+        "name": "Barrington Street Parking",
+        "features": [
+          "Wheelchair accessible",
+          "Well-lit",
+          "Near amenities",
+          "Easy access"
+        ],
+        "type": "accessible_parking"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5765,
+          44.6465
+        ]
+      },
+      "properties": {
+        "id": "parking-4",
+        "name": "Halifax Waterfront Parking",
+        "features": [
+          "Wheelchair accessible",
+          "Scenic location",
+          "Ramp access",
+          "Security cameras"
+        ],
+        "type": "accessible_parking"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5735,
+          44.6495
+        ]
+      },
+      "properties": {
+        "id": "parking-5",
+        "name": "Citadel Hill Parking",
+        "features": [
+          "Wheelchair accessible",
+          "Historic location",
+          "Wide spaces",
+          "Security cameras"
+        ],
+        "type": "accessible_parking"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.577,
+          44.646
+        ]
+      },
+      "properties": {
+        "id": "parking-6",
+        "name": "Seaport Farmers Market Parking",
+        "features": [
+          "Wheelchair accessible",
+          "Market access",
+          "Easy parking",
+          "Well-lit"
+        ],
+        "type": "accessible_parking"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5745,
+          44.6485
+        ]
+      },
+      "properties": {
+        "id": "parking-7",
+        "name": "Halifax Shopping Centre Parking",
+        "features": [
+          "Wheelchair accessible",
+          "Shopping access",
+          "Covered parking",
+          "Security cameras"
+        ],
+        "type": "accessible_parking"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.574,
+          44.649
+        ]
+      },
+      "properties": {
+        "id": "parking-8",
+        "name": "Public Gardens Parking",
+        "features": [
+          "Wheelchair accessible",
+          "Garden access",
+          "Scenic location",
+          "Easy access"
+        ],
+        "type": "accessible_parking"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5756,
+          44.6475
+        ]
+      },
+      "properties": {
+        "name": "Halifax Central Library Parking",
+        "type": "accessible_parking"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.576,
+          44.6475
+        ]
+      },
+      "properties": {
+        "name": "Spring Garden Road Parking",
+        "type": "accessible_parking"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -63.5756,
+            44.6475
+          ],
+          [
+            -63.575,
+            44.647
+          ],
+          [
+            -63.5745,
+            44.6465
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Barrington Street",
+        "type": "travelway"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -63.5756,
+            44.6475
+          ],
+          [
+            -63.576,
+            44.6475
+          ],
+          [
+            -63.5765,
+            44.6475
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Spring Garden Road",
+        "type": "travelway"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5702105792205,
+          44.6644144778974
+        ]
+      },
+      "properties": {
+        "id": 1,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5753845689315,
+          44.6426918827473
+        ]
+      },
+      "properties": {
+        "id": 2,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6632921386686,
+          44.6608335456184
+        ]
+      },
+      "properties": {
+        "id": 3,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.553235341672,
+          44.7068792028844
+        ]
+      },
+      "properties": {
+        "id": 4,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.4899908455839,
+          44.6870054255094
+        ]
+      },
+      "properties": {
+        "id": 5,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6554952668556,
+          44.7294640342677
+        ]
+      },
+      "properties": {
+        "id": 6,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5617264342314,
+          44.6793425206591
+        ]
+      },
+      "properties": {
+        "id": 7,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -62.527213613706,
+          44.9174920989975
+        ]
+      },
+      "properties": {
+        "id": 8,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6670949731676,
+          44.65878097749
+        ]
+      },
+      "properties": {
+        "id": 9,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5856962842639,
+          44.6541188933824
+        ]
+      },
+      "properties": {
+        "id": 10,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5991470276092,
+          44.6644233466669
+        ]
+      },
+      "properties": {
+        "id": 11,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5897116053619,
+          44.6509738448632
+        ]
+      },
+      "properties": {
+        "id": 12,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.532614098405,
+          44.6872054589748
+        ]
+      },
+      "properties": {
+        "id": 13,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5215834047569,
+          44.668582048826
+        ]
+      },
+      "properties": {
+        "id": 14,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.571715874464,
+          44.649688313644
+        ]
+      },
+      "properties": {
+        "id": 15,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6990299440758,
+          44.7680877336863
+        ]
+      },
+      "properties": {
+        "id": 16,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5734209631115,
+          44.62151129236
+        ]
+      },
+      "properties": {
+        "id": 17,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5689560873161,
+          44.6639556997974
+        ]
+      },
+      "properties": {
+        "id": 18,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5691332350902,
+          44.6644650626414
+        ]
+      },
+      "properties": {
+        "id": 19,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6094979499122,
+          44.6203168098462
+        ]
+      },
+      "properties": {
+        "id": 20,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6879937015342,
+          44.7687870239733
+        ]
+      },
+      "properties": {
+        "id": 21,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5394534245156,
+          44.675388302161
+        ]
+      },
+      "properties": {
+        "id": 22,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.56625203614,
+          44.6271769075443
+        ]
+      },
+      "properties": {
+        "id": 23,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.1485979643447,
+          44.7863830907269
+        ]
+      },
+      "properties": {
+        "id": 24,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6046124793075,
+          44.6376182568361
+        ]
+      },
+      "properties": {
+        "id": 25,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5057062669134,
+          44.6698571420566
+        ]
+      },
+      "properties": {
+        "id": 26,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6714203127516,
+          44.7156733228093
+        ]
+      },
+      "properties": {
+        "id": 27,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5975781181689,
+          44.6295525118753
+        ]
+      },
+      "properties": {
+        "id": 28,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.4736900892018,
+          44.6074033761617
+        ]
+      },
+      "properties": {
+        "id": 29,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5815334148804,
+          44.6420597556371
+        ]
+      },
+      "properties": {
+        "id": 30,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5818419996553,
+          44.6419789158161
+        ]
+      },
+      "properties": {
+        "id": 31,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6946380680753,
+          44.7364898668485
+        ]
+      },
+      "properties": {
+        "id": 32,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.549466185013,
+          44.6491512151778
+        ]
+      },
+      "properties": {
+        "id": 33,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.553443497493,
+          44.7022928568494
+        ]
+      },
+      "properties": {
+        "id": 34,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6181906513709,
+          44.609190593315
+        ]
+      },
+      "properties": {
+        "id": 35,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5744232952207,
+          44.6704889483308
+        ]
+      },
+      "properties": {
+        "id": 36,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -64.0615843432416,
+          44.6388401609
+        ]
+      },
+      "properties": {
+        "id": 37,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5506048059238,
+          44.6812034391469
+        ]
+      },
+      "properties": {
+        "id": 38,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.4900044640436,
+          44.6837198680345
+        ]
+      },
+      "properties": {
+        "id": 39,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.566799913242,
+          44.6846511001784
+        ]
+      },
+      "properties": {
+        "id": 40,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5885733940828,
+          44.6840606481583
+        ]
+      },
+      "properties": {
+        "id": 41,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -62.5441385132593,
+          44.9272605444904
+        ]
+      },
+      "properties": {
+        "id": 42,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6204865565908,
+          44.6379649413609
+        ]
+      },
+      "properties": {
+        "id": 43,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6230699559394,
+          44.6597388431822
+        ]
+      },
+      "properties": {
+        "id": 44,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.5765310078803,
+          44.6860873770702
+        ]
+      },
+      "properties": {
+        "id": 45,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.8579774830369,
+          44.703165720014
+        ]
+      },
+      "properties": {
+        "id": 46,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -63.6764160102349,
+          44.7801316867951
+        ]
+      },
+      "properties": {
+        "id": 47,
+        "source": "HRM_Public_Washrooms_8937353538278970153"
+      }
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "trek-iq",
+  "version": "1.0.0",
+  "description": "Accessibility-focused routing and data visualization web app for Halifax",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "jest",
+    "test:e2e": "playwright test",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "network": "node start-network.js",
+    "test:network": "node test-network-config.js"
+  },
+  "keywords": [
+    "accessibility",
+    "routing",
+    "halifax",
+    "geojson",
+    "leaflet"
+  ],
+  "author": "Trek.IQ Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "concurrently": "^8.2.2",
+    "jest": "^29.7.0"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.7"
+  }
+}

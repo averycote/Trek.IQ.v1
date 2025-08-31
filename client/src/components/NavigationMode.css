@@ -1,0 +1,741 @@
+/* ===== FUTURISTIC NAVIGATION MODE STYLES ===== */
+
+/* Navigation Mode Container */
+.navigation-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+/* Shrunken Search Bar */
+.shrunken-search-bar {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: 
+    0 8px 32px rgba(0, 255, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  pointer-events: auto;
+  z-index: 2001;
+  max-width: 280px;
+}
+
+.search-bar-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.route-summary {
+  flex: 1;
+  min-width: 0;
+}
+
+.origin-dest {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.origin, .destination {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70px;
+  font-size: 11px;
+}
+
+.route-line {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.route-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00ffff;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+}
+
+.route-dot.start {
+  background: #00ff88;
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+}
+
+.route-dot.end {
+  background: #ff0088;
+  box-shadow: 0 0 8px rgba(255, 0, 136, 0.6);
+}
+
+.route-line-segment {
+  width: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, #00ffff, #ff0088);
+  border-radius: 1px;
+}
+
+.edit-route-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: rgba(0, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #00ffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-route-btn:hover {
+  background: rgba(0, 255, 255, 0.2);
+  box-shadow: 0 0 16px rgba(0, 255, 255, 0.4);
+}
+
+.edit-route-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Go Button */
+.go-button {
+  position: fixed;
+  bottom: 120px;
+  right: 20px;
+  width: 70px;
+  height: 70px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00ff88, #00ffff);
+  cursor: pointer;
+  pointer-events: auto;
+  z-index: 2002;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 255, 136, 0.4);
+}
+
+.go-button-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #000;
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.go-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.go-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.go-text {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.go-button-glow {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background: radial-gradient(circle, rgba(0, 255, 136, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+/* Directions Panel */
+.directions-panel {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 400px;
+  max-height: calc(100vh - 40px);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(20, 20, 40, 0.95));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 255, 255, 0.4);
+  border-radius: 20px;
+  box-shadow: 
+    0 12px 40px rgba(0, 255, 255, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  pointer-events: auto;
+  z-index: 2003;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.directions-panel.minimized {
+  width: 60px;
+  height: 60px;
+}
+
+.directions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: linear-gradient(90deg, rgba(0, 255, 255, 0.1), rgba(0, 255, 136, 0.1));
+  border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+  position: relative;
+}
+
+.directions-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.6), transparent);
+}
+
+.directions-title h3 {
+  margin: 0;
+  background: linear-gradient(135deg, #00ffff, #00ff88);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  text-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+}
+
+.distance-to-next {
+  display: block;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 4px;
+  font-weight: 600;
+  background: rgba(0, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.directions-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.minimize-btn,
+.exit-navigation-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15), rgba(0, 255, 136, 0.15));
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 10px;
+  color: #00ffff;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.minimize-btn::before,
+.exit-navigation-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.minimize-btn:hover::before,
+.exit-navigation-btn:hover::before {
+  left: 100%;
+}
+
+.minimize-btn:hover,
+.exit-navigation-btn:hover {
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.25), rgba(0, 255, 136, 0.25));
+  border-color: rgba(0, 255, 255, 0.5);
+  box-shadow: 
+    0 0 20px rgba(0, 255, 255, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.minimize-btn svg,
+.exit-navigation-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.directions-content {
+  padding: 24px;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  font-size: 14px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.3), rgba(20, 20, 40, 0.1));
+}
+
+.directions-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.directions-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.directions-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(0, 255, 255, 0.4), rgba(0, 255, 136, 0.4));
+  border-radius: 3px;
+}
+
+.directions-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(0, 255, 255, 0.6), rgba(0, 255, 136, 0.6));
+}
+
+/* Current Step */
+.current-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15), rgba(0, 255, 136, 0.1));
+  border-radius: 16px;
+  border: 1px solid rgba(0, 255, 255, 0.4);
+  margin-bottom: 20px;
+  box-shadow: 
+    0 4px 16px rgba(0, 255, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.current-step::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #00ffff, #00ff88, #00ffff);
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.step-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.3), rgba(0, 255, 136, 0.2));
+  border: 2px solid rgba(0, 255, 255, 0.5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  box-shadow: 
+    0 0 20px rgba(0, 255, 255, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  position: relative;
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.step-icon.small {
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+}
+
+.step-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.step-instruction {
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  line-height: 1.6;
+  word-wrap: break-word;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.step-details {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.step-distance,
+.step-duration {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Upcoming Steps */
+.upcoming-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.upcoming-step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.upcoming-step:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+  border-color: rgba(0, 255, 255, 0.3);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 255, 255, 0.1);
+}
+
+.upcoming-step .step-instruction {
+  font-size: 14px;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.upcoming-step .step-distance {
+  font-size: 12px;
+}
+
+/* No Directions */
+.no-directions {
+  text-align: center;
+  padding: 32px 16px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ===== ACCESSIBILITY MARKERS ===== */
+
+.accessibility-marker {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.accessibility-marker:hover {
+  transform: scale(1.1);
+}
+
+.marker-glow {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  border-radius: 50%;
+  animation: markerGlow 2s ease-in-out infinite;
+}
+
+.accessibility-marker.accessibleParking .marker-glow {
+  background: radial-gradient(circle, rgba(0, 255, 136, 0.4) 0%, transparent 70%);
+}
+
+.accessibility-marker.transitStops .marker-glow {
+  background: radial-gradient(circle, rgba(0, 255, 255, 0.4) 0%, transparent 70%);
+}
+
+.accessibility-marker.trafficControl .marker-glow {
+  background: radial-gradient(circle, rgba(255, 255, 0, 0.4) 0%, transparent 70%);
+}
+
+.accessibility-marker.activeTravelways .marker-glow {
+  background: radial-gradient(circle, rgba(255, 0, 255, 0.4) 0%, transparent 70%);
+}
+
+.accessibility-marker.accessibleBathrooms .marker-glow {
+  background: radial-gradient(circle, rgba(255, 165, 0, 0.4) 0%, transparent 70%);
+}
+
+.accessibility-marker.elevators .marker-glow {
+  background: radial-gradient(circle, rgba(138, 43, 226, 0.4) 0%, transparent 70%);
+}
+
+.accessibility-marker.ramps .marker-glow {
+  background: radial-gradient(circle, rgba(255, 69, 0, 0.4) 0%, transparent 70%);
+}
+
+.accessibility-marker.accessibleEntrances .marker-glow {
+  background: radial-gradient(circle, rgba(0, 128, 0, 0.4) 0%, transparent 70%);
+}
+
+@keyframes markerGlow {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+.marker-icon {
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #00ffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: 0 0 16px rgba(0, 255, 255, 0.4);
+  position: relative;
+  z-index: 1;
+}
+
+.marker-label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: #00ffff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  margin-top: 4px;
+}
+
+.accessibility-marker:hover .marker-label {
+  opacity: 1;
+}
+
+.marker-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border: 2px solid #00ffff;
+  border-radius: 50%;
+  animation: markerPulse 2s ease-in-out infinite;
+}
+
+@keyframes markerPulse {
+  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
+
+/* Accessibility Popup */
+.accessibility-popup {
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 255, 255, 0.2);
+  color: #ffffff;
+  max-width: 250px;
+}
+
+.popup-content h4 {
+  margin: 0 0 12px 0;
+  color: #00ffff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.accessibility-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.info-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.info-value {
+  color: #00ffff;
+  font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .shrunken-search-bar {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: calc(100vw - 20px);
+  }
+  
+  .go-button {
+    bottom: 100px;
+    right: 15px;
+    width: 60px;
+    height: 60px;
+  }
+  
+  .directions-panel {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-width: calc(100vw - 20px);
+    border-radius: 16px;
+  }
+  
+  .directions-panel.minimized {
+    width: 50px;
+    height: 50px;
+    top: 10px;
+    right: 10px;
+  }
+  
+  .directions-header {
+    padding: 16px;
+  }
+  
+  .directions-title h3 {
+    font-size: 18px;
+  }
+  
+  .distance-to-next {
+    font-size: 12px;
+    padding: 3px 6px;
+  }
+  
+  .directions-content {
+    padding: 16px;
+    font-size: 13px;
+  }
+  
+  .current-step {
+    padding: 16px;
+    gap: 14px;
+  }
+  
+  .step-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+  
+  .step-instruction {
+    font-size: 15px;
+    margin-bottom: 10px;
+  }
+  
+  .upcoming-step {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .upcoming-step .step-instruction {
+    font-size: 13px;
+  }
+  
+  .upcoming-step .step-distance {
+    font-size: 11px;
+  }
+  
+  .minimize-btn,
+  .exit-navigation-btn {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .directions-panel {
+    top: 5px;
+    right: 5px;
+    left: 5px;
+    max-width: calc(100vw - 10px);
+  }
+  
+  .directions-header {
+    padding: 12px;
+  }
+  
+  .directions-title h3 {
+    font-size: 16px;
+  }
+  
+  .directions-content {
+    padding: 12px;
+    font-size: 12px;
+  }
+  
+  .current-step {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .step-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+  
+  .step-instruction {
+    font-size: 14px;
+  }
+  
+  .upcoming-step {
+    padding: 10px;
+    gap: 10px;
+  }
+}

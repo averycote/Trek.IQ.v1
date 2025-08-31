@@ -1,0 +1,491 @@
+import React, { useState, useEffect } from 'react';
+import accessibilityService from '../services/accessibilityService';
+
+// Utility function to generate turn-by-turn directions from route coordinates
+const generateDirectionsFromRoute = (route) => {
+  if (!route || !route.features || !route.features[0]) {
+    return [];
+  }
+
+  const feature = route.features[0];
+  const coordinates = feature.geometry?.coordinates || [];
+  const properties = feature.properties || {};
+  
+  if (coordinates.length < 2) {
+    return [];
+  }
+
+  const directions = [];
+  let stepNumber = 1;
+
+  // Calculate bearing between consecutive points to determine turns
+  const calculateBearing = (coord1, coord2) => {
+    const [lng1, lat1] = coord1;
+    const [lng2, lat2] = coord2;
+    
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const lat1Rad = lat1 * Math.PI / 180;
+    const lat2Rad = lat2 * Math.PI / 180;
+    
+    const y = Math.sin(dLng) * Math.cos(lat2Rad);
+    const x = Math.cos(lat1Rad) * Math.sin(lat2Rad) - Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
+    
+    let bearing = Math.atan2(y, x) * 180 / Math.PI;
+    return (bearing + 360) % 360;
+  };
+
+  // Calculate distance between two coordinates
+  const calculateDistance = (coord1, coord2) => {
+    const [lng1, lat1] = coord1;
+    const [lng2, lat2] = coord2;
+    
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lng2 - lng1) * Math.PI / 180;
+    
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    
+    return R * c;
+  };
+
+  // Generate initial direction
+  if (coordinates.length >= 2) {
+    const firstBearing = calculateBearing(coordinates[0], coordinates[1]);
+    const distance = calculateDistance(coordinates[0], coordinates[1]);
+    
+    directions.push({
+      step: stepNumber++,
+      instruction: `Start heading ${getBearingDirection(firstBearing)}`,
+      distance: Math.round(distance),
+      mode: properties.mode || 'walking',
+      bearing: firstBearing
+    });
+  }
+
+  // Generate directions for route segments
+  for (let i = 1; i < coordinates.length - 1; i++) {
+    const prevCoord = coordinates[i - 1];
+    const currentCoord = coordinates[i];
+    const nextCoord = coordinates[i + 1];
+    
+    const prevBearing = calculateBearing(prevCoord, currentCoord);
+    const nextBearing = calculateBearing(currentCoord, nextCoord);
+    const distance = calculateDistance(currentCoord, nextCoord);
+    
+    // Calculate turn angle
+    let turnAngle = nextBearing - prevBearing;
+    if (turnAngle > 180) turnAngle -= 360;
+    if (turnAngle < -180) turnAngle += 360;
+    
+    // Generate instruction based on turn angle
+    let instruction = '';
+    if (Math.abs(turnAngle) < 10) {
+      instruction = 'Continue straight';
+    } else if (turnAngle > 10 && turnAngle < 45) {
+      instruction = 'Bear right';
+    } else if (turnAngle >= 45 && turnAngle < 135) {
+      instruction = 'Turn right';
+    } else if (turnAngle >= 135) {
+      instruction = 'Sharp right';
+    } else if (turnAngle < -10 && turnAngle > -45) {
+      instruction = 'Bear left';
+    } else if (turnAngle <= -45 && turnAngle > -135) {
+      instruction = 'Turn left';
+    } else if (turnAngle <= -135) {
+      instruction = 'Sharp left';
+    }
+    
+    if (distance > 50) { // Only add direction if segment is significant
+      directions.push({
+        step: stepNumber++,
+        instruction: instruction,
+        distance: Math.round(distance),
+        mode: properties.mode || 'walking',
+        bearing: nextBearing,
+        turnAngle: turnAngle
+      });
+    }
+  }
+
+  // Add final direction
+  if (coordinates.length >= 2) {
+    const lastCoord = coordinates[coordinates.length - 1];
+    const secondLastCoord = coordinates[coordinates.length - 2];
+    const finalDistance = calculateDistance(secondLastCoord, lastCoord);
+    
+    directions.push({
+      step: stepNumber,
+      instruction: 'Arrive at destination',
+      distance: Math.round(finalDistance),
+      mode: properties.mode || 'walking',
+      bearing: 0
+    });
+  }
+
+  return directions;
+};
+
+// Helper function to convert bearing to cardinal direction
+const getBearingDirection = (bearing) => {
+  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const index = Math.round(bearing / 45) % 8;
+  return directions[index];
+};
+
+const DirectionsPanel = ({ 
+  route, 
+  isOpen, 
+  onClose, 
+  isDarkMode,
+  settings = {} 
+}) => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isAutoPlay, setIsAutoPlay] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Handle different route data structures
+  const directions = route?.directions || route?.steps || generateDirectionsFromRoute(route) || [];
+  const accessibleParking = route?.accessibleParking || [];
+  
+  // Extract route properties based on data structure
+  const routeProperties = route?.features?.[0]?.properties || route || {};
+
+  useEffect(() => {
+    if (isAutoPlay && directions.length > 0) {
+      const interval = setInterval(() => {
+        setCurrentStep(prev => {
+          if (prev < directions.length - 1) {
+            return prev + 1;
+          } else {
+            setIsAutoPlay(false);
+            return prev;
+          }
+        });
+      }, 5000); // 5 seconds per step
+
+      return () => clearInterval(interval);
+    }
+  }, [isAutoPlay, directions.length]);
+
+  useEffect(() => {
+    if (settings.voiceNavigation && route && directions.length > 0) {
+      accessibilityService.announceRoute(route);
+    }
+  }, [route, settings.voiceNavigation, directions.length]);
+
+  const handleStepClick = (stepIndex) => {
+    setCurrentStep(stepIndex);
+    if (settings.voiceNavigation) {
+      const step = directions[stepIndex];
+      accessibilityService.speak(`Step ${step.step}: ${step.instruction}`);
+    }
+    if (settings.hapticFeedback) {
+      accessibilityService.hapticFeedback('light');
+    }
+  };
+
+  const toggleAutoPlay = () => {
+    setIsAutoPlay(!isAutoPlay);
+    if (!isAutoPlay && settings.voiceNavigation) {
+      accessibilityService.speak('Starting auto-play navigation. Each step will be announced every 5 seconds.');
+    }
+  };
+
+  const getModeIcon = (mode) => {
+    const icons = {
+      walking: '🚶',
+      transit: '🚌',
+      driving: '🚗'
+    };
+    return icons[mode] || '📍';
+  };
+
+  const getAccessibilityIcon = (accessibility) => {
+    if (!accessibility) return null;
+    
+    const icons = [];
+    if (accessibility.hasSidewalks) icons.push('🛣️');
+    if (accessibility.hasCurbCuts) icons.push('♿');
+    if (accessibility.avoidSteps) icons.push('🚫');
+    if (accessibility.winterMode) icons.push('❄️');
+    
+    return icons.join(' ');
+  };
+
+  const getTextSizeClass = () => {
+    const sizes = {
+      small: 'text-sm',
+      medium: 'text-base',
+      large: 'text-lg',
+      'extra-large': 'text-xl'
+    };
+    return sizes[settings.textSize] || 'text-base';
+  };
+
+  if (!isOpen || !route) return null;
+
+  return (
+    <div className={`fixed overflow-hidden rounded-lg shadow-xl z-40 ${
+      isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
+    } ${
+      window.innerWidth <= 768
+        ? 'bottom-24 left-4 right-4 top-auto max-h-72'
+        : 'right-4 top-20 w-96 max-h-[calc(100vh-6rem)]'
+    }`}>
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex justify-between items-center">
+          <h3 className={`font-semibold ${getTextSizeClass()}`}>Step-by-Step Directions</h3>
+          <div className="flex space-x-2">
+            <button
+              onClick={toggleAutoPlay}
+              className={`p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                isAutoPlay 
+                  ? 'bg-red-600 text-white' 
+                  : isDarkMode 
+                    ? 'bg-gray-700 hover:bg-gray-600' 
+                    : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+              aria-label={isAutoPlay ? 'Stop auto-play' : 'Start auto-play'}
+            >
+              {isAutoPlay ? '⏸️' : '▶️'}
+            </button>
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className={`p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 hover:bg-gray-600' 
+                  : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+              aria-label={isExpanded ? 'Collapse' : 'Expand'}
+            >
+              {isExpanded ? '📉' : '📈'}
+            </button>
+            <button
+              onClick={onClose}
+              className={`p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                isDarkMode 
+                  ? 'bg-gray-700 hover:bg-gray-600' 
+                  : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+              aria-label="Close directions"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* Route Summary */}
+        <div className={`mt-3 p-3 rounded-md ${
+          isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+        }`}>
+          <div className="flex justify-between items-center">
+                          <div>
+                <p className={`font-medium ${getTextSizeClass()}`}>
+                  {(() => {
+                    const distance = routeProperties.distance || 0;
+                    if (distance >= 1000) {
+                      return `${(distance / 1000).toFixed(1)} km`;
+                    }
+                    return `${Math.round(distance)} m`;
+                  })()}
+                </p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {(() => {
+                    const duration = routeProperties.duration || 0;
+                    if (duration >= 3600) { // More than 1 hour
+                      const hours = Math.floor(duration / 3600);
+                      const minutes = Math.round((duration % 3600) / 60);
+                      return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+                    }
+                    return `${Math.round(duration / 60)} min`;
+                  })()}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  {routeProperties.mode || 'walking'}
+                </p>
+                {routeProperties.avoidSteps && (
+                  <p className="text-xs text-blue-600">♿ Accessible Route</p>
+                )}
+              </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={`overflow-y-auto ${isExpanded ? 'h-96' : 'h-64'}`}>
+        {directions.length === 0 ? (
+          <div className="p-4 text-center">
+            <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              No directions available
+            </p>
+          </div>
+        ) : (
+          <div className="p-4 space-y-3">
+            {directions.map((step, index) => (
+              <div
+                key={index}
+                onClick={() => handleStepClick(index)}
+                className={`p-3 rounded-md cursor-pointer transition-colors ${
+                  index === currentStep
+                    ? isDarkMode 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-blue-100 border-l-4 border-blue-600'
+                    : isDarkMode 
+                      ? 'bg-gray-700 hover:bg-gray-600' 
+                      : 'bg-gray-50 hover:bg-gray-100'
+                }`}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleStepClick(index);
+                  }
+                }}
+              >
+                <div className="flex items-start space-x-3">
+                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    index === currentStep
+                      ? 'bg-white text-blue-600'
+                      : isDarkMode 
+                        ? 'bg-gray-600 text-white' 
+                        : 'bg-gray-300 text-gray-700'
+                  }`}>
+                    {step.step}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-lg">{getModeIcon(step.mode)}</span>
+                      <p className={`font-medium ${getTextSizeClass()}`}>
+                        {step.instruction}
+                      </p>
+                    </div>
+                    
+                    {step.distance > 0 && (
+                      <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {step.distance} meters
+                      </p>
+                    )}
+                    
+                    {step.accessibility && (
+                      <div className="mt-2 flex items-center space-x-1">
+                        <span className="text-xs">
+                          {getAccessibilityIcon(step.accessibility)}
+                        </span>
+                        <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                          {step.accessibility.surfaceType} surface
+                          {step.accessibility.hasSidewalks && ', sidewalks'}
+                          {step.accessibility.hasCurbCuts && ', curb cuts'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Accessible Parking Section for Driving Routes */}
+      {routeProperties.mode === 'driving' && accessibleParking.length > 0 && (
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <h4 className={`font-semibold mb-3 ${getTextSizeClass()}`}>
+            🚗 Accessible Parking Near Destination
+          </h4>
+          <div className="space-y-3">
+            {accessibleParking.map((spot, index) => (
+              <div
+                key={spot.id}
+                className={`p-3 rounded-md ${
+                  isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h5 className={`font-medium ${getTextSizeClass()}`}>
+                    {spot.name}
+                  </h5>
+                  <span className={`text-sm ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                    {spot.distance}m away
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-sm mb-2">
+                  <div>
+                    <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Time Limit:</span>
+                    <span className="ml-1 font-medium">{spot.timeLimit}</span>
+                  </div>
+                  <div>
+                    <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Cost:</span>
+                    <span className="ml-1 font-medium">{spot.cost}</span>
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap gap-1">
+                  {spot.features.map((feature, featureIndex) => (
+                    <span
+                      key={featureIndex}
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        isDarkMode 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-blue-100 text-blue-800'
+                      }`}
+                    >
+                      {feature}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Navigation Controls */}
+      {directions.length > 0 && (
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex justify-between items-center">
+            <button
+              onClick={() => handleStepClick(Math.max(0, currentStep - 1))}
+              disabled={currentStep === 0}
+              className={`px-3 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                currentStep === 0
+                  ? 'opacity-50 cursor-not-allowed'
+                  : isDarkMode 
+                    ? 'bg-gray-700 hover:bg-gray-600' 
+                    : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+            >
+              ← Previous
+            </button>
+            
+            <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+              {currentStep + 1} of {directions.length}
+            </span>
+            
+            <button
+              onClick={() => handleStepClick(Math.min(directions.length - 1, currentStep + 1))}
+              disabled={currentStep === directions.length - 1}
+              className={`px-3 py-1 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                currentStep === directions.length - 1
+                  ? 'opacity-50 cursor-not-allowed'
+                  : isDarkMode 
+                    ? 'bg-gray-700 hover:bg-gray-600' 
+                    : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+            >
+              Next →
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default DirectionsPanel;

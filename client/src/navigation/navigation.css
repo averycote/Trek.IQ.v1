@@ -1,0 +1,1552 @@
+/* ===== CLEAN MOBILE NAVIGATION STYLES ===== */
+
+/* ===== MOBILE NAVIGATION PANEL - ENHANCED MOBILE DESIGN ===== */
+
+.mobile-navigation-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
+  z-index: 1500; /* High z-index to stay above map and other UI */
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  /* Enhanced safe area support */
+  padding-bottom: max(20px, env(safe-area-inset-bottom, 0));
+  max-height: 70vh; /* Increased for better usability */
+  /* Enhanced hardware acceleration */
+  transform: translateZ(0);
+  will-change: transform, height;
+  /* Better touch handling */
+  touch-action: pan-y;
+  /* Prevent overscroll */
+  overscroll-behavior: contain;
+}
+
+/* Route Summary State - compact for mobile */
+.mobile-navigation-panel.route-summary {
+  max-height: 40vh;
+  height: auto;
+}
+
+/* Active Navigation State - minimal height */
+.mobile-navigation-panel.active-navigation {
+  max-height: 35vh;
+  height: auto;
+}
+
+/* Collapsed state - optimized for mobile interaction */
+.mobile-navigation-panel.collapsed {
+  height: 80px; /* Improved height for better touch targets */
+  border-radius: 20px 20px 0 0;
+  min-height: 80px; /* Ensure consistent minimum height */
+  /* Better visual separation */
+  border-top: 2px solid #f3f4f6;
+}
+
+/* Drag Handle - ENHANCED MOBILE TOUCH TARGET */
+.drag-handle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 0 8px 0; /* Better spacing */
+  cursor: grab;
+  position: relative;
+  min-height: 44px; /* WCAG compliant touch target */
+  outline: none;
+  background: #ffffff;
+  /* Enhanced touch feedback */
+  -webkit-tap-highlight-color: transparent;
+  /* Better touch area */
+  min-width: 60px; /* Larger touch area */
+  /* Visual feedback on touch */
+  transition: background-color 0.2s ease;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  background: #f9fafb;
+}
+
+.drag-handle:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.handle-bar {
+  width: 36px; /* Better visibility */
+  height: 3px; /* More visible */
+  background: #d1d5db;
+  border-radius: 2px;
+  /* Subtle shadow for depth */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Close Button - ENHANCED MOBILE TOUCH TARGET */
+.close-panel-button.mobile {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 44px; /* WCAG compliant touch target */
+  height: 44px;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+  outline: none;
+  /* Enhanced touch feedback */
+  -webkit-tap-highlight-color: transparent;
+  /* Better visual feedback */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-size: 16px;
+  /* Prevent text selection */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.close-panel-button.mobile:hover {
+  background: #f9fafb;
+  color: #374151;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.close-panel-button.mobile:active {
+  transform: translateY(0);
+  background: #f3f4f6;
+}
+
+.close-panel-button.mobile:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  /* Enhanced focus for accessibility */
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+/* Panel Content - COMPACT MOBILE DESIGN */
+.panel-content {
+  padding: 0;
+  overflow-y: auto;
+  height: calc(100% - 40px); /* Further reduced for mobile */
+  transition: opacity 0.3s ease;
+  /* Ensure smooth scrolling */
+  -webkit-overflow-scrolling: touch;
+  /* Prevent content from interfering with map */
+  position: relative;
+  z-index: 1;
+}
+
+/* Accessibility Score - COMPACT MOBILE DESIGN */
+.accessibility-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px; /* Further reduced padding */
+  background: #f8fafc;
+  border-radius: 6px; /* Further reduced border radius */
+  margin: 6px 10px; /* Further reduced margins */
+  border: 1px solid #e2e8f0;
+  /* Ensure visibility */
+  z-index: 10;
+  position: relative;
+  /* Better mobile typography */
+  font-size: 14px;
+}
+
+.score-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.score-icon {
+  font-size: 24px;
+}
+
+.score-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.score-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.score-level {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.score-value {
+  text-align: right;
+}
+
+.score-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* Barriers Warning - COMPACT MOBILE DESIGN */
+.barriers-warning {
+  margin: 6px 10px; /* Further reduced margins */
+  padding: 6px 10px; /* Further reduced padding */
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 6px; /* Further reduced border radius */
+  /* Ensure visibility */
+  z-index: 10;
+  position: relative;
+  /* Better mobile typography */
+  font-size: 13px;
+}
+
+.warning-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.warning-icon {
+  font-size: 16px;
+}
+
+.warning-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.warning-text {
+  font-size: 12px;
+  color: #a16207;
+  line-height: 1.4;
+}
+
+.mobile-navigation-panel.collapsed .panel-content {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ===== ENHANCED COLLAPSED NAVIGATION ===== */
+
+.collapsed-navigation {
+  display: none;
+  padding: 0 16px 16px 16px;
+}
+
+.mobile-navigation-panel.collapsed .collapsed-navigation {
+  display: block;
+  opacity: 1;
+}
+
+.collapsed-current-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8fafc;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 8px;
+  /* Better touch target for the entire step */
+  min-height: 48px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  /* Enhanced touch feedback */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.collapsed-current-step:hover {
+  background: #f0f9ff;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.collapsed-current-step:active {
+  transform: translateY(0);
+  background: #e0f2fe;
+}
+
+.collapsed-current-step:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+  /* Enhanced focus for accessibility */
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.collapsed-step-icon {
+  width: 32px;
+  height: 32px;
+  background: #3b82f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: white;
+  flex-shrink: 0;
+  /* Better visual depth */
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.collapsed-step-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.collapsed-step-instruction {
+  color: #111827; /* High contrast dark color */
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 3px;
+  line-height: 1.2;
+  /* Improve text overflow handling */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collapsed-step-metrics {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.collapsed-next-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  padding: 12px;
+  opacity: 0.8;
+}
+
+.collapsed-next-icon {
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  background: #6b7280;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.collapsed-next-instruction {
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===== COMPACT ROUTE HEADER - MOBILE OPTIMIZED ===== */
+
+.route-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 8px 8px 8px; /* Further reduced padding */
+  margin-bottom: 0;
+  /* Ensure proper spacing for accessibility info */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.route-header-title {
+  font-size: 14px; /* Further reduced for mobile */
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px; /* Further reduced */
+  display: flex;
+  align-items: center;
+  gap: 6px; /* Further reduced gap */
+}
+
+.route-header-icon {
+  width: 18px;
+  height: 18px;
+  color: #3b82f6;
+}
+
+.route-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px; /* Further reduced gap */
+  margin-bottom: 8px; /* Further reduced margin */
+}
+
+.route-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px; /* Further reduced padding */
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px; /* Further reduced border radius */
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 14px; /* Further reduced for mobile */
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 1px; /* Further reduced margin */
+}
+
+.metric-label {
+  font-size: 9px; /* Further reduced for mobile */
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.route-progress {
+  margin-top: 16px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Current Step Info */
+.current-step-info {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.step-instruction {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0c4a6e;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.step-distance {
+  font-size: 14px;
+  color: #0369a1;
+  font-weight: 500;
+}
+
+/* Route Info and Stats */
+.route-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.route-mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-icon {
+  font-size: 20px;
+}
+
+.mode-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: capitalize;
+}
+
+.route-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-icon {
+  font-size: 16px;
+}
+
+.stat-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Route Points */
+.route-points {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.route-point {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 8px;
+}
+
+.point {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 8px;
+}
+
+.point-marker {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.point-marker.start {
+  background: #10b981;
+}
+
+.point-marker.end {
+  background: #ef4444;
+}
+
+.point-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.point-label {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.point-address {
+  font-size: 14px;
+  color: #111827;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.route-point-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: white;
+  flex-shrink: 0;
+  /* Better icon rendering */
+  text-align: center;
+  line-height: 1;
+  /* Prevent distortion */
+  min-width: 20px;
+  min-height: 20px;
+}
+
+.route-point-icon.from {
+  background: #10b981;
+}
+
+.route-point-icon.to {
+  background: #ef4444;
+}
+
+.route-point-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.route-point-label {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.route-point-address {
+  font-size: 14px;
+  color: #111827;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* ===== ENHANCED ACTION BAR - MOBILE OPTIMIZED ===== */
+
+.action-bar {
+  display: flex;
+  gap: 8px; /* Better spacing */
+  padding: 12px; /* Improved padding */
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  /* Better visual separation */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  /* Ensure proper flex behavior */
+  flex-wrap: wrap;
+  /* Handle small screens */
+  min-height: fit-content;
+}
+
+.action-button {
+  flex: 1;
+  min-width: 0; /* Allow shrinking */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px; /* Better icon-text spacing */
+  padding: 12px 16px; /* Better touch area */
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 12px; /* Modern rounded corners */
+  font-size: 14px; /* Better readability */
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 48px; /* WCAG compliant touch target */
+  outline: none;
+  /* Enhanced touch feedback */
+  -webkit-tap-highlight-color: transparent;
+  /* Better visual feedback */
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+  /* Prevent text selection */
+  user-select: none;
+  -webkit-user-select: none;
+  /* Better text contrast */
+  text-shadow: none;
+  /* Ensure text doesn't overflow */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.action-button:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.action-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.action-button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+}
+
+.action-button.secondary {
+  background: #f9fafb;
+  color: #374151;
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.action-button.secondary:hover {
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-button.secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.action-button.danger {
+  background: #ef4444;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+.action-button.danger:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.action-button.danger:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+.action-button-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0; /* Prevent icon distortion */
+  /* Ensure proper scaling */
+  min-width: 16px;
+  min-height: 16px;
+  /* Better rendering */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* ===== COMPACT DIRECTIONS LIST - MOBILE OPTIMIZED ===== */
+
+.directions-list {
+  background: #ffffff;
+  max-height: 120px; /* Even more compact for mobile */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile directions panel - ultra compact */
+.directions-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1500; /* Lower z-index to not interfere with map */
+  max-height: 25vh; /* Even more compact for mobile */
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.direction-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px; /* Even further reduced */
+  padding: 6px; /* Even further reduced */
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  /* Ensure proper touch target */
+  min-height: 28px; /* Even further reduced */
+  /* Improve touch feedback */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.direction-step:hover {
+  background: #f9fafb;
+}
+
+.direction-step.active {
+  background: #f0f9ff;
+  border-left: 4px solid #3b82f6;
+}
+
+.direction-step-icon {
+  width: 20px; /* Even further reduced */
+  height: 20px; /* Even further reduced */
+  background: #3b82f6;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px; /* Even further reduced */
+  color: white;
+  flex-shrink: 0;
+}
+
+.direction-step.active .direction-step-icon {
+  background: #1d4ed8;
+}
+
+.direction-step-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.direction-step-instruction {
+  font-size: 11px; /* Even further reduced for mobile */
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 2px; /* Even further reduced */
+  line-height: 1.1; /* Even further reduced */
+  /* Ensure proper readability */
+  word-wrap: break-word;
+  /* Better text overflow handling */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2; /* Standard property for compatibility */
+  -webkit-box-orient: vertical;
+}
+
+.direction-step.active .direction-step-instruction {
+  color: #1e40af;
+}
+
+.direction-step-metrics {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.direction-step-distance,
+.direction-step-duration {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ===== CLEAN ACCESSIBILITY TOGGLES ===== */
+
+.accessibility-toggles {
+  padding: 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.accessibility-toggles-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.accessibility-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid #f3f4f6;
+  /* Ensure proper touch target */
+  min-height: 48px;
+  /* Improve touch feedback */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.accessibility-toggle:last-child {
+  border-bottom: none;
+}
+
+.accessibility-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px; /* Minimum accessible font size */
+  color: #111827;
+  font-weight: 500;
+  /* Ensure proper readability */
+  line-height: 1.4;
+}
+
+.accessibility-toggle-icon {
+  width: 20px;
+  height: 20px;
+  color: #6b7280;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 48px;
+  height: 24px;
+  background: #d1d5db;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-switch.active {
+  background: #3b82f6;
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+
+.toggle-switch.active::after {
+  transform: translateX(24px);
+}
+
+/* ===== RESPONSIVE ACTION BAR ADAPTATIONS ===== */
+
+@media (max-width: 640px) {
+  .action-bar {
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .action-button {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-navigation-panel {
+    border-radius: 12px 12px 0 0; /* Even further reduced */
+    /* Ensure proper stacking on small screens */
+    transform: translateZ(0);
+    max-height: 40vh; /* Even further reduced for mobile */
+  }
+  
+  .mobile-navigation-panel.route-summary {
+    max-height: 35vh;
+  }
+  
+  .mobile-navigation-panel.active-navigation {
+    max-height: 30vh;
+  }
+  
+  .mobile-navigation-panel.collapsed {
+    height: 60px; /* Even further reduced */
+  }
+  
+  /* Ensure directions panel is properly sized for mobile */
+  .directions-panel {
+    max-height: 20vh; /* Even more compact */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .panel-content {
+    height: calc(100% - 32px); /* Even further reduced */
+  }
+  
+  .collapsed-navigation {
+    padding: 0 8px 8px 8px; /* Even further reduced padding */
+  }
+  
+  .collapsed-current-step {
+    padding: 6px; /* Even further reduced padding */
+    gap: 6px; /* Even further reduced gap */
+  }
+  
+  .collapsed-step-icon {
+    width: 20px; /* Even further reduced size */
+    height: 20px;
+    font-size: 10px;
+  }
+  
+  .collapsed-step-instruction {
+    font-size: 12px; /* Even further reduced font size */
+  }
+  
+  .route-header {
+    padding: 8px 6px 6px 6px; /* Even further reduced padding */
+  }
+  
+  .route-header-title {
+    font-size: 12px; /* Even further reduced font size */
+  }
+  
+  .route-metrics {
+    gap: 4px; /* Even further reduced gap */
+  }
+  
+  .metric-value {
+    font-size: 12px; /* Even further reduced font size */
+  }
+  
+  .action-button {
+    min-height: 40px; /* Maintain accessibility */
+    padding: 8px 10px; /* Balanced padding */
+    font-size: 12px; /* Maintain readability */
+    gap: 4px; /* Tighter spacing for small screens */
+  }
+
+  /* Stack buttons vertically on very small screens if needed */
+  @media (max-width: 360px) {
+    .action-bar {
+      flex-direction: column;
+    }
+
+    .action-button {
+      width: 100%;
+      flex: none;
+    }
+  }
+  
+  .direction-step {
+    padding: 4px; /* Even further reduced padding */
+    gap: 4px; /* Even further reduced gap */
+  }
+  
+  .direction-step-instruction {
+    font-size: 10px; /* Even further reduced font size */
+  }
+  
+  .direction-step-icon {
+    width: 16px; /* Even smaller icons on mobile */
+    height: 16px;
+    font-size: 8px;
+    /* Maintain aspect ratio */
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    min-height: 16px;
+  }
+
+  .action-button-icon {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    min-height: 14px;
+  }
+
+  .route-point-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    min-width: 18px;
+    min-height: 18px;
+  }
+
+  .collapsed-step-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    min-width: 24px;
+    min-height: 24px;
+  }
+  
+  .accessibility-toggles {
+    padding: 8px; /* Even further reduced padding */
+  }
+  
+  /* Compact accessibility score for mobile */
+  .accessibility-score {
+    padding: 4px 6px;
+    margin: 4px 6px;
+    font-size: 12px;
+  }
+  
+  /* Compact barriers warning for mobile */
+  .barriers-warning {
+    margin: 4px 6px;
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+}
+
+/* ===== ACCESSIBILITY SUPPORT ===== */
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  .mobile-navigation-panel {
+    background: #ffffff;
+    border-top: 2px solid #000000;
+  }
+  
+  .action-button {
+    border: 2px solid #000000;
+  }
+  
+  .direction-step {
+    border-bottom: 2px solid #000000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-navigation-panel,
+  .action-button,
+  .direction-step,
+  .toggle-switch {
+    transition: none;
+  }
+  }
+  
+/* ===== DARK MODE SUPPORT ===== */
+
+@media (prefers-color-scheme: dark) {
+  .mobile-navigation-panel {
+    background: #1f2937;
+    border-top-color: #374151;
+  }
+  
+  .route-header {
+    background: #1f2937;
+    border-bottom-color: #374151;
+  }
+  
+  .route-header-title {
+    color: #f9fafb;
+  }
+  
+  .route-metric {
+    background: #374151;
+    border-color: #4b5563;
+  }
+  
+  .metric-value {
+    color: #f9fafb;
+  }
+  
+  .action-bar {
+    background: #1f2937;
+    border-bottom-color: #374151;
+  }
+  
+  .action-button.secondary {
+    background: #374151;
+    color: #f9fafb;
+    border-color: #4b5563;
+  }
+  
+  .action-button.secondary:hover {
+    background: #4b5563;
+  }
+  
+  .directions-list {
+    background: #1f2937;
+  }
+  
+  .direction-step {
+    border-bottom-color: #374151;
+  }
+  
+  .direction-step:hover {
+    background: #374151;
+  }
+  
+  .direction-step.active {
+    background: #1e3a8a;
+  }
+  
+  .direction-step-instruction {
+    color: #f9fafb;
+  }
+  
+  .direction-step.active .direction-step-instruction {
+    color: #93c5fd;
+  }
+  
+  .accessibility-toggles {
+    background: #1f2937;
+    border-bottom-color: #374151;
+  }
+  
+  .accessibility-toggles-title {
+    color: #f9fafb;
+  }
+  
+.accessibility-toggle {
+    border-bottom-color: #374151;
+  }
+  
+  .accessibility-toggle-label {
+    color: #f9fafb;
+  }
+}
+
+/* ===== ROUTE VISIBILITY FIXES ===== */
+
+/* Ensure navigation panels don't interfere with map route rendering */
+.mobile-navigation-panel,
+.directions-panel,
+.route-header,
+.action-bar,
+.panel-content {
+  /* Prevent interference with map layers */
+  isolation: isolate;
+  /* Ensure panels are properly contained */
+  contain: layout style paint;
+}
+
+/* Force route visibility on map */
+.mapboxgl-map .mapboxgl-canvas-container {
+  /* Ensure map canvas is properly stacked */
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure route layers are visible above base map but below UI */
+.mapboxgl-layer[data-layer*="route"] {
+  z-index: 100 !important;
+}
+
+/* Navigation panel specific route visibility fixes */
+.mobile-navigation-panel {
+  /* Ensure panel doesn't block map interactions when collapsed */
+  pointer-events: auto;
+}
+
+.mobile-navigation-panel.collapsed {
+  /* Allow map interactions through collapsed panel area */
+  pointer-events: none;
+}
+
+.mobile-navigation-panel.collapsed .collapsed-navigation,
+.mobile-navigation-panel.collapsed .drag-handle,
+.mobile-navigation-panel.collapsed .close-panel-button {
+  /* Re-enable pointer events for interactive elements */
+  pointer-events: auto;
+}
+
+/* Ensure proper map padding when navigation panels are open */
+@media (max-width: 768px) {
+  /* Mobile: Ensure map content is visible above navigation panels */
+  .map-container {
+    padding-bottom: 0 !important;
+  }
+  
+  /* Ensure route is visible when navigation panel is open */
+  .mobile-navigation-panel:not(.collapsed) ~ .map-container {
+    padding-bottom: 30vh !important;
+  }
+  
+  /* Collapsed panel should not affect map padding */
+  .mobile-navigation-panel.collapsed ~ .map-container {
+    padding-bottom: 80px !important;
+  }
+}
+
+/* Route line visibility enhancements */
+.mapboxgl-canvas {
+  /* Ensure canvas rendering is optimized */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* Prevent navigation panels from interfering with route interaction */
+.navigation-overlay {
+  pointer-events: none;
+}
+
+.navigation-overlay > * {
+  pointer-events: auto;
+}
+
+/* ===== ENHANCED SHRUNKEN SEARCH BAR - MOBILE OPTIMIZED ===== */
+
+.shrunken-search-bar {
+  position: fixed;
+  top: 80px; /* Below top bar with safe spacing */
+  left: 16px;
+  right: 16px;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  z-index: 1400; /* Above map but below navigation panels */
+  padding: 12px 16px;
+  /* Enhanced mobile sizing */
+  max-width: calc(100vw - 32px);
+  /* Better visual depth */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.search-bar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.route-summary {
+  flex: 1;
+  min-width: 0; /* Allow text truncation */
+}
+
+.origin-dest {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #374151;
+  /* Better line height for readability */
+  line-height: 1.4;
+}
+
+.origin, .destination {
+  font-weight: 500;
+  /* Enhanced text truncation */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+  /* Better text contrast */
+  color: #111827;
+}
+
+.route-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.route-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.route-dot.start {
+  background: #10b981;
+}
+
+.route-dot.end {
+  background: #ef4444;
+}
+
+.route-line-segment {
+  width: 20px;
+  height: 1px;
+  background: #d1d5db;
+}
+
+.edit-route-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px; /* WCAG compliant touch target */
+  height: 44px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+  flex-shrink: 0;
+  /* Enhanced touch feedback */
+  -webkit-tap-highlight-color: transparent;
+  /* Better visual depth */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  /* Prevent text selection */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.edit-route-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.edit-route-btn:active {
+  transform: translateY(0);
+  background: #e5e7eb;
+}
+
+.edit-route-btn:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* ===== ENHANCED GO BUTTON - MOBILE OPTIMIZED ===== */
+
+.go-button {
+  position: fixed;
+  bottom: 120px; /* Above navigation panel with better spacing */
+  right: 20px;
+  width: 72px; /* Larger touch target */
+  height: 72px;
+  background: #10b981;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  z-index: 1350; /* Optimized z-index layering */
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  outline: none;
+  /* Enhanced touch target */
+  min-width: 72px;
+  min-height: 72px;
+  /* Better touch feedback */
+  -webkit-tap-highlight-color: transparent;
+  /* Enhanced shadow for depth */
+  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.4);
+  /* Prevent text selection */
+  user-select: none;
+  -webkit-user-select: none;
+  /* Better visual feedback */
+  transform: translateZ(0);
+}
+
+.go-button:hover {
+  background: #059669;
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.6);
+}
+
+.go-button:active {
+  transform: translateY(-1px) scale(0.98);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+}
+
+.go-button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3), 0 6px 24px rgba(16, 185, 129, 0.4);
+}
+
+.go-button-glow {
+  position: absolute;
+  inset: -4px;
+  background: linear-gradient(45deg, #10b981, #059669);
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: pulse 2s infinite;
+  z-index: -1;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.1;
+  }
+}
+
+.go-button-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.go-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.go-text {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Mobile adjustments for go button */
+@media (max-width: 480px) {
+  .go-button {
+    width: 56px;
+    height: 56px;
+    bottom: 90px;
+    right: 16px;
+  }
+  
+  .go-icon {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .go-text {
+    font-size: 9px;
+  }
+  
+  .shrunken-search-bar {
+    top: 60px;
+    left: 8px;
+    right: 8px;
+    padding: 6px 8px;
+  }
+  
+  .origin, .destination {
+    max-width: 100px;
+    font-size: 11px;
+  }
+  
+  .edit-route-btn {
+    width: 28px;
+    height: 28px;
+  }
+}
