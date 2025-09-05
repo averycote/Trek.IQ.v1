@@ -4,10 +4,12 @@
   "description": "Accessibility-focused routing and data visualization web app for Halifax",
   "main": "server/index.js",
   "scripts": {
+    "start": "node server/index.js",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && npm run dev",
     "client": "cd client && npm start",
-    "build": "cd client && npm run build",
+    "build": "npm run install:all && cd client && npm run build",
+    "postinstall": "npm run build",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "jest",
     "test:e2e": "playwright test",
@@ -32,6 +34,7 @@
     "jest": "^29.7.0"
   },
   "dependencies": {
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "cross-env": "^7.0.3"
   }
 }

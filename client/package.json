@@ -9,6 +9,7 @@
     "@testing-library/user-event": "^13.5.0",
     "@turf/turf": "^7.2.0",
     "autoprefixer": "^10.4.14",
+    "cross-env": "^7.0.3",
     "date-fns": "^2.30.0",
     "framer-motion": "^12.23.12",
     "http-proxy-middleware": "^3.0.5",
@@ -31,7 +32,7 @@
   "scripts": {
     "start": "react-scripts start",
     "start:https": "set HTTPS=true && react-scripts start",
-    "build": "GENERATE_SOURCEMAP=false react-scripts build",
+    "build": "cross-env GENERATE_SOURCEMAP=false react-scripts build",
     "build:analyze": "npm run build && npx serve -s build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

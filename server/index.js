@@ -54,13 +54,17 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Allow localhost and local network access
+    // Allow localhost, local network access, and Railway deployment
     const allowedOrigins = [
       'http://localhost:3000',
+      'http://localhost:8080',
       'http://127.0.0.1:3000',
+      'http://127.0.0.1:8080',
       /^http:\/\/192\.168\.\d+\.\d+:3000$/,  // Allow local network IPs
       /^http:\/\/10\.\d+\.\d+\.\d+:3000$/,   // Allow 10.x.x.x network
-      /^http:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+:3000$/  // Allow 172.16-31.x.x network
+      /^http:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+:3000$/,  // Allow 172.16-31.x.x network
+      /^https:\/\/.*\.railway\.app$/,  // Allow Railway deployment
+      /^https:\/\/.*\.up\.railway\.app$/  // Allow Railway deployment (alternative domain)
     ];
     
     // Check if origin matches any allowed pattern
@@ -75,7 +79,12 @@ const corsOptions = {
       callback(null, true);
     } else {
       console.log(`CORS blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      // In production, allow all origins for now (Railway might have dynamic URLs)
+      if (process.env.NODE_ENV === 'production') {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
     }
   },
   credentials: true,
