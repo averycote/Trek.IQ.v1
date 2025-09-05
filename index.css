@@ -1,0 +1,365 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for Trek.IQ */
+body {
+  margin: 0 !important;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  height: 100vh !important;
+  overflow: hidden !important;
+}
+
+/* FIXED: Ensure app shell and main content are properly sized */
+#root {
+  height: 100vh !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.app-shell {
+  height: 100vh !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.main-content {
+  height: 100vh !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Accessibility focus styles */
+*:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* High contrast focus styles */
+.high-contrast *:focus {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 3px #000000;
+}
+
+/* Skip link for screen readers */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: #3b82f6;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 1000;
+  font-weight: bold;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* Map container styles */
+.map-container {
+  height: 100vh !important;
+  width: 100% !important;
+  margin-top: 0 !important;
+  position: relative !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* FIXED: Ensure map canvas is visible on desktop */
+.map-canvas {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 1 !important;
+  height: 100vh !important;
+  width: 100% !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.enhanced-map-container {
+  height: 100% !important;
+  width: 100% !important;
+  position: relative !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Ensure modals appear above Leaflet map elements */
+.leaflet-container {
+  z-index: 1;
+}
+
+.leaflet-control-container {
+  z-index: 1000;
+}
+
+.leaflet-popup {
+  z-index: 1000;
+}
+
+/* Modal z-index overrides */
+.modal-overlay {
+  z-index: 9999 !important;
+}
+
+/* Dark mode adjustments for Leaflet */
+.dark-mode .leaflet-container {
+  background-color: #1f2937;
+}
+
+.dark-mode .leaflet-popup-content-wrapper {
+  background-color: #374151;
+  color: white;
+}
+
+.dark-mode .leaflet-popup-tip {
+  background-color: #374151;
+}
+
+/* Custom barrier marker styles */
+.custom-barrier-marker {
+  background: transparent;
+  border: none;
+}
+
+/* High contrast mode */
+.high-contrast {
+  filter: contrast(1.5) brightness(1.1);
+}
+
+.high-contrast .bg-white {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+.high-contrast .bg-gray-800 {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.high-contrast .text-gray-600 {
+  color: #000000 !important;
+}
+
+.high-contrast .text-gray-300 {
+  color: #ffffff !important;
+}
+
+/* Reduce motion */
+.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Text size adjustments */
+.text-size-small {
+  font-size: 14px !important;
+}
+
+.text-size-medium {
+  font-size: 16px !important;
+}
+
+.text-size-large {
+  font-size: 18px !important;
+}
+
+.text-size-extra-large {
+  font-size: 20px !important;
+}
+
+/* Simple mode styles */
+.simple-mode .complex-features {
+  display: none !important;
+}
+
+.simple-mode .advanced-options {
+  display: none !important;
+}
+
+/* Voice command indicator */
+.voice-listening {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* Accessibility announcement area */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Enhanced keyboard navigation */
+.keyboard-nav *:focus {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.keyboard-nav button:focus,
+.keyboard-nav input:focus,
+.keyboard-nav select:focus {
+  transform: scale(1.02);
+}
+
+/* Loading states */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Route accessibility indicators */
+.route-accessible {
+  border-left: 4px solid #10b981;
+}
+
+.route-winter {
+  border-left: 4px solid #3b82f6;
+}
+
+.route-steps {
+  border-left: 4px solid #f59e0b;
+}
+
+/* Barrier status indicators */
+.barrier-new {
+  background-color: #ef4444;
+}
+
+.barrier-in-review {
+  background-color: #f59e0b;
+}
+
+.barrier-resolved {
+  background-color: #6b7280;
+}
+
+/* Responsive accessibility */
+@media (max-width: 768px) {
+  .accessibility-panel {
+    width: 95vw;
+    max-width: none;
+  }
+  
+  .directions-panel {
+    width: 95vw;
+    max-width: none;
+  }
+}
+
+/* Print styles for accessibility */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-friendly {
+    background: white !important;
+    color: black !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  *:focus {
+    outline: 3px solid #000;
+    outline-offset: 2px;
+  }
+}
+
+/* Modern forced-colors mode support (replaces -ms-high-contrast) */
+@media (forced-colors: active) {
+  *:focus {
+    outline: 3px solid ButtonText;
+    outline-offset: 2px;
+  }
+  
+  .bg-white {
+    background-color: Canvas !important;
+    color: CanvasText !important;
+  }
+  
+  .bg-gray-800 {
+    background-color: Canvas !important;
+    color: CanvasText !important;
+  }
+  
+  .text-gray-600,
+  .text-gray-300 {
+    color: CanvasText !important;
+  }
+  
+  button {
+    background-color: ButtonFace !important;
+    color: ButtonText !important;
+    border: 1px solid ButtonText !important;
+  }
+  
+  button:hover {
+    background-color: Highlight !important;
+    color: HighlightText !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
