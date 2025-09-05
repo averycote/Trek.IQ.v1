@@ -189,17 +189,44 @@ const NavigationIntegration: React.FC<NavigationIntegrationProps> = ({
             data: routeLine
           });
 
-          // Determine route color based on accessibility
-          const accessibilityScore = route.summary?.accessibilityScore?.grade || 'C';
-          const hasBarriers = route.summary?.barriers?.length > 0;
-
+          // Get dynamic route color based on comprehensive accessibility scoring
           let routeColor = '#3b82f6'; // Default blue
-          if (accessibilityScore === 'A' && !hasBarriers) {
-            routeColor = '#10b981'; // Green for accessible
-          } else if (accessibilityScore === 'B' || hasBarriers) {
-            routeColor = '#f59e0b'; // Orange for caution
-          } else if (accessibilityScore === 'C') {
-            routeColor = '#ef4444'; // Red for challenging
+          
+          // Use comprehensive route scorer for accurate color determination
+          try {
+            const { default: comprehensiveRouteScorer } = await import('../services/comprehensiveRouteScorer');
+            const userPreferences = {
+              // Get user preferences from local storage or default values
+              maxSlope: 8,
+              avoidSteps: true,
+              mobilityDevice: localStorage.getItem('trek-iq-mobility-device') || 'none',
+              visualImpairment: localStorage.getItem('trek-iq-visual-impairment') === 'true'
+            };
+            
+            const scoringResult = await comprehensiveRouteScorer.calculateRouteScore(route, { userPreferences });
+            routeColor = scoringResult.color;
+            
+            console.log(`🎨 Route color determined by comprehensive scoring: ${routeColor} (Score: ${scoringResult.overallScore}, Grade: ${scoringResult.grade})`);
+            
+            // Store scoring result for use in route panel
+            if (route.features?.[0]?.properties) {
+              route.features[0].properties.comprehensiveAccessibility = scoringResult;
+            }
+            
+          } catch (error) {
+            console.error('Failed to calculate comprehensive route score, using fallback:', error);
+            
+            // Fallback to existing logic
+            const accessibilityScore = route.summary?.accessibilityScore?.grade || 'C';
+            const hasBarriers = route.summary?.barriers?.length > 0;
+
+            if (accessibilityScore === 'A' && !hasBarriers) {
+              routeColor = '#10b981'; // Green for accessible
+            } else if (accessibilityScore === 'B' || hasBarriers) {
+              routeColor = '#f59e0b'; // Orange for caution
+            } else if (accessibilityScore === 'C') {
+              routeColor = '#ef4444'; // Red for challenging
+            }
           }
 
           // Add route layer with color coding

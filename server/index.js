@@ -14,9 +14,10 @@ const db = require('./database');
 const barrierRoutes = require('./routes/barriers');
 const aiRoutes = require('./routes/ai');
 const geocodingRoutes = require('./routes/geocoding');
+const wheelmapRoutes = require('./routes/wheelmap');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8081;
 
 // Enhanced middleware with optimizations
 app.use(helmet({
@@ -528,6 +529,9 @@ app.use('/api/ai', aiRoutes);
 
 // Geocoding routes
 app.use('/api/geocoding', geocodingRoutes);
+
+// Wheelmap proxy routes
+app.use('/api/wheelmap', wheelmapRoutes);
 
 // Optimized data routes
 const optimizedDataRoutes = require('./routes/optimizedData');

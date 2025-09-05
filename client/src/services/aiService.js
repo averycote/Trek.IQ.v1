@@ -1,5 +1,12 @@
-import * as tf from '@tensorflow/tfjs';
-import { debounce } from 'lodash';
+// OPTIMIZATION: Removed TensorFlow and lodash dependencies to reduce bundle size
+// Simple debounce implementation to replace lodash
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(null, args), delay);
+  };
+};
 
 class AIService {
   constructor() {
@@ -11,42 +18,52 @@ class AIService {
     this.lastUpdate = null;
   }
 
-  // Initialize AI model for barrier prediction
+  // OPTIMIZATION: Simplified model initialization without TensorFlow
   async initializeModel() {
     try {
-      // Load pre-trained model or create a simple one for demo
-      this.model = await this.createSimpleModel();
+      // Use lightweight heuristic-based model instead of TensorFlow
+      this.model = this.createHeuristicModel();
       this.isModelLoaded = true;
-      console.log('AI model initialized successfully');
+      console.log('AI service initialized with heuristic model');
     } catch (error) {
-      console.error('Failed to initialize AI model:', error);
+      console.error('Failed to initialize AI service:', error);
       // Fallback to rule-based prediction
       this.isModelLoaded = false;
     }
   }
 
-  // Create an enhanced neural network for barrier prediction
-  async createSimpleModel() {
-    const model = tf.sequential({
-      layers: [
-        tf.layers.dense({ inputShape: [15], units: 32, activation: 'relu' }),
-        tf.layers.batchNormalization(),
-        tf.layers.dropout({ rate: 0.3 }),
-        tf.layers.dense({ units: 16, activation: 'relu' }),
-        tf.layers.batchNormalization(),
-        tf.layers.dropout({ rate: 0.2 }),
-        tf.layers.dense({ units: 8, activation: 'relu' }),
-        tf.layers.dense({ units: 1, activation: 'sigmoid' })
-      ]
-    });
-
-    model.compile({
-      optimizer: tf.train.adam(0.001),
-      loss: 'binaryCrossentropy',
-      metrics: ['accuracy']
-    });
-
-    return model;
+  // OPTIMIZATION: Create lightweight heuristic model instead of TensorFlow
+  createHeuristicModel() {
+    return {
+      predict: (features) => {
+        // Simple heuristic-based prediction using weighted factors
+        const [weather, time, temperature, precipitation, wind, visibility, 
+               maintenance, roadCondition, trafficDensity, historicalIncidents,
+               seasonalFactor, dayOfWeek, hourOfDay, weatherTrend, alertLevel] = features;
+        
+        // Calculate risk score based on weighted factors
+        let riskScore = 0;
+        
+        // Weather factors (40% weight)
+        riskScore += weather * 0.15;
+        riskScore += precipitation * 0.15;
+        riskScore += (1 - visibility) * 0.1;
+        
+        // Road conditions (30% weight)
+        riskScore += roadCondition * 0.15;
+        riskScore += maintenance * 0.15;
+        
+        // Traffic and time factors (20% weight)
+        riskScore += trafficDensity * 0.1;
+        riskScore += seasonalFactor * 0.1;
+        
+        // Historical data (10% weight)
+        riskScore += historicalIncidents * 0.1;
+        
+        // Normalize to 0-1 range
+        return Math.min(Math.max(riskScore, 0), 1);
+      }
+    };
   }
 
   // Predict potential barriers along a route

@@ -206,6 +206,7 @@ const NavigationIntegration = ({
     
     const accessibilityScore = getAccessibilityScore();
 
+
     return (
       <AnimatePresence>
         <motion.div
@@ -287,12 +288,20 @@ const NavigationIntegration = ({
                  </div>
                </div>
 
-               {/* Accessibility Score - ALWAYS SHOW */}
+               {/* Comprehensive Accessibility Information */}
+               <div className="comprehensive-accessibility">
+                 <div className="accessibility-header">
+                   <span className="accessibility-icon">♿</span>
+                   <span className="accessibility-title">Route Accessibility</span>
+                 </div>
+
+                 <div className="accessibility-content">
+                   {/* Route Score */}
                <div className="accessibility-score">
                  <div className="score-info">
                    <span className="score-icon">{accessibilityScore.icon}</span>
                    <div className="score-details">
-                     <span className="score-label">Accessibility Score</span>
+                         <span className="score-label">Overall Score</span>
                      <span className={`score-level ${accessibilityScore.color}`}>{accessibilityScore.level}</span>
                    </div>
                  </div>
@@ -301,28 +310,54 @@ const NavigationIntegration = ({
                  </div>
                </div>
 
-               {/* Barriers Warning - ALWAYS SHOW IF BARRIERS EXIST */}
-               {barriers && barriers.length > 0 ? (
-                 <div className="barriers-warning">
-                   <div className="warning-header">
-                     <span className="warning-icon">⚠️</span>
-                     <span className="warning-title">Barriers Detected</span>
+                   {/* Route Conditions */}
+                   <div className="route-conditions">
+                     <div className="condition-item">
+                       <span className="condition-icon">🚶</span>
+                       <div className="condition-info">
+                         <span className="condition-label">Travel Mode</span>
+                         <span className="condition-value">{routeMode === 'walking' ? 'Pedestrian' : routeMode === 'driving' ? 'Vehicle' : 'Transit'}</span>
+                       </div>
+                     </div>
+
+                     <div className="condition-item">
+                       <span className="condition-icon">📏</span>
+                       <div className="condition-info">
+                         <span className="condition-label">Distance</span>
+                         <span className="condition-value">{(route.features[0].properties.distance / 1000).toFixed(1)} km</span>
+                       </div>
+                     </div>
+
+                     <div className="condition-item">
+                       <span className="condition-icon">⏱️</span>
+                       <div className="condition-info">
+                         <span className="condition-label">Duration</span>
+                         <span className="condition-value">{Math.round(route.features[0].properties.duration / 60)} min</span>
+                       </div>
+                     </div>
                    </div>
-                   <span className="warning-text">
-                     {barriers.length} accessibility barrier{barriers.length !== 1 ? 's' : ''} found along your route
-                   </span>
+
+                   {/* Barriers Status */}
+                   {barriers && barriers.length > 0 ? (
+                     <div className="barriers-status warning">
+                       <span className="status-icon">⚠️</span>
+                       <div className="status-info">
+                         <span className="status-label">Barriers Detected</span>
+                         <span className="status-detail">{barriers.length} accessibility barrier{barriers.length !== 1 ? 's' : ''} found</span>
+                       </div>
                  </div>
                ) : (
-                 <div className="barriers-warning" style={{ background: '#f0f9ff', borderColor: '#0ea5e9', color: '#0c4a6e' }}>
-                   <div className="warning-header">
-                     <span className="warning-icon">✅</span>
-                     <span className="warning-title">No Barriers Detected</span>
+                     <div className="barriers-status success">
+                       <span className="status-icon">✅</span>
+                       <div className="status-info">
+                         <span className="status-label">No Barriers</span>
+                         <span className="status-detail">Route appears accessible</span>
+                       </div>
                    </div>
-                   <span className="warning-text">
-                     This route appears to be accessible
-                   </span>
+                   )}
                  </div>
-               )}
+               </div>
+
 
                <div className="route-points">
                  <div className="point origin">

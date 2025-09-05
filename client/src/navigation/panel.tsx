@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { NavState } from './state';
 import RouteHeader from './routeHeader';
 import ActionBar from './actionBar';
-import AccessibilityToggles from './accessibilityToggles';
 import DirectionsList from './directionsList';
 
 interface NavigationPanelProps {
@@ -229,10 +228,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
               isMobile={true}
             />
 
-            <AccessibilityToggles 
-              navigationState={navigationState}
-              isMobile={true}
-            />
 
             <DirectionsList
               navigationState={navigationState}
@@ -303,10 +298,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
             isMobile={false}
           />
 
-          <AccessibilityToggles 
-            navigationState={navigationState}
-            isMobile={false}
-          />
 
           <DirectionsList
             navigationState={navigationState}

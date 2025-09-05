@@ -58,6 +58,8 @@
   cursor: pointer;
   color: #6b7280;
   transition: all 0.2s ease;
+   width: var(--touch-target-md);
+    height: var(--touch-target-md);
 }
 
 .close-button:hover {

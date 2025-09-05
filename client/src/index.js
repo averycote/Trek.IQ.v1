@@ -12,25 +12,16 @@ import './mobile-first.css'; // Mobile-first design system (LAST - highest prior
 
 import App from './App';
 
-// Register service worker with cache-busting
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-    
-        // Force update to clear old cache
-        registration.update();
-      })
-      .catch((error) => {
-    
-      });
-  });
-}
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true
+      }}
+    >
       <App />
     </BrowserRouter>
   </React.StrictMode>

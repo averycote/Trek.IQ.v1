@@ -1,42 +1,47 @@
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Toaster, toast } from 'react-hot-toast';
-import mapboxgl from 'mapbox-gl';
-import TopBar from './TopBar';
-import MapCanvas from './MapCanvas';
-import FabCluster from './FabCluster';
-import EnhancedSearchPanel from './EnhancedSearchPanel';
-import SideMenu from './SideMenu';
-import LayersPanel from './LayersPanel';
-import ReportBarrierModal from './ReportBarrierModal';
-import LoadingSpinner from './LoadingSpinner';
-import NavigationIntegration from '../navigation/NavigationIntegration';
-import TransitInfo from './TransitInfo';
-// import LiabilityBarrierAlert from './LiabilityBarrierAlert'; // Removed old component
-import SystemStatusPanel from './SystemStatusPanel';
-import UnifiedRoutePanel from './UnifiedRoutePanel';
-import DirectionsPanel from './DirectionsPanel';
+import {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  Suspense,
+  lazy,
+} from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
+import { Toaster, toast } from "react-hot-toast";
+import TopBar from "./TopBar";
+import MapCanvas from "./MapCanvas";
+import FabCluster from "./FabCluster";
+import EnhancedSearchPanel from "./EnhancedSearchPanel";
+import SideMenu from "./SideMenu";
+import LayersPanel from "./LayersPanel";
+import ReportBarrierModal from "./ReportBarrierModal";
+import LoadingSpinner from "./LoadingSpinner";
+import NavigationIntegration from "../navigation/NavigationIntegration";
+import TransitInfo from "./TransitInfo";
+import SystemStatusPanel from "./SystemStatusPanel";
+import UnifiedRoutePanel from "./UnifiedRoutePanel";
+import DirectionsPanel from "./DirectionsPanel";
 
-import MobileRoutingVerification from './MobileRoutingVerification';
+// OPTIMIZATION: Removed MobileRoutingVerification import
 
-import apiIntegrationManager from '../services/apiIntegrationManager';
-import comprehensiveRoutingOrchestrator from '../services/comprehensiveRoutingOrchestrator';
-import { UnifiedRoutePanel as UnifiedBarrierPanel } from './EnhancedBarrierAlert';
-import './BarrierDialog.css';
+import apiIntegrationManager from "../services/apiIntegrationManager";
+import comprehensiveRoutingOrchestrator from "../services/comprehensiveRoutingOrchestrator";
+import barrierDetectionRegistry from "../services/barrierDetectionRegistry";
+import elevationService from "../services/elevationService";
+import "./BarrierDialog.css";
 
-// Import page components
-import AccountPage from './pages/AccountPage';
-import SettingsPage from './pages/SettingsPage';
-import SavedRoutesPage from './pages/SavedRoutesPage';
-import ReportedBarriersPage from './pages/ReportedBarriersPage';
-import HelpPage from './pages/HelpPage';
-import AboutPage from './pages/AboutPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
+const AccountPage = lazy(() => import("./pages/AccountPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const SavedRoutesPage = lazy(() => import("./pages/SavedRoutesPage"));
+const ReportedBarriersPage = lazy(() => import("./pages/ReportedBarriersPage"));
+const HelpPage = lazy(() => import("./pages/HelpPage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const AdminDashboardPage = lazy(() => import("./pages/AdminDashboardPage"));
 
 const AppShell = () => {
   // FIXED: Get navigate function from React Router
   const navigate = useNavigate();
-  
+
   // Layout state - All panels closed by default for mobile
   const [isLayersPanelOpen, setIsLayersPanelOpen] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
@@ -44,51 +49,55 @@ const AppShell = () => {
   const [isTransitInfoOpen, setIsTransitInfoOpen] = useState(false);
   const [isSearchPanelOpen, setIsSearchPanelOpen] = useState(false); // Search panel closed by default
   const [isSystemStatusOpen, setIsSystemStatusOpen] = useState(false);
-  
+
   // FIXED: Page state management for mobile
   const [isPageOpen, setIsPageOpen] = useState(false);
 
   // Search and routing state
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
-  const [routeMode, setRouteMode] = useState('walking');
+  const [origin, setOrigin] = useState("");
+  const [destination, setDestination] = useState("");
+  const [routeMode, setRouteMode] = useState("walking");
   const [route, setRoute] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
-  
+
   // Route display state
   const [isRoutePanelOpen, setIsRoutePanelOpen] = useState(false);
   const [isDirectionsPanelOpen, setIsDirectionsPanelOpen] = useState(false);
-  
-  // Navigation mode state
-  const [isNavigationMode, setIsNavigationMode] = useState(false);
+
+  // OPTIMIZATION: Restored necessary state variables that are still referenced
   const [mapInstance, setMapInstance] = useState(null);
+  const [isMapLoading, setIsMapLoading] = useState(true);
+  const [isNavigationMode, setIsNavigationMode] = useState(false);
   const [barrierAlert, setBarrierAlert] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
-  const [isMapLoading, setIsMapLoading] = useState(true);
-  
-  // Mobile routing verification state
-  const [isMobileRoutingVerificationOpen, setIsMobileRoutingVerificationOpen] = useState(false);
-  
+
+  // OPTIMIZATION: Removed mobile routing verification state
+
   // Enhanced routing state
   const [comprehensiveRoute, setComprehensiveRoute] = useState(null);
   const [isBarrierAlertVisible, setIsBarrierAlertVisible] = useState(false);
   const [isRouteSummaryVisible, setIsRouteSummaryVisible] = useState(false);
-  const [routeGenerationStatus, setRouteGenerationStatus] = useState('idle'); // idle, loading, success, error
-  
+  const [routeGenerationStatus, setRouteGenerationStatus] = useState("idle");
+
   // Memoize the onMapLoad callback to prevent unnecessary re-renders
   const handleMapLoad = useCallback((map) => {
-    console.log('AppShell: onMapLoad callback received:', map);
+    console.log("AppShell: onMapLoad callback received:", map);
     setMapInstance(map);
     setIsMapLoading(false);
   }, []);
 
   // Map and layer state
-  const [activeLayers, setActiveLayers] = useState(new Set([
-    'accessibleParking',
-    'activeTravelways',
-    'sidewalkClosures',
-    'transitRoutes'
-  ]));
+  const [activeLayers, setActiveLayers] = useState(
+    new Set([
+      "accessibleParking",
+      "activeTravelways",
+      "sidewalkClosures",
+      "transitRoutes",
+      "wheelmap_parking",
+      "wheelmap_food",
+      "wheelmap_toilets"
+    ])
+  );
 
   // Accessibility settings
   const [accessibilitySettings] = useState({
@@ -98,148 +107,194 @@ const AppShell = () => {
     preferWidePaths: true,
     wheelchairAccessible: false,
     visualImpairment: false,
-    hearingImpairment: false
+    hearingImpairment: false,
   });
 
   // Theme and preferences
-  const [currentTheme, setCurrentTheme] = useState('light');
+  const [currentTheme, setCurrentTheme] = useState("light");
   const [voiceGuidanceEnabled, setVoiceGuidanceEnabled] = useState(false);
 
   // Mobile detection - FIXED: More accurate mobile detection
   const isMobile = useMemo(() => {
     // Check viewport width first (most reliable for responsive design)
     const isMobileViewport = window.innerWidth <= 768;
-    
+
     // Check for mobile user agents (but be more specific)
-    const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
+    const isMobileUserAgent =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+
     // Check for touch capability (but don't rely solely on this as many desktops have touch)
-    const isTouchDevice = 'ontouchstart' in window && navigator.maxTouchPoints > 0;
-    
+    const isTouchDevice =
+      "ontouchstart" in window && navigator.maxTouchPoints > 0;
+
     // For desktop, prioritize viewport width over touch capability
     // Only consider it mobile if it's a small viewport OR has a mobile user agent
     const isMobile = isMobileViewport || isMobileUserAgent;
-    
-    console.log('Mobile detection:', {
+
+    console.log("Mobile detection:", {
       viewport: window.innerWidth,
       isMobileViewport,
       userAgent: navigator.userAgent,
       isMobileUserAgent,
       isTouchDevice,
-      finalResult: isMobile
+      finalResult: isMobile,
     });
-    
+
     return isMobile;
   }, []);
 
   // Initialize app state on component mount
   useEffect(() => {
     // Ensure light theme is applied by default
-    document.body.classList.remove('dark-mode');
-    document.documentElement.setAttribute('data-theme', 'light');
-    
+    document.body.classList.remove("dark-mode");
+    document.documentElement.setAttribute("data-theme", "light");
+
     // Ensure all panels are in correct initial state
     setIsTransitInfoOpen(false);
     setIsSideMenuOpen(false);
     setIsLayersPanelOpen(false);
     setIsReportModalOpen(false);
-    
+
     // Search panel should be closed by default on mobile for better UX
     setIsSearchPanelOpen(false);
-    
+
     // Ensure no route is active initially
     setRoute(null);
     setIsNavigating(false);
     setIsNavigationMode(false);
-    
+
     // Initialize API integration manager and comprehensive routing orchestrator
     const initializeSystem = async () => {
       try {
-        console.log('Initializing Trek.IQ system...', { isMobile, userAgent: navigator.userAgent });
-        
-        // Add timeout for mobile devices
-        const initTimeout = isMobile ? 10000 : 5000; // 10 seconds for mobile, 5 for desktop
-        
+        console.log("Initializing Trek.IQ system...", {
+          isMobile,
+          userAgent: navigator.userAgent,
+        });
+
+        // OPTIMIZATION: Removed unused initTimeout variable
+
         const initPromises = [
           apiIntegrationManager.initialize(),
-          comprehensiveRoutingOrchestrator.initialize()
+          comprehensiveRoutingOrchestrator.initialize(),
+          barrierDetectionRegistry.initialize(),
+          elevationService.initialize(),
         ];
 
         // Initialize all services
         const results = await Promise.allSettled(initPromises);
 
         // Check if API Integration Manager initialized successfully
-        if (results[0].status === 'fulfilled') {
-          console.log('✅ API Integration Manager initialized');
+        if (results[0].status === "fulfilled") {
+          console.log("✅ API Integration Manager initialized");
         } else {
-          console.warn('⚠️ API Integration Manager failed:', results[0].reason);
+          console.warn("⚠️ API Integration Manager failed:", results[0].reason);
         }
 
         // Check if Comprehensive Routing Orchestrator initialized successfully
-        if (results[1].status === 'fulfilled') {
-          console.log('✅ Comprehensive Routing Orchestrator initialized');
+        if (results[1].status === "fulfilled") {
+          console.log("✅ Comprehensive Routing Orchestrator initialized");
         } else {
-          console.warn('⚠️ Comprehensive Routing Orchestrator failed:', results[1].reason);
+          console.warn(
+            "⚠️ Comprehensive Routing Orchestrator failed:",
+            results[1].reason
+          );
         }
-        
+
+        // Check if Barrier Detection Registry initialized successfully
+        if (results[2].status === "fulfilled") {
+          console.log("✅ Barrier Detection Registry initialized");
+        } else {
+          console.warn(
+            "⚠️ Barrier Detection Registry failed:",
+            results[2].reason
+          );
+        }
+
+        // Check if Elevation Service initialized successfully
+        if (results[3].status === "fulfilled") {
+          console.log("✅ Elevation Service initialized");
+          
+          // OPTIMIZATION: Test elevation API in development
+          if (process.env.NODE_ENV === 'development') {
+            import('../utils/elevationTest').then(({ runElevationTests }) => {
+              runElevationTests().then(testResults => {
+                console.log('📊 Elevation API test results:', testResults.summary);
+              });
+            });
+          }
+        } else {
+          console.warn(
+            "⚠️ Elevation Service failed:",
+            results[3].reason
+          );
+        }
+
         // Set up status listener
         apiIntegrationManager.addStatusListener((type, data) => {
-          if (type === 'initialized' && data.success) {
+          if (type === "initialized" && data.success) {
             setIsSystemReady(true);
             setSystemStatus(apiIntegrationManager.getSystemStatus());
-            console.log('Trek.IQ system ready on', isMobile ? 'mobile' : 'desktop');
-          } else if (type === 'system_health') {
+            console.log(
+              "Trek.IQ system ready on",
+              isMobile ? "mobile" : "desktop"
+            );
+          } else if (type === "system_health") {
             setSystemStatus(apiIntegrationManager.getSystemStatus());
           }
         });
-        
+
         // Check initial status
         setIsSystemReady(apiIntegrationManager.isSystemReady());
         setSystemStatus(apiIntegrationManager.getSystemStatus());
-        
-        console.log('System initialization completed successfully');
-        
+
+        console.log("System initialization completed successfully");
       } catch (error) {
-        console.error('Failed to initialize system:', error);
-        
+        console.error("Failed to initialize system:", error);
+
         // More specific error message for mobile
         if (isMobile) {
-          toast.error('Mobile initialization failed. Please check your connection and try refreshing the page.');
+          toast.error(
+            "Mobile initialization failed. Please check your connection and try refreshing the page."
+          );
         } else {
-          toast.error('System initialization failed. Some features may be unavailable.');
+          toast.error(
+            "System initialization failed. Some features may be unavailable."
+          );
         }
-        
+
         // Still try to set system as ready for basic functionality
         setIsSystemReady(true);
       }
     };
-    
+
     initializeSystem();
-    
-    console.log('AppShell initialized with mobile-first state:', {
+
+    console.log("AppShell initialized with mobile-first state:", {
       isMobile,
       userAgent: navigator.userAgent,
       viewport: { width: window.innerWidth, height: window.innerHeight },
-      touchSupport: 'ontouchstart' in window,
+      touchSupport: "ontouchstart" in window,
       maxTouchPoints: navigator.maxTouchPoints,
       isSearchPanelOpen: false,
       isSideMenuOpen: false,
       isLayersPanelOpen: false,
-      isTransitInfoOpen: false
+      isTransitInfoOpen: false,
     });
   }, [isMobile]);
 
   // FIXED: Apply theme changes when currentTheme changes
   useEffect(() => {
-    if (currentTheme === 'dark') {
-      document.body.classList.add('dark-mode');
-      document.documentElement.setAttribute('data-theme', 'dark');
+    if (currentTheme === "dark") {
+      document.body.classList.add("dark-mode");
+      document.documentElement.setAttribute("data-theme", "dark");
     } else {
-      document.body.classList.remove('dark-mode');
-      document.documentElement.setAttribute('data-theme', 'light');
+      document.body.classList.remove("dark-mode");
+      document.documentElement.setAttribute("data-theme", "light");
     }
   }, [currentTheme]);
-  
+
   // Service readiness
   const [isSystemReady, setIsSystemReady] = useState(false);
   // eslint-disable-next-line no-unused-vars
@@ -252,7 +307,7 @@ const AppShell = () => {
     top: 0,
     bottom: 0,
     left: 0,
-    right: 0
+    right: 0,
   });
 
   // Update map padding based on mobile layout - ENHANCED OVERLAP PREVENTION
@@ -261,7 +316,7 @@ const AppShell = () => {
       top: 0,
       bottom: 0,
       left: 0,
-      right: 0
+      right: 0,
     };
 
     // Padding adjustments for mobile-first design
@@ -286,7 +341,8 @@ const AppShell = () => {
 
       // Add extra padding for safe areas
       if (window.visualViewport) {
-        const safeAreaBottom = window.visualViewport.height - window.innerHeight;
+        const safeAreaBottom =
+          window.visualViewport.height - window.innerHeight;
         if (safeAreaBottom > 0) {
           padding.bottom += safeAreaBottom;
         }
@@ -308,155 +364,170 @@ const AppShell = () => {
   }, [updateMapPadding]);
 
   // Handle route request using comprehensive routing orchestrator
-  const handleRouteRequest = useCallback(async (routeData) => {
-    try {
-      console.log('Comprehensive route request received:', routeData);
-      
-      // Validate route data
-      if (!routeData.origin || !routeData.destination) {
-        toast.error('Please enter both origin and destination');
-        return;
-      }
+  const handleRouteRequest = useCallback(
+    async (routeData) => {
+      try {
+        console.log("Comprehensive route request received:", routeData);
 
-      // Check if system is ready
-      if (!isSystemReady) {
-        if (isMobile) {
-          toast.error('Mobile system is still initializing. Please wait a moment and try again.');
-        } else {
-          toast.error('System is still initializing. Please try again in a moment.');
+        // Validate route data
+        if (!routeData.origin || !routeData.destination) {
+          toast.error("Please enter both origin and destination");
+          return;
         }
-        return;
+
+        // Check if system is ready
+        if (!isSystemReady) {
+          if (isMobile) {
+            toast.error(
+              "Mobile system is still initializing. Please wait a moment and try again."
+            );
+          } else {
+            toast.error(
+              "System is still initializing. Please try again in a moment."
+            );
+          }
+          return;
+        }
+
+        // Set loading state
+        setRouteGenerationStatus("loading");
+        const loadingToast = toast.loading("Generating comprehensive route...");
+
+        // Use comprehensive routing orchestrator
+        const routeRequest = {
+          origin: routeData.origin,
+          destination: routeData.destination,
+          mode: routeData.mode || "walking",
+          time: { type: "now" },
+          userPrefs: routeData.accessibilitySettings || {},
+        };
+
+        console.log(
+          "Calling comprehensive routing orchestrator with:",
+          routeRequest
+        );
+
+        const result = await comprehensiveRoutingOrchestrator.generateRoute(
+          routeRequest
+        );
+
+        console.log("Comprehensive route generation result:", result);
+
+        if (result.success && result.route) {
+          // Store comprehensive route data
+          setComprehensiveRoute(result.route);
+
+          // Always show route panel directly - barriers are handled within the panel
+          setIsRoutePanelOpen(true);
+
+          // Also update the legacy route state for compatibility
+          setRoute(result.route);
+
+          setRouteGenerationStatus("success");
+          toast.dismiss(loadingToast);
+          toast.success("Route generated successfully!");
+
+          // Update legacy route state for compatibility
+          setRoute(result.route);
+        } else {
+          setRouteGenerationStatus("error");
+          toast.dismiss(loadingToast);
+          toast.error(result.error || "Failed to generate route");
+        }
+      } catch (error) {
+        console.error("Route generation failed:", error);
+        setRouteGenerationStatus("error");
+        toast.error("Route generation failed. Please try again.");
       }
-
-      // Set loading state
-      setRouteGenerationStatus('loading');
-      const loadingToast = toast.loading('Generating comprehensive route...');
-      
-      // Use comprehensive routing orchestrator
-      const routeRequest = {
-        origin: routeData.origin,
-        destination: routeData.destination,
-        mode: routeData.mode || 'walking',
-        time: { type: 'now' },
-        userPrefs: routeData.accessibilitySettings || {}
-      };
-
-      console.log('Calling comprehensive routing orchestrator with:', routeRequest);
-      
-      const result = await comprehensiveRoutingOrchestrator.generateRoute(routeRequest);
-
-      console.log('Comprehensive route generation result:', result);
-
-      if (result.success && result.route) {
-        // Store comprehensive route data
-        setComprehensiveRoute(result.route);
-        
-        // Always show route panel directly - barriers are handled within the panel
-        setIsRoutePanelOpen(true);
-
-        // Also update the legacy route state for compatibility
-        setRoute(result.route);
-        
-        setRouteGenerationStatus('success');
-        toast.dismiss(loadingToast);
-        toast.success('Route generated successfully!');
-        
-        // Update legacy route state for compatibility
-        setRoute(result.route);
-        
-      } else {
-        setRouteGenerationStatus('error');
-        toast.dismiss(loadingToast);
-        toast.error(result.error || 'Failed to generate route');
-      }
-      
-    } catch (error) {
-      console.error('Route generation failed:', error);
-      setRouteGenerationStatus('error');
-      toast.error('Route generation failed. Please try again.');
-    }
-  }, [isSystemReady]);
+    },
+    [isSystemReady]
+  );
 
   // Handle enhanced barrier alert actions
   const handleBarrierReroute = useCallback(async (routeData, barriers) => {
     try {
-      console.log('User chose to reroute around barriers:', barriers);
-      
+      console.log("User chose to reroute around barriers:", barriers);
+
       // Show loading state
-      setRouteGenerationStatus('loading');
-      const loadingToast = toast.loading('Calculating alternative route...');
-      
+      setRouteGenerationStatus("loading");
+      const loadingToast = toast.loading("Calculating alternative route...");
+
       // Generate new route with barrier avoidance
       const routeRequest = {
         origin: routeData.origin,
         destination: routeData.destination,
-        mode: routeData.mode || 'walking',
-        time: { type: 'now' },
+        mode: routeData.mode || "walking",
+        time: { type: "now" },
         userPrefs: {
           ...routeData.userPrefs,
           avoidBarriers: true,
-          barrierTypes: barriers.map(b => b.type)
-        }
+          barrierTypes: barriers.map((b) => b.type),
+        },
       };
 
-      const result = await comprehensiveRoutingOrchestrator.generateRoute(routeRequest);
+      const result = await comprehensiveRoutingOrchestrator.generateRoute(
+        routeRequest
+      );
 
       if (result.success && result.route) {
         setComprehensiveRoute(result.route);
         setRoute(result.route);
-        
+
         // Check for barriers in new route
         if (result.barriers && result.barriers.length > 0) {
           setBarrierAlert({
             barriers: result.barriers,
             routeData: result.route,
-            analysis: result.accessibilityScore
+            analysis: result.accessibilityScore,
           });
           setIsBarrierAlertVisible(true);
         } else {
           setIsRouteSummaryVisible(true);
         }
-        
-        setRouteGenerationStatus('success');
+
+        setRouteGenerationStatus("success");
         toast.dismiss(loadingToast);
-        toast.success('Alternative route found!');
+        toast.success("Alternative route found!");
       } else {
-        setRouteGenerationStatus('error');
+        setRouteGenerationStatus("error");
         toast.dismiss(loadingToast);
-        toast.error('No alternative route available');
+        toast.error("No alternative route available");
       }
     } catch (error) {
-      console.error('Reroute error:', error);
-      setRouteGenerationStatus('error');
-      toast.error('Failed to calculate alternative route');
+      console.error("Reroute error:", error);
+      setRouteGenerationStatus("error");
+      toast.error("Failed to calculate alternative route");
     }
   }, []);
 
-    const handleBarrierProceed = useCallback((routeData, barriers, acknowledgmentTime) => {
-    console.log('User chose to proceed despite barriers:', barriers);
+  const handleBarrierProceed = useCallback(
+    (routeData, barriers, acknowledgmentTime) => {
+      console.log("User chose to proceed despite barriers:", barriers);
 
-    // Log user decision for analytics
-    comprehensiveRoutingOrchestrator.handleBarrierDecision('proceed', {
-      routeData,
-      barriers,
-      acknowledgmentTime
-    });
+      // Log user decision for analytics
+      comprehensiveRoutingOrchestrator.handleBarrierDecision("proceed", {
+        routeData,
+        barriers,
+        acknowledgmentTime,
+      });
 
-    toast.success('Proceeding with route');
-  }, []);
+      toast.success("Proceeding with route");
+    },
+    []
+  );
 
   const handleBarrierDismiss = useCallback(() => {
     setIsBarrierAlertVisible(false);
     setIsRouteSummaryVisible(false);
     setComprehensiveRoute(null);
     setRoute(null);
-    setRouteGenerationStatus('idle');
+    setRouteGenerationStatus("idle");
   }, []);
 
   const handleBarrierReport = useCallback((barrier) => {
-    console.log('User reported barrier:', barrier);
+    console.log("User reported barrier:", barrier);
     // TODO: Implement barrier reporting
-    toast.success('Barrier reported successfully');
+    toast.success("Barrier reported successfully");
   }, []);
 
   // Handle route clear
@@ -470,59 +541,57 @@ const AppShell = () => {
     setIsDirectionsPanelOpen(false);
     setIsBarrierAlertVisible(false);
     setIsRouteSummaryVisible(false);
-    setRouteGenerationStatus('idle');
+    setRouteGenerationStatus("idle");
   }, []);
 
-  // Handle mobile routing verification toggle
-  const handleMobileRoutingVerificationToggle = useCallback(() => {
-    setIsMobileRoutingVerificationOpen(!isMobileRoutingVerificationOpen);
-  }, [isMobileRoutingVerificationOpen]);
-
-
+  // OPTIMIZATION: Removed mobile routing verification toggle
 
   // Handle navigation start - State management only (map operations handled by NavigationIntegration)
-  const handleNavigationStart = useCallback((routeData) => {
-    console.log('=== NAVIGATION START STATE MANAGEMENT ===');
-    console.log('handleNavigationStart called with routeData:', routeData);
-    console.log('Current route state:', route);
-    console.log('Current mapInstance state:', !!mapInstance);
+  const handleNavigationStart = useCallback(
+    (routeData) => {
+      console.log("=== NAVIGATION START STATE MANAGEMENT ===");
+      console.log("handleNavigationStart called with routeData:", routeData);
+      console.log("Current route state:", route);
+      console.log("Current mapInstance state:", !!mapInstance);
 
-    // Update navigation state
-    setIsNavigating(true);
-    setIsNavigationMode(true);
+      // Update navigation state
+      setIsNavigating(true);
+      setIsNavigationMode(true);
 
-    // Hide route summary when navigation starts
-    setIsRouteSummaryVisible(false);
+      // Hide route summary when navigation starts
+      setIsRouteSummaryVisible(false);
 
-    // Close route details panel when navigation starts
-    setIsRoutePanelOpen(false);
+      // Close route details panel when navigation starts
+      setIsRoutePanelOpen(false);
 
-    // Open directions panel for both mobile and desktop
-    setIsDirectionsPanelOpen(true);
+      // Open directions panel for both mobile and desktop
+      setIsDirectionsPanelOpen(true);
 
-    // Show success message
-    toast.success('Navigation started! Follow the directions below.');
+      // Show success message
+      toast.success("Navigation started! Follow the directions below.");
 
-    console.log('Navigation state updated successfully');
-    console.log('isNavigating:', true);
-    console.log('isNavigationMode:', true);
-  }, [route, mapInstance]);
+      console.log("Navigation state updated successfully");
+      console.log("isNavigating:", true);
+      console.log("isNavigationMode:", true);
+    },
+    [route, mapInstance]
+  );
 
   // Handle navigation end
   const handleNavigationEnd = useCallback(() => {
-    console.log('=== NAVIGATION END DEBUG ===');
-    console.log('handleNavigationEnd called');
-    
+    console.log("=== NAVIGATION END DEBUG ===");
+    console.log("handleNavigationEnd called");
+
     setIsNavigating(false);
     setIsNavigationMode(false);
-    
+
     // Close directions panel when navigation ends
     setIsDirectionsPanelOpen(false);
-    
+
     // Show the route summary again when navigation ends
     setIsRouteSummaryVisible(true);
-    
-    console.log('Navigation end completed');
+
+    console.log("Navigation end completed");
   }, []);
 
   // Handle search panel toggle
@@ -557,7 +626,7 @@ const AppShell = () => {
 
   // Handle layers panel toggle
   const handleLayersPanelToggle = useCallback(() => {
-    console.log('handleLayersPanelToggle called');
+    console.log("handleLayersPanelToggle called");
     setIsLayersPanelOpen(!isLayersPanelOpen);
   }, [isLayersPanelOpen]);
 
@@ -580,23 +649,24 @@ const AppShell = () => {
   // Initialize system services
   const initializeSystem = useCallback(async () => {
     try {
-      console.log('Initializing Trek.IQ system...');
-      
+      console.log("Initializing Trek.IQ system...");
+
       // Initialize API integration manager
       await apiIntegrationManager.initialize();
-      
+
       // Make services available globally for testing and analytics
       window.apiIntegrationManager = apiIntegrationManager;
-      window.comprehensiveRoutingOrchestrator = comprehensiveRoutingOrchestrator;
-      
+      window.comprehensiveRoutingOrchestrator =
+        comprehensiveRoutingOrchestrator;
+
       // Expose individual services
-      const barrierService = apiIntegrationManager.getService('barrier');
-      const searchService = apiIntegrationManager.getService('search');
-      const routingService = apiIntegrationManager.getService('routing');
-      const elevationService = apiIntegrationManager.getService('elevation');
-      const openRouteService = apiIntegrationManager.getService('openRoute');
-      const transitService = apiIntegrationManager.getService('transit');
-      const transitAPIService = apiIntegrationManager.getService('transitAPI');
+      const barrierService = apiIntegrationManager.getService("barrier");
+      const searchService = apiIntegrationManager.getService("search");
+      const routingService = apiIntegrationManager.getService("routing");
+      const elevationService = apiIntegrationManager.getService("elevation");
+      const openRouteService = apiIntegrationManager.getService("openRoute");
+      const transitService = apiIntegrationManager.getService("transit");
+      const transitAPIService = apiIntegrationManager.getService("transitAPI");
 
       if (barrierService) window.barrierService = barrierService;
       if (searchService) window.enhancedSearchService = searchService;
@@ -605,7 +675,7 @@ const AppShell = () => {
       if (openRouteService) window.openRouteService = openRouteService;
       if (transitService) window.transitService = transitService;
       if (transitAPIService) window.transitAPIService = transitAPIService;
-      
+
       // Expose additional services that tests expect
       window.geocodingService = searchService; // Search service handles geocoding
       window.mapboxService = searchService; // Search service uses Mapbox
@@ -618,11 +688,11 @@ const AppShell = () => {
       window.slopeService = elevationService; // Elevation service handles slopes
       window.openElevationService = elevationService; // Same as elevation service
       window.fallbackService = apiIntegrationManager; // API manager handles fallbacks
-      
+
       setIsSystemReady(true);
-      console.log('Trek.IQ system initialized successfully');
+      console.log("Trek.IQ system initialized successfully");
     } catch (error) {
-      console.error('Failed to initialize system:', error);
+      console.error("Failed to initialize system:", error);
       setIsSystemReady(false);
     }
   }, []);
@@ -632,18 +702,58 @@ const AppShell = () => {
     initializeSystem();
   }, [initializeSystem]);
 
+  const handleNavigate = useCallback(
+    (path) => {
+      navigate(path);
+      setIsSideMenuOpen(false);
+    },
+    [navigate]
+  );
+
+  const handleReportSubmit = useCallback((result) => {
+    console.log("Barrier report submitted successfully:", result);
+  }, []);
+
+  const handleRoutePanelClose = useCallback(() => {
+    setIsRoutePanelOpen(false);
+  }, []);
+
+  const handleLayerToggle = useCallback((layerId) => {
+    setActiveLayers((prev) => {
+      const newLayers = new Set(prev);
+      if (newLayers.has(layerId)) {
+        newLayers.delete(layerId);
+      } else {
+        newLayers.add(layerId);
+      }
+      return newLayers;
+    });
+  }, []);
+
+  const handleSystemStatusOpen = useCallback(
+    () => setIsSystemStatusOpen(true),
+    []
+  );
+
+  //Cause the props make the component re-render each time
+  const fabClassName = useMemo(() => {
+    if (isMobile)
+      return isRoutePanelOpen || isDirectionsPanelOpen ? "fab-left-mobile" : "";
+    return isRoutePanelOpen || isDirectionsPanelOpen ? "fab-left" : "";
+  }, [isMobile, isRoutePanelOpen, isDirectionsPanelOpen]);
+
   return (
     <div className="app-shell">
       <Toaster position="top-center" />
 
       {/* Top Bar */}
-      <TopBar 
+      <TopBar
         onToggleMenu={handleSideMenuToggle}
         onSearchToggle={handleSearchPanelToggle}
         isSearchPanelOpen={isSearchPanelOpen}
         currentTheme={currentTheme}
         onThemeChange={setCurrentTheme}
-        onSystemStatusToggle={() => setIsSystemStatusOpen(true)}
+        onSystemStatusToggle={handleSystemStatusOpen}
         isMobile={isMobile}
       />
 
@@ -657,18 +767,20 @@ const AppShell = () => {
           activeLayers={activeLayers}
           accessibilitySettings={accessibilitySettings}
           onMapLoad={handleMapLoad}
+          onLayerToggle={handleLayerToggle}
           mapPadding={mapPadding}
           isReportingMode={false}
           routeMode={routeMode}
+          isMobile={isMobile}
         />
 
         {/* Debug Route Data */}
-        {console.log('AppShell: MapCanvas route data:', {
+        {console.log("AppShell: MapCanvas route data:", {
           hasRoute: !!route,
           routeType: route?.type,
           routeFeatures: route?.features?.length,
           routeProperties: route?.features?.[0]?.properties,
-          comprehensiveRoute: !!comprehensiveRoute
+          comprehensiveRoute: !!comprehensiveRoute,
         })}
 
         {/* Search Panel - Same component for mobile and desktop, just styled differently */}
@@ -711,8 +823,8 @@ const AppShell = () => {
             route={comprehensiveRoute || route}
             routeMode={routeMode}
             isOpen={true}
-            onClose={() => setIsRoutePanelOpen(false)}
-            isDarkMode={currentTheme === 'dark'}
+            onClose={handleRoutePanelClose}
+            isDarkMode={currentTheme === "dark"}
             onReroute={handleRouteRequest}
             onStartNavigation={handleNavigationStart}
             origin={origin}
@@ -725,13 +837,23 @@ const AppShell = () => {
             route={comprehensiveRoute || route}
             isOpen={true}
             onClose={handleNavigationEnd}
-            isDarkMode={currentTheme === 'dark'}
+            isDarkMode={currentTheme === "dark"}
             settings={{
               voiceNavigation: voiceGuidanceEnabled,
-              hapticFeedback: true
+              hapticFeedback: true,
             }}
+            isMobile={isMobile}
+            onReportBarrier={() => setIsReportModalOpen(true)}
           />
         )}
+
+        {/* {route && isNavigating && isDirectionsPanelOpen && isMobile && (
+          <div className="absolute right-4 bottom-[calc(100%+1rem)]  z-[1]">
+            <BarrierReportFAB
+              onReportBarrier={() => setIsReportModalOpen(true)}
+            />
+          </div>
+        )} */}
 
         {/* FAB Cluster - Position correctly for both mobile and desktop */}
         {!isPageOpen && (
@@ -739,15 +861,10 @@ const AppShell = () => {
             onReportBarrier={() => setIsReportModalOpen(true)}
             onTransitInfo={handleTransitInfoToggle}
             onLayersToggle={handleLayersPanelToggle}
-            onMobileRoutingVerification={handleMobileRoutingVerificationToggle}
             isMobile={isMobile}
             isNavigating={isNavigating}
             activeLayers={activeLayers}
-            className={
-              isMobile
-                ? (isRoutePanelOpen || isDirectionsPanelOpen) ? 'fab-left-mobile' : ''
-                : (isRoutePanelOpen || isDirectionsPanelOpen) ? 'fab-left' : ''
-            }
+            className={fabClassName}
           />
         )}
 
@@ -759,28 +876,20 @@ const AppShell = () => {
           onThemeChange={setCurrentTheme}
           voiceGuidanceEnabled={voiceGuidanceEnabled}
           onVoiceGuidanceToggle={setVoiceGuidanceEnabled}
-          onNavigate={(path) => {
-            // FIXED: Use React Router navigation instead of window.location
-            // This ensures proper page state management
-            navigate(path);
-            // Close side menu after navigation
-            setIsSideMenuOpen(false);
-          }}
+          onNavigate={handleNavigate}
         />
 
         {/* Layers Panel */}
         <LayersPanel
           isOpen={isLayersPanelOpen}
+          isDarkMode={currentTheme === "dark"}
           onClose={() => setIsLayersPanelOpen(false)}
           activeLayers={activeLayers}
-          onLayerToggle={(layerId) => {
-            const newLayers = new Set(activeLayers);
-            if (newLayers.has(layerId)) {
-              newLayers.delete(layerId);
-            } else {
-              newLayers.add(layerId);
-            }
-            setActiveLayers(newLayers);
+          onLayerToggle={handleLayerToggle}
+          onWheelmapFilterChange={(filters) => {
+            // Handle wheelmap filter changes here
+            console.log('Wheelmap filters changed:', filters);
+            // You can add logic here to update the WheelmapLayer component with new filters
           }}
         />
 
@@ -788,13 +897,9 @@ const AppShell = () => {
         <ReportBarrierModal
           isOpen={isReportModalOpen}
           onClose={() => setIsReportModalOpen(false)}
-          onReport={(result) => {
-            console.log('Barrier report submitted successfully:', result);
-            // You can add additional logic here like refreshing barrier data
-            // or showing a success message
-          }}
+          onReport={handleReportSubmit}
           userLocation={userLocation}
-          isDarkMode={currentTheme === 'dark'}
+          isDarkMode={currentTheme === "dark"}
         />
 
         {/* Transit Info - Only show when explicitly opened */}
@@ -811,81 +916,102 @@ const AppShell = () => {
         {isMapLoading && <LoadingSpinner />}
 
         {/* System Status Panel */}
-        <SystemStatusPanel 
-          isOpen={isSystemStatusOpen} 
-          onClose={() => setIsSystemStatusOpen(false)} 
+        <SystemStatusPanel
+          isOpen={isSystemStatusOpen}
+          onClose={() => setIsSystemStatusOpen(false)}
         />
 
         {/* Route Panels - Same for both mobile and desktop, just styled differently */}
 
         {/* Debug: Log route data for desktop panels */}
         {!isMobile && route && (
-          <div style={{ display: 'none' }}>
-            {console.log('Desktop Route Panels Debug:', {
+          <div style={{ display: "none" }}>
+            {console.log("Desktop Route Panels Debug:", {
               route,
               isRoutePanelOpen,
               isDirectionsPanelOpen,
               routeMode,
               origin,
-              destination
+              destination,
             })}
           </div>
         )}
 
         {/* No overlapping barrier panels - barriers handled in UnifiedRoutePanel */}
 
-        {/* Mobile Routing Verification */}
-        <MobileRoutingVerification
-          isVisible={isMobileRoutingVerificationOpen}
-          onClose={() => setIsMobileRoutingVerificationOpen(false)}
-        />
+        {/* OPTIMIZATION: Removed Mobile Routing Verification component */}
       </div>
 
-      {/* Page Routes - FIXED: Wrapped with PageWrapper for mobile behavior */}
-      <Routes>
-        <Route path="/account" element={
-          <AccountPage 
-            onPageOpen={handlePageOpen}
-            onPageClose={handlePageClose}
+      {/* Added lazy loading for the routes */}
+      <Suspense fallback={<div>Loading...</div>}>
+        <Routes>
+          {/* Root route - renders the main app interface */}
+          <Route path="/" element={<div style={{ display: 'none' }} />} />
+          <Route
+            path="/account"
+            element={
+              <AccountPage
+                onPageOpen={handlePageOpen}
+                onPageClose={handlePageClose}
+              />
+            }
           />
-        } />
-        <Route path="/settings" element={
-          <SettingsPage 
-            onPageOpen={handlePageOpen}
-            onPageClose={handlePageClose}
+          <Route
+            path="/settings"
+            element={
+              <SettingsPage
+                onPageOpen={handlePageOpen}
+                onPageClose={handlePageClose}
+              />
+            }
           />
-        } />
-        <Route path="/saved-routes" element={
-          <SavedRoutesPage 
-            onPageOpen={handlePageOpen}
-            onPageClose={handlePageClose}
+          <Route
+            path="/saved-routes"
+            element={
+              <SavedRoutesPage
+                onPageOpen={handlePageOpen}
+                onPageClose={handlePageClose}
+              />
+            }
           />
-        } />
-        <Route path="/reported-barriers" element={
-          <ReportedBarriersPage 
-            onPageOpen={handlePageOpen}
-            onPageClose={handlePageClose}
+          <Route
+            path="/reported-barriers"
+            element={
+              <ReportedBarriersPage
+                onPageOpen={handlePageOpen}
+                onPageClose={handlePageClose}
+              />
+            }
           />
-        } />
-        <Route path="/help" element={
-          <HelpPage 
-            onPageOpen={handlePageOpen}
-            onPageClose={handlePageClose}
+          <Route
+            path="/help"
+            element={
+              <HelpPage
+                onPageOpen={handlePageOpen}
+                onPageClose={handlePageClose}
+              />
+            }
           />
-        } />
-        <Route path="/about" element={
-          <AboutPage 
-            onPageOpen={handlePageOpen}
-            onPageClose={handlePageClose}
+          <Route
+            path="/about"
+            element={
+              <AboutPage
+                onPageOpen={handlePageOpen}
+                onPageClose={handlePageClose}
+              />
+            }
           />
-        } />
-        <Route path="/admin" element={
-          <AdminDashboardPage 
-            onPageOpen={handlePageOpen}
-            onPageClose={handlePageClose}
+          <Route
+            path="/admin"
+            element={
+              <AdminDashboardPage
+                onPageOpen={handlePageOpen}
+                onPageClose={handlePageClose}
+              />
+            }
           />
-        } />
-      </Routes>
+        </Routes>
+      </Suspense>
     </div>
   );
 };

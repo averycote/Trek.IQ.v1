@@ -13,7 +13,9 @@
     "test:e2e": "playwright test",
     "install:all": "npm install && cd server && npm install && cd ../client && npm install",
     "network": "node start-network.js",
-    "test:network": "node test-network-config.js"
+    "test:network": "node test-network-config.js",
+    "download:accessibility": "node scripts/downloadAccessibilityData.js",
+    "update:data": "npm run download:accessibility"
   },
   "keywords": [
     "accessibility",

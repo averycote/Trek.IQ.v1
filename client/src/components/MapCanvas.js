@@ -12,7 +12,9 @@ const MapCanvas = React.memo(({
   isHeatmapVisible,
   isReportingMode,
   onRouteUpdate,
-  onMapLoad
+  onMapLoad,
+  onLayerToggle,
+  isMobile = false
 }) => {
   // Convert Set to Array for compatibility with existing component
   const activeLayersArray = useMemo(() => {
@@ -52,7 +54,9 @@ const MapCanvas = React.memo(({
         accessibilitySettings={accessibilitySettings}
         isReportingMode={isReportingMode}
         onMapClick={handleMapClick}
+        onLayerToggle={onLayerToggle}
         mapPadding={mapPadding}
+        isMobile={isMobile}
       />
 
       {/* Debug overlay for route visibility */}

@@ -5,7 +5,7 @@
 /* Custom styles for Trek.IQ */
 body {
   margin: 0 !important;
-  padding: 0 !important;
+
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -318,6 +318,40 @@ code {
   *:focus {
     outline: 3px solid #000;
     outline-offset: 2px;
+  }
+}
+
+/* Modern forced-colors mode support (replaces -ms-high-contrast) */
+@media (forced-colors: active) {
+  *:focus {
+    outline: 3px solid ButtonText;
+    outline-offset: 2px;
+  }
+  
+  .bg-white {
+    background-color: Canvas !important;
+    color: CanvasText !important;
+  }
+  
+  .bg-gray-800 {
+    background-color: Canvas !important;
+    color: CanvasText !important;
+  }
+  
+  .text-gray-600,
+  .text-gray-300 {
+    color: CanvasText !important;
+  }
+  
+  button {
+    background-color: ButtonFace !important;
+    color: ButtonText !important;
+    border: 1px solid ButtonText !important;
+  }
+  
+  button:hover {
+    background-color: Highlight !important;
+    color: HighlightText !important;
   }
 }
 

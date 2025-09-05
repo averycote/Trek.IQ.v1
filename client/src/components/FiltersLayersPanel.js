@@ -21,6 +21,135 @@ const FiltersLayersPanel = ({
 
   // Define layers with mode-specific logic
   const layers = [
+    // Accessibility.cloud filters
+    {
+      id: 'wheelchair_accessible_bathrooms',
+      name: 'Accessible Bathrooms',
+      description: 'Wheelchair accessible restrooms and toilets',
+      category: 'Accessibility',
+      autoEnableFor: ['walking', 'transit'],
+      icon: '🚻',
+      isAccessibilityFilter: true
+    },
+    {
+      id: 'wheelchair_accessible_places',
+      name: 'Fully Accessible Places',
+      description: 'Places with full wheelchair accessibility',
+      category: 'Accessibility',
+      autoEnableFor: ['walking'],
+      icon: '♿',
+      isAccessibilityFilter: true
+    },
+    {
+      id: 'limited_accessibility_places',
+      name: 'Limited Accessibility',
+      description: 'Places with partial wheelchair access',
+      category: 'Accessibility',
+      autoEnableFor: [],
+      icon: '⚠️',
+      isAccessibilityFilter: true
+    },
+    {
+      id: 'not_accessible_places',
+      name: 'Not Accessible Places',
+      description: 'Places that are not wheelchair accessible',
+      category: 'Accessibility',
+      autoEnableFor: [],
+      icon: '❌',
+      isAccessibilityFilter: true
+    },
+    {
+      id: 'accessible_transit_stops',
+      name: 'Accessible Transit',
+      description: 'Transit stops with accessibility features',
+      category: 'Accessibility',
+      autoEnableFor: ['transit'],
+      icon: '🚌',
+      isAccessibilityFilter: true
+    },
+    {
+      id: 'accessible_parking',
+      name: 'Accessible Parking',
+      description: 'Designated accessible parking spaces',
+      category: 'Accessibility',
+      autoEnableFor: ['driving'],
+      icon: '🅿️',
+      isAccessibilityFilter: true
+    },
+    {
+      id: 'accessibility_equipment',
+      name: 'Accessibility Equipment',
+      description: 'Elevators, ramps, and accessibility equipment',
+      category: 'Accessibility',
+      autoEnableFor: ['walking'],
+      icon: '⬆️',
+      isAccessibilityFilter: true
+    },
+    // Wheelmap-specific filters
+    {
+      id: 'wheelmap_parking',
+      name: 'Accessible Parking',
+      description: 'Wheelchair accessible parking spaces from Wheelmap',
+      category: 'Wheelmap',
+      autoEnableFor: ['driving'],
+      icon: '🅿️',
+      isWheelmapFilter: true
+    },
+    {
+      id: 'wheelmap_toilets',
+      name: 'Accessible Bathrooms',
+      description: 'Wheelchair accessible restrooms from Wheelmap',
+      category: 'Wheelmap',
+      autoEnableFor: ['walking', 'transit'],
+      icon: '🚻',
+      isWheelmapFilter: true
+    },
+    {
+      id: 'wheelmap_food',
+      name: 'Accessible Restaurants',
+      description: 'Wheelchair accessible dining from Wheelmap',
+      category: 'Wheelmap',
+      autoEnableFor: ['walking'],
+      icon: '🍴',
+      isWheelmapFilter: true
+    },
+    {
+      id: 'wheelmap_shopping',
+      name: 'Accessible Shopping',
+      description: 'Wheelchair accessible shops from Wheelmap',
+      category: 'Wheelmap',
+      autoEnableFor: ['walking'],
+      icon: '🛍️',
+      isWheelmapFilter: true
+    },
+    {
+      id: 'wheelmap_accommodation',
+      name: 'Accessible Hotels',
+      description: 'Wheelchair accessible accommodation from Wheelmap',
+      category: 'Wheelmap',
+      autoEnableFor: [],
+      icon: '🏨',
+      isWheelmapFilter: true
+    },
+    {
+      id: 'wheelmap_leisure',
+      name: 'Accessible Entertainment',
+      description: 'Wheelchair accessible entertainment from Wheelmap',
+      category: 'Wheelmap',
+      autoEnableFor: [],
+      icon: '🎭',
+      isWheelmapFilter: true
+    },
+    {
+      id: 'accessibility_heatmap',
+      name: 'Accessibility Heatmap',
+      description: 'Visual overlay showing accessibility density',
+      category: 'Wheelmap',
+      autoEnableFor: [],
+      icon: '📊',
+      isHeatmapFilter: true
+    },
+    // Existing static layers
     {
       id: 'Active Travelways',
       name: 'Active Travelways',

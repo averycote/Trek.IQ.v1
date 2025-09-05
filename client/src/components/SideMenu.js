@@ -135,7 +135,7 @@ const SideMenu = React.memo(({
         </div>
 
         {/* Menu Content */}
-        <div className="side-menu-content">
+        <div className="side-menu-content p-2">
           {/* Navigation Items */}
           <div className="menu-section">
             <h3 className="section-title">Navigation</h3>

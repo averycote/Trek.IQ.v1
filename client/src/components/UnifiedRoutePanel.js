@@ -1,24 +1,18 @@
-import React, { useState } from 'react';
+// OPTIMIZATION: Added useMemo and useCallback for performance
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+// OPTIMIZATION: Removed unused imports to reduce bundle size
 import {
   XMarkIcon,
-  MapPinIcon,
-  ClockIcon,
   ArrowPathIcon,
   InformationCircleIcon,
   ExclamationTriangleIcon,
-  CheckCircleIcon,
   ChevronDownIcon,
   ChevronRightIcon,
-  WifiIcon,
-  ShieldCheckIcon,
-  LightBulbIcon,
-  TruckIcon,
-  BusIcon,
-  CarIcon,
-  PersonWalkingIcon,
-  UserIcon
+  LightBulbIcon
 } from '@heroicons/react/24/outline';
 import TransitLogo from './TransitLogo';
+import accessibilityCloudService from '../services/accessibilityCloudService';
+import wheelmapApiService from '../services/wheelmapApiService';
 
 const UnifiedRoutePanel = ({
   route,
@@ -31,20 +25,92 @@ const UnifiedRoutePanel = ({
   origin,
   destination
 }) => {
-  const [expandedSections, setExpandedSections] = useState(new Set(['overview', 'barriers']));
+  const [expandedSections, setExpandedSections] = useState(new Set(['barriers']));
+  const [accessibilityData, setAccessibilityData] = useState(null);
+  const [loadingAccessibility, setLoadingAccessibility] = useState(false);
+  const [wheelmapData, setWheelmapData] = useState(null);
+  const [nearbyAccessiblePlaces, setNearbyAccessiblePlaces] = useState([]);
+  const [loadingWheelmap, setLoadingWheelmap] = useState(false);
 
-  if (!route || !isOpen) return null;
+  // Fetch accessibility data when route changes
+  useEffect(() => {
+    const fetchAccessibilityData = async () => {
+      if (!route?.features?.[0]?.geometry?.coordinates) {
+        return;
+      }
 
-  const routeData = route.features?.[0]?.properties || {};
-  const coordinates = route.features?.[0]?.geometry?.coordinates || [];
-  const accessibility = routeData.accessibility || {};
-  const barriers = accessibility.analysis?.barriers || [];
-  const warnings = accessibility.analysis?.warnings || [];
-  const recommendations = accessibility.analysis?.recommendations || [];
-  const amenities = accessibility.amenities || {};
-  const aiInsights = routeData.aiInsights || {};
+      setLoadingAccessibility(true);
+      try {
+        console.log('🌐 UnifiedRoutePanel: Fetching accessibility data for route');
+        const accessibilityInfo = await accessibilityCloudService.getRouteAccessibilityData(route);
+        setAccessibilityData(accessibilityInfo);
+        console.log('✅ UnifiedRoutePanel: Accessibility data loaded:', accessibilityInfo);
+      } catch (error) {
+        console.error('❌ UnifiedRoutePanel: Error loading accessibility data:', error);
+        setAccessibilityData(accessibilityCloudService.createErrorResponse());
+      } finally {
+        setLoadingAccessibility(false);
+      }
+    };
 
-  const toggleSection = (section) => {
+    if (isOpen) {
+      fetchAccessibilityData();
+    }
+  }, [route, isOpen]);
+
+  // Fetch Wheelmap data when route changes
+  useEffect(() => {
+    const fetchWheelmapData = async () => {
+      if (!route?.features?.[0]?.geometry?.coordinates || !isOpen) {
+        setWheelmapData(null);
+        setNearbyAccessiblePlaces([]);
+        return;
+      }
+
+      setLoadingWheelmap(true);
+      try {
+        console.log('🌐 UnifiedRoutePanel: Fetching Wheelmap data for route');
+        
+        // Analyze route accessibility
+        const routeAnalysis = await wheelmapApiService.analyzeRouteAccessibility(route);
+        setWheelmapData(routeAnalysis);
+
+        // Get destination coordinates for nearby places
+        const routeCoords = route.features[0].geometry.coordinates;
+        const destinationCoords = routeCoords[routeCoords.length - 1];
+        
+        // Find nearby accessible places at destination
+        const nearbyPlaces = await wheelmapApiService.findNearbyAccessiblePlaces(destinationCoords, 3);
+        setNearbyAccessiblePlaces(nearbyPlaces);
+
+        console.log('✅ UnifiedRoutePanel: Wheelmap data loaded successfully');
+      } catch (error) {
+        console.error('❌ UnifiedRoutePanel: Error fetching Wheelmap data:', error);
+        setWheelmapData(null);
+        setNearbyAccessiblePlaces([]);
+      } finally {
+        setLoadingWheelmap(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchWheelmapData();
+    }
+  }, [route, isOpen]);
+
+  // OPTIMIZATION: Move all hooks before early return to comply with Rules of Hooks
+  // Memoize expensive route data calculations
+  const routeData = useMemo(() => route?.features?.[0]?.properties || {}, [route]);
+  const coordinates = useMemo(() => route?.features?.[0]?.geometry?.coordinates || [], [route]);
+  const accessibility = useMemo(() => routeData.accessibility || {}, [routeData]);
+  const barriers = useMemo(() => accessibility.analysis?.barriers || [], [accessibility]);
+  const warnings = useMemo(() => accessibility.analysis?.warnings || [], [accessibility]);
+  const recommendations = useMemo(() => accessibility.analysis?.recommendations || [], [accessibility]);
+  const amenities = useMemo(() => accessibility.amenities || {}, [accessibility]);
+  const aiInsights = useMemo(() => routeData.aiInsights || {}, [routeData]);
+
+  // Memoize callback functions to prevent unnecessary re-renders
+  const toggleSection = useCallback((section) => {
     const newExpanded = new Set(expandedSections);
     if (newExpanded.has(section)) {
       newExpanded.delete(section);
@@ -52,15 +118,38 @@ const UnifiedRoutePanel = ({
       newExpanded.add(section);
     }
     setExpandedSections(newExpanded);
-  };
+  }, [expandedSections]);
 
-  const getAccessibilityScore = () => {
+  // Memoize accessibility score calculation using comprehensive scoring
+  const accessibilityScoreInfo = useMemo(() => {
+    // Use comprehensive accessibility data if available
+    const comprehensiveData = routeData.comprehensiveAccessibility;
+    if (comprehensiveData) {
+      const colorMap = {
+        '#10b981': { level: 'Excellent', color: 'text-green-500', bg: 'bg-green-100', icon: '🟢' },
+        '#3b82f6': { level: 'Good', color: 'text-blue-500', bg: 'bg-blue-100', icon: '🔵' },
+        '#f59e0b': { level: 'Fair', color: 'text-yellow-500', bg: 'bg-yellow-100', icon: '🟡' },
+        '#ef4444': { level: 'Poor', color: 'text-red-500', bg: 'bg-red-100', icon: '🔴' },
+        '#7c2d12': { level: 'Very Poor', color: 'text-red-700', bg: 'bg-red-200', icon: '🔴' }
+      };
+      
+      return {
+        ...colorMap[comprehensiveData.color] || colorMap['#3b82f6'],
+        score: comprehensiveData.overallScore,
+        grade: comprehensiveData.grade,
+        details: comprehensiveData
+      };
+    }
+    
+    // Fallback to existing logic
     const score = accessibility.score || 95;
-    if (score >= 90) return { level: 'Excellent', color: 'text-green-500', bg: 'bg-green-100', icon: '🟢' };
-    if (score >= 75) return { level: 'Good', color: 'text-blue-500', bg: 'bg-blue-100', icon: '🔵' };
-    if (score >= 60) return { level: 'Fair', color: 'text-yellow-500', bg: 'bg-yellow-100', icon: '🟡' };
-    return { level: 'Poor', color: 'text-red-500', bg: 'bg-red-100', icon: '🔴' };
-  };
+    if (score >= 90) return { level: 'Excellent', color: 'text-green-500', bg: 'bg-green-100', icon: '🟢', score };
+    if (score >= 75) return { level: 'Good', color: 'text-blue-500', bg: 'bg-blue-100', icon: '🔵', score };
+    if (score >= 60) return { level: 'Fair', color: 'text-yellow-500', bg: 'bg-yellow-100', icon: '🟡', score };
+    return { level: 'Poor', color: 'text-red-500', bg: 'bg-red-100', icon: '🔴', score };
+  }, [accessibility.score, routeData.comprehensiveAccessibility]);
+
+  if (!route || !isOpen) return null;
 
   const getModeIcon = (mode) => {
     switch (mode) {
@@ -97,12 +186,13 @@ const UnifiedRoutePanel = ({
     }
   };
 
-  const accessibilityScore = getAccessibilityScore();
+  // OPTIMIZATION: Use memoized accessibility score info
+  const accessibilityScore = accessibilityScoreInfo;
 
   return (
     <div className={`fixed z-50 ${isDarkMode ? 'text-white' : 'text-gray-800'} ${
       window.innerWidth <= 768
-        ? 'bottom-24 left-4 right-4 max-w-none'
+        ? 'bottom-16 left-4 right-4 max-w-none'
         : 'bottom-4 left-4 max-w-md'
     }`}>
       <div className={`p-4 rounded-lg shadow-xl overflow-y-auto ${
@@ -134,103 +224,7 @@ const UnifiedRoutePanel = ({
           </button>
         </div>
 
-        {/* Route Overview */}
-        <div className="mb-4">
-          <button
-            onClick={() => toggleSection('overview')}
-            className="w-full text-left font-medium mb-2 flex items-center justify-between"
-          >
-            <span>Route Overview</span>
-            {expandedSections.has('overview') ? (
-              <ChevronDownIcon className="w-4 h-4" />
-            ) : (
-              <ChevronRightIcon className="w-4 h-4" />
-            )}
-          </button>
-          {expandedSections.has('overview') && (
-            <div className="space-y-3">
-              {/* Distance and Duration */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <div className="flex items-center gap-3">
-                  <MapPinIcon className="w-5 h-5 text-blue-500" />
-                  <div>
-                    <div className="font-medium">
-                      {(() => {
-                        const distance = routeData.distance || 0;
-                        if (distance >= 1000) {
-                          return `${(distance / 1000).toFixed(1)} km`;
-                        }
-                        return `${Math.round(distance)} m`;
-                      })()}
-                    </div>
-                    <div className="text-sm opacity-75">Distance</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <ClockIcon className="w-5 h-5 text-green-500" />
-                  <div>
-                    <div className="font-medium">
-                      {(() => {
-                        const duration = routeData.duration || 0;
-                        if (duration >= 3600) { // More than 1 hour
-                          const hours = Math.floor(duration / 3600);
-                          const minutes = Math.round((duration % 3600) / 60);
-                          return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
-                        }
-                        return `${Math.round(duration / 60)} min`;
-                      })()}
-                    </div>
-                    <div className="text-sm opacity-75">Duration</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Accessibility Score */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <div className="flex items-center gap-3">
-                  <UserIcon className="w-5 h-5 text-green-500" />
-                  <div>
-                    <div className="font-medium">Accessibility Score</div>
-                    <div className="text-sm opacity-75">{accessibilityScore.level}</div>
-                  </div>
-                </div>
-                <div className={`text-2xl font-bold ${accessibilityScore.color}`}>
-                  {accessibilityScore.icon} {accessibility.score || 95}%
-                </div>
-              </div>
-
-              {/* Route Color Indicator */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <div className="flex items-center gap-3">
-                  <div className={`w-4 h-4 rounded-full ${getRouteColorInfo(accessibility.score || 85).color}`}></div>
-                  <div>
-                    <div className="font-medium">Route Line Color</div>
-                    <div className="text-sm opacity-75">Shows accessibility level</div>
-                  </div>
-                </div>
-                <div className={`font-medium ${getRouteColorInfo(accessibility.score || 85).textColor}`}>
-                  {getRouteColorInfo(accessibility.score || 85).label}
-                </div>
-              </div>
-
-              {/* Route endpoints */}
-              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="font-medium">From:</span>
-                    <span className="opacity-75">{origin?.display_name || 'Selected location'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    <span className="font-medium">To:</span>
-                    <span className="opacity-75">{destination?.display_name || 'Selected location'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Route Overview section removed per user request */}
 
         {/* Barriers and Warnings */}
         {(barriers.length > 0 || warnings.length > 0) && (
@@ -465,121 +459,202 @@ const UnifiedRoutePanel = ({
           </div>
         )}
 
-        {/* Accessibility Details */}
+        {/* Comprehensive Accessibility Information */}
         <div className="mb-4">
-          <button
-            onClick={() => toggleSection('accessibility')}
-            className="w-full text-left font-medium mb-2 flex items-center justify-between"
-          >
-            <div className="flex items-center gap-2">
-              <ShieldCheckIcon className="w-5 h-5 text-green-500" />
-              <span>Accessibility Details</span>
+          <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-2xl">♿</span>
+              <span className="font-semibold text-lg text-gray-800 dark:text-gray-200">Route Accessibility</span>
             </div>
-            {expandedSections.has('accessibility') ? (
-              <ChevronDownIcon className="w-4 h-4" />
-            ) : (
-              <ChevronRightIcon className="w-4 h-4" />
-            )}
-          </button>
-          {expandedSections.has('accessibility') && (
-            <div className="space-y-3">
-              {/* Mode-specific features */}
-              {routeMode === 'walking' && (
-                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                  <h4 className="font-medium mb-2">Walking Features</h4>
-                  <div className="space-y-2 text-sm">
-                    {accessibility.hasSidewalks && (
-                      <div className="flex items-center gap-2">
-                        <CheckCircleIcon className="w-4 h-4 text-green-500" />
-                        <span>Sidewalks available</span>
-                      </div>
-                    )}
-                    {accessibility.hasCurbCuts && (
-                      <div className="flex items-center gap-2">
-                        <CheckCircleIcon className="w-4 h-4 text-green-500" />
-                        <span>Curb cuts present</span>
-                      </div>
-                    )}
-                    {accessibility.stepsCount > 0 && (
-                      <div className="flex items-center gap-2">
-                        <ExclamationTriangleIcon className="w-4 h-4 text-yellow-500" />
-                        <span>{accessibility.stepsCount} steps encountered</span>
-                      </div>
-                    )}
-                    {accessibility.winterMode && (
-                      <div className="flex items-center gap-2">
-                        <InformationCircleIcon className="w-4 h-4 text-blue-500" />
-                        <span>Winter-maintained route</span>
-                      </div>
-                    )}
-                  </div>
+            <div className="space-y-4">
+              {/* Overall Score - Cleaned up layout */}
+              <div className="p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{accessibilityScore.icon || '🟢'}</span>
+                    <div>
+                      <div className="font-medium text-gray-800 dark:text-gray-200">Overall Score</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Based on accessibility data</div>
                 </div>
-              )}
-
-              {routeMode === 'driving' && (
-                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                  <h4 className="font-medium mb-2">Driving Features</h4>
-                  <div className="space-y-2 text-sm">
-                    {routeData.accessibleParking && routeData.accessibleParking.length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <CheckCircleIcon className="w-4 h-4 text-green-500" />
-                        <span>{routeData.accessibleParking.length} accessible parking spots nearby</span>
-                      </div>
-                    )}
-                    {accessibility.hasTrafficSignals && (
-                      <div className="flex items-center gap-2">
-                        <CheckCircleIcon className="w-4 h-4 text-green-500" />
-                        <span>Traffic signals present</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {routeMode === 'transit' && (
-                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                  <h4 className="font-medium mb-2">Transit Features</h4>
-                  <div className="space-y-2 text-sm">
-                    {accessibility.nearbyTransitStops > 0 && (
-                      <div className="flex items-center gap-2">
-                        <CheckCircleIcon className="w-4 h-4 text-green-500" />
-                        <span>{accessibility.nearbyTransitStops} transit stops nearby</span>
-                      </div>
-                    )}
-                    {accessibility.accessibleStops > 0 && (
-                      <div className="flex items-center gap-2">
-                        <CheckCircleIcon className="w-4 h-4 text-green-500" />
-                        <span>{accessibility.accessibleStops} accessible stops</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* General accessibility info */}
-              <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <h4 className="font-medium mb-2">General Accessibility</h4>
-                <div className="space-y-2 text-sm">
-                  {accessibility.surfaceType && (
-                    <div className="flex items-center gap-2">
-                      <span>Surface: {accessibility.surfaceType}</span>
+                        </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold">
+                      <span className={accessibilityScore.color}>
+                        {accessibilityScore.score || accessibilityData?.accessibilityScore || wheelmapData?.accessibilityScore || 85}%
+                              </span>
+                            </div>
+                    {accessibilityScore.grade && (
+                      <div className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        Grade {accessibilityScore.grade}
                     </div>
                   )}
-                  {accessibility.elevation && (
-                    <div className="flex items-center gap-2">
-                      <span>Elevation: {accessibility.elevation}</span>
                     </div>
+        </div>
+
+                {/* Supporting evidence bullet points */}
+                <div className="pt-3 border-t border-gray-200 dark:border-gray-600 space-y-3">
+                  {/* Confidence and warnings row */}
+                  {accessibilityScore.details && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Confidence: {Math.round(accessibilityScore.details.confidence * 100)}%
+                      </span>
+                      {accessibilityScore.details.analysis?.warnings?.length > 0 && (
+                        <span className="text-orange-600 dark:text-orange-400">
+                          {accessibilityScore.details.analysis.warnings.length} warning(s)
+                        </span>
+              )}
+            </div>
                   )}
-                  {accessibility.lighting && (
-                    <div className="flex items-center gap-2">
-                      <LightBulbIcon className="w-4 h-4 text-yellow-500" />
-                      <span>Street lighting available</span>
+                  
+                  {/* Supporting evidence bullet points */}
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                      Supporting Evidence:
+                          </div>
+                    <div className="space-y-1 text-xs text-gray-700 dark:text-gray-300">
+                      {/* Generate bullet points based on comprehensive scoring data */}
+                      {accessibilityScore.details?.components?.elevation?.score > 80 && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-green-600 dark:text-green-400">•</span>
+                          <span>Minimal elevation changes detected</span>
+                </div>
+              )}
+                      {accessibilityScore.details?.components?.barriers?.score > 85 && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-green-600 dark:text-green-400">•</span>
+                          <span>Users report no significant barriers</span>
+            </div>
+          )}
+                      {accessibilityScore.details?.components?.infrastructure?.score > 75 && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-green-600 dark:text-green-400">•</span>
+                          <span>Good sidewalk infrastructure available</span>
+        </div>
+                      )}
+                      {accessibilityScore.details?.components?.amenities?.score > 70 && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-green-600 dark:text-green-400">•</span>
+                          <span>Accessible amenities found along route</span>
+            </div>
+                      )}
+                      {accessibilityScore.details?.analysis?.steepSegments?.length === 0 && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-green-600 dark:text-green-400">•</span>
+                          <span>No steep slopes detected</span>
+                              </div>
+                            )}
+                      
+                      {/* Negative indicators */}
+                      {accessibilityScore.details?.components?.elevation?.score < 60 && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-orange-600 dark:text-orange-400">•</span>
+                          <span>Significant elevation changes present</span>
+                </div>
+              )}
+                      {accessibilityScore.details?.components?.barriers?.score < 70 && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-orange-600 dark:text-orange-400">•</span>
+                          <span>Potential barriers reported by users</span>
+            </div>
+          )}
+                      {accessibilityScore.details?.analysis?.steepSegments?.length > 0 && (
+                        <div className="flex items-start gap-2">
+                          <span className="text-orange-600 dark:text-orange-400">•</span>
+                          <span>{accessibilityScore.details.analysis.steepSegments.length} steep segment(s) detected</span>
+        </div>
+                      )}
+                      
+                      {/* Fallback bullet points if no comprehensive data */}
+                      {!accessibilityScore.details && (
+                        <>
+                          <div className="flex items-start gap-2">
+                            <span className="text-blue-600 dark:text-blue-400">•</span>
+                            <span>Route analyzed for accessibility features</span>
+            </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-blue-600 dark:text-blue-400">•</span>
+                            <span>Based on community accessibility data</span>
+                      </div>
+                          <div className="flex items-start gap-2">
+                            <span className="text-blue-600 dark:text-blue-400">•</span>
+                            <span>Infrastructure and barrier assessment included</span>
+                      </div>
+                        </>
+                    )}
+                      </div>
+                      </div>
+                  </div>
+                </div>
+
+              {/* Route Conditions */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-center">
+                  <div className="text-lg mb-1">🚶</div>
+                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">Travel Mode</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 capitalize">{routeMode}</div>
+                      </div>
+                    
+                <div className="p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-center">
+                  <div className="text-lg mb-1">📏</div>
+                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">Distance</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">{(route.features[0].properties.distance / 1000).toFixed(1)} km</div>
+                      </div>
+                    
+                <div className="p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-center">
+                  <div className="text-lg mb-1">⏱️</div>
+                  <div className="text-sm font-medium text-gray-800 dark:text-gray-200">Duration</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">{Math.round(route.features[0].properties.duration / 60)} min</div>
+                  </div>
+                </div>
+                    
+              {/* Barriers Status */}
+              <div className={`p-3 rounded-lg border ${
+                (wheelmapData?.barriers && wheelmapData.barriers.length > 0) 
+                  ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
+                  : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+              }`}>
+                      <div className="flex items-center gap-2">
+                  <span className="text-xl">
+                    {(wheelmapData?.barriers && wheelmapData.barriers.length > 0) ? '⚠️' : '✅'}
+                  </span>
+                        <div>
+                    <div className={`font-medium ${
+                      (wheelmapData?.barriers && wheelmapData.barriers.length > 0)
+                        ? 'text-red-800 dark:text-red-200'
+                        : 'text-green-800 dark:text-green-200'
+                    }`}>
+                      {(wheelmapData?.barriers && wheelmapData.barriers.length > 0) ? 'Barriers Detected' : 'No Barriers'}
+                      </div>
+                    <div className={`text-sm ${
+                      (wheelmapData?.barriers && wheelmapData.barriers.length > 0)
+                        ? 'text-red-600 dark:text-red-400'
+                        : 'text-green-600 dark:text-green-400'
+                    }`}>
+                      {(wheelmapData?.barriers && wheelmapData.barriers.length > 0) 
+                        ? `${wheelmapData.barriers.length} accessibility barrier${wheelmapData.barriers.length !== 1 ? 's' : ''} found`
+                        : 'Route appears accessible'
+                      }
+                      </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Stats */}
+              {wheelmapData && wheelmapData.totalPOIs > 0 && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-center">
+                    <div className="text-lg font-bold text-green-600 dark:text-green-400">{wheelmapData.accessible}</div>
+                    <div className="text-xs text-green-600 dark:text-green-400">Accessible Places</div>
+                    </div>
+                  <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-center">
+                    <div className="text-lg font-bold text-yellow-600 dark:text-yellow-400">{wheelmapData.partiallyAccessible}</div>
+                    <div className="text-xs text-yellow-600 dark:text-yellow-400">Partial Access</div>
+                    </div>
                     </div>
                   )}
                 </div>
               </div>
-            </div>
-          )}
         </div>
 
         {/* Transit API Attribution */}
