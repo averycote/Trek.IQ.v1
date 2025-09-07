@@ -110,3 +110,4 @@ playwright/.cache/
 # Large backup files - INCLUDE for complete deployment
 # server/data/backup/**/*.geojson
 # server/data/backup/**/*.db
+node_modules
