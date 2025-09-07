@@ -15,6 +15,7 @@ const barrierRoutes = require('./routes/barriers');
 const aiRoutes = require('./routes/ai');
 const geocodingRoutes = require('./routes/geocoding');
 const wheelmapRoutes = require('./routes/wheelmap');
+const accessibilityRoutes = require('./routes/accessibilityData');
 
 const app = express();
 const PORT = process.env.PORT || 8081;
@@ -541,6 +542,9 @@ app.use('/api/geocoding', geocodingRoutes);
 
 // Wheelmap proxy routes
 app.use('/api/wheelmap', wheelmapRoutes);
+
+// Accessibility data routes
+app.use('/api/accessibility', accessibilityRoutes);
 
 // Optimized data routes
 const optimizedDataRoutes = require('./routes/optimizedData');
