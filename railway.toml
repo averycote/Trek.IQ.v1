@@ -9,6 +9,7 @@ restartPolicyMaxRetries = 10
 [environments.production]
 variables = { NODE_ENV = "production", PORT = "3000" }
 
-# Build configuration for Railway
+# Build configuration for Railway - using pre-built client files
 [build.env]
 NODE_ENV = "production"
+NIXPACKS_BUILD_CMD = "npm run build"
