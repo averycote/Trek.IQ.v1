@@ -1,0 +1,45 @@
+# Ignore development and build artifacts
+node_modules/
+.git/
+.gitignore
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignore client source files (we only need the built version)
+client/src/
+client/public/
+client/node_modules/
+
+# Ignore server development files
+server/node_modules/
+
+# Ignore test files
+tests/
+*.test.js
+*.spec.js
+
+# Ignore documentation
+docs/
+*.md
+README.md
+
+# Ignore local environment files
+.env.local
+.env.development
+.env.test
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore build artifacts we don't need
+client/build/static/js/*.map
+client/build/static/css/*.map
