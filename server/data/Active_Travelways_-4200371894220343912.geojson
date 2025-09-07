@@ -1,0 +1,35 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Barrington Street",
+        "type": "pedestrian"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-63.5756, 44.6475],
+          [-63.5750, 44.6470],
+          [-63.5745, 44.6465]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Spring Garden Road",
+        "type": "pedestrian"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-63.5756, 44.6475],
+          [-63.5760, 44.6475],
+          [-63.5765, 44.6475]
+        ]
+      }
+    }
+  ]
+}

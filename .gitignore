@@ -103,10 +103,10 @@ playwright/.cache/
 # Jest
 .jest/
 
-# Server data (if any large files)
-server/data/*.geojson
-!server/data/sample*.geojson
+# Server data - INCLUDE all data files for Railway deployment
+# server/data/*.geojson
+# !server/data/sample*.geojson
 
-# Large backup files
-server/data/backup/**/*.geojson
-server/data/backup/**/*.db
+# Large backup files - INCLUDE for complete deployment
+# server/data/backup/**/*.geojson
+# server/data/backup/**/*.db

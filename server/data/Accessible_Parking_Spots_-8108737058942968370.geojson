@@ -1,0 +1,27 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Halifax Central Library Parking",
+        "type": "accessible_parking"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-63.5756, 44.6475]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Spring Garden Road Parking",
+        "type": "accessible_parking"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-63.5760, 44.6475]
+      }
+    }
+  ]
+}
