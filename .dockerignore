@@ -9,7 +9,7 @@ yarn-error.log*
 
 # Ignore client source files (we only need the built version)
 client/src/
-client/public/
+# client/public/ - needed for React build process
 client/node_modules/
 
 # Ignore server development files  
