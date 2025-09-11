@@ -3,6 +3,7 @@ import {
   MapPinIcon,
   ArrowRightIcon,
   XMarkIcon,
+  GlobeAltIcon,
 } from "@heroicons/react/24/outline";
 import enhancedSearchService from "../services/enhancedSearchService";
 
@@ -100,6 +101,7 @@ const EnhancedSearchPanel = React.memo(
     onModeChange,
     isMobile = false,
     onSearchToggle,
+    onLocationDetect,
   }) => {
     const [showOriginResults, setShowOriginResults] = useState(false);
     const [showDestinationResults, setShowDestinationResults] = useState(false);
@@ -108,6 +110,7 @@ const EnhancedSearchPanel = React.memo(
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const [isLoading, setIsLoading] = useState(false);
     const [searchError, setSearchError] = useState(null);
+    const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
     const originInputRef = useRef(null);
     const destinationInputRef = useRef(null);
@@ -285,6 +288,23 @@ const EnhancedSearchPanel = React.memo(
       [onModeChange]
     );
 
+    // Location detection handler
+    const handleLocationDetect = useCallback(async () => {
+      if (!onLocationDetect) return;
+      
+      setIsDetectingLocation(true);
+      setSearchError(null);
+      
+      try {
+        await onLocationDetect();
+      } catch (error) {
+        console.error('Location detection failed:', error);
+        setSearchError('Failed to detect location. Please enter manually.');
+      } finally {
+        setIsDetectingLocation(false);
+      }
+    }, [onLocationDetect]);
+
     // Focus management
     const handleInputFocus = useCallback(
       (inputType) => {
@@ -364,50 +384,67 @@ const EnhancedSearchPanel = React.memo(
               <MapPinIcon className="w-4 h-4" />
               Starting Point
             </label>
-            <div className="input-container">
-              <input
-                ref={originInputRef}
-                id="origin-input"
-                type="text"
-                value={origin}
-                onChange={(e) =>
-                  handleInputChange(
-                    e.target.value,
-                    onOriginChange,
-                    setShowOriginResults
-                  )
-                }
-                onFocus={() => handleInputFocus("origin")}
-                onBlur={handleInputBlur}
-                onKeyDown={(e) =>
-                  handleKeyDown(
-                    e,
-                    originSearchResults,
-                    setShowOriginResults,
-                    (result) =>
-                      handleResultSelect(
-                        result,
-                        onOriginChange,
-                        setShowOriginResults
-                      )
-                  )
-                }
-                placeholder="Enter starting location"
-                className="search-input"
-                aria-describedby="origin-results"
-              />
-              {origin && (
-                <button
-                  onClick={() =>
-                    clearInput(onOriginChange, setShowOriginResults)
+            <div className="input-container-with-location">
+              <div className="input-container">
+                <input
+                  ref={originInputRef}
+                  id="origin-input"
+                  type="text"
+                  value={origin}
+                  onChange={(e) =>
+                    handleInputChange(
+                      e.target.value,
+                      onOriginChange,
+                      setShowOriginResults
+                    )
                   }
-                  className="clear-button"
-                  aria-label="Clear origin"
-                  type="button"
-                >
-                  <XMarkIcon className="w-4 h-4" />
-                </button>
-              )}
+                  onFocus={() => handleInputFocus("origin")}
+                  onBlur={handleInputBlur}
+                  onKeyDown={(e) =>
+                    handleKeyDown(
+                      e,
+                      originSearchResults,
+                      setShowOriginResults,
+                      (result) =>
+                        handleResultSelect(
+                          result,
+                          onOriginChange,
+                          setShowOriginResults
+                        )
+                    )
+                  }
+                  placeholder="Enter starting location"
+                  className="search-input"
+                  aria-describedby="origin-results"
+                />
+                {origin && (
+                  <button
+                    onClick={() =>
+                      clearInput(onOriginChange, setShowOriginResults)
+                    }
+                    className="clear-button"
+                    aria-label="Clear origin"
+                    type="button"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {/* Location Detection Button */}
+              <button
+                onClick={handleLocationDetect}
+                disabled={isDetectingLocation}
+                className="location-detect-button"
+                aria-label="Use current location"
+                type="button"
+                title="Use current location"
+              >
+                {isDetectingLocation ? (
+                  <div className="spinner-small"></div>
+                ) : (
+                  <GlobeAltIcon className="w-5 h-5" />
+                )}
+              </button>
             </div>
 
             {/* Origin Results */}

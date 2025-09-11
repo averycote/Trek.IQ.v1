@@ -146,33 +146,39 @@ const AppShell = () => {
     return isMobile;
   }, []);
 
-  // Initialize geolocation and attempt to get user's current location
-  const initializeGeolocation = useCallback(async () => {
-    if (!isGeolocationEnabled || hasAttemptedGeolocation) return;
+  // Manual location detection handler - called when user clicks the location button
+  const handleManualLocationDetection = useCallback(async () => {
+    if (!isGeolocationEnabled) {
+      toast.error("Geolocation service is not available.", {
+        duration: 3000,
+        position: isMobile ? 'bottom-center' : 'top-center'
+      });
+      return;
+    }
 
     try {
-      console.log("🌍 Attempting to detect user location...");
-      setHasAttemptedGeolocation(true);
+      console.log("🌍 Manual location detection requested...");
 
-      // Set up geolocation event listeners
+      // Set up one-time geolocation event listeners
       const handleGeolocationUpdate = (event, data) => {
         switch (event) {
           case 'positionUpdate':
             console.log("📍 Location detected:", data);
             setUserLocation(data);
             
-            // Automatically set as origin if no origin is set
-            if (!origin || origin.trim() === '') {
-              const locationString = geolocationService.toAddressString(data);
-              console.log("🎯 Setting detected location as origin:", locationString);
-              setOrigin(locationString);
-              
-              // Show success message
-              toast.success("📍 Current location detected and set as starting point!", {
-                duration: 4000,
-                position: isMobile ? 'bottom-center' : 'top-center'
-              });
-            }
+            // Set as origin regardless of current value
+            const locationString = geolocationService.toAddressString(data);
+            console.log("🎯 Setting detected location as origin:", locationString);
+            setOrigin(locationString);
+            
+            // Show success message
+            toast.success("📍 Current location set as starting point!", {
+              duration: 4000,
+              position: isMobile ? 'bottom-center' : 'top-center'
+            });
+            
+            // Remove listener after successful detection
+            geolocationService.removeListener(handleGeolocationUpdate);
             break;
             
           case 'error':
@@ -180,29 +186,24 @@ const AppShell = () => {
             
             // Show user-friendly error message
             if (data.type === 'permission_denied') {
-              toast.error("Location access denied. You can enter your starting point manually.", {
+              toast.error("Location access denied. Please allow location access and try again.", {
                 duration: 5000,
                 position: isMobile ? 'bottom-center' : 'top-center'
               });
             } else if (data.type === 'timeout') {
-              toast.error("Location detection timed out. Please enter your starting point manually.", {
+              toast.error("Location detection timed out. Please try again.", {
                 duration: 4000,
                 position: isMobile ? 'bottom-center' : 'top-center'
               });
             } else {
-              console.log("Geolocation failed silently, user can still enter location manually");
+              toast.error("Failed to detect location. Please enter manually.", {
+                duration: 4000,
+                position: isMobile ? 'bottom-center' : 'top-center'
+              });
             }
-            break;
             
-          case 'permissionChange':
-            console.log("🔄 Geolocation permission changed:", data);
-            if (data === 'granted' && !userLocation) {
-              // Permission was granted, try again
-              setTimeout(() => {
-                setHasAttemptedGeolocation(false);
-                initializeGeolocation();
-              }, 1000);
-            }
+            // Remove listener after error
+            geolocationService.removeListener(handleGeolocationUpdate);
             break;
             
           default:
@@ -215,25 +216,20 @@ const AppShell = () => {
       geolocationService.addListener(handleGeolocationUpdate);
 
       // Attempt to get current position
-      try {
-        await geolocationService.getCurrentPosition({
-          timeout: 8000, // 8 seconds timeout
-          maximumAge: 300000, // Accept 5-minute-old position
-          enableHighAccuracy: true
-        });
-        
-        // Position will be handled by the event listener above
-        console.log("✅ Geolocation initialization completed successfully");
-        
-      } catch (error) {
-        // Error will be handled by the event listener above
-        console.log("Geolocation failed during initialization, falling back to manual entry");
-      }
-
+      await geolocationService.getCurrentPosition({
+        timeout: 10000, // 10 seconds timeout for manual requests
+        maximumAge: 60000, // Accept 1-minute-old position for manual requests
+        enableHighAccuracy: true
+      });
+      
     } catch (error) {
-      console.error("Failed to initialize geolocation:", error);
+      console.error("Manual location detection failed:", error);
+      toast.error("Failed to detect location. Please enter manually.", {
+        duration: 4000,
+        position: isMobile ? 'bottom-center' : 'top-center'
+      });
     }
-  }, [isGeolocationEnabled, hasAttemptedGeolocation, origin, isMobile, userLocation]);
+  }, [isGeolocationEnabled, isMobile]);
 
   // Initialize app state on component mount
   useEffect(() => {
@@ -326,8 +322,7 @@ const AppShell = () => {
         if (results[4].status === "fulfilled") {
           console.log("✅ Geolocation Service initialized");
           setIsGeolocationEnabled(true);
-          // Attempt to get user location automatically
-          initializeGeolocation();
+          // Location detection is now manual via button click
         } else {
           console.warn(
             "⚠️ Geolocation Service failed:",
@@ -387,7 +382,7 @@ const AppShell = () => {
       isLayersPanelOpen: false,
       isTransitInfoOpen: false,
     });
-  }, [isMobile, initializeGeolocation]);
+  }, [isMobile]);
 
   // FIXED: Apply theme changes when currentTheme changes
   useEffect(() => {
@@ -805,6 +800,7 @@ const AppShell = () => {
             onModeChange={handleRouteModeChange}
             isMobile={isMobile}
             onSearchToggle={handleSearchPanelToggle}
+            onLocationDetect={handleManualLocationDetection}
           />
         )}
 
