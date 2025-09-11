@@ -305,8 +305,10 @@ class EnhancedAccessibleRoutingService {
     if (accessibility.elevation === 'minimal') score += 0.08;
     if (accessibility.lighting === 'adequate') score += 0.05;
     if (accessibility.lighting === 'high') score += 0.08;
-    if (accessibility.width >= 1.5) score += 0.10; // Wheelchair accessible width
-    if (accessibility.width >= 1.0 && accessibility.width < 1.5) score += 0.05;
+    // CSA B651 compliant width scoring
+    if (accessibility.width >= 1.8) score += 0.15; // Preferred width per CSA B651
+    else if (accessibility.width >= 1.5) score += 0.08; // Minimum compliant width
+    else if (accessibility.width >= 1.0 && accessibility.width < 1.5) score -= 0.15; // Below standard penalty
 
     // Real barrier impact calculation
     for (const barrier of barriers) {
@@ -314,11 +316,13 @@ class EnhancedAccessibleRoutingService {
       score -= impact;
     }
 
-    // User-specific adjustments based on real needs
+    // User-specific adjustments based on real needs - CSA B651 compliance
     if (userPrefs.mobilityDevice === 'wheelchair') {
-      if (!accessibility.hasCurbCuts) score -= 0.25;
-      if (accessibility.width < 1.5) score -= 0.20;
-      if (accessibility.surfaceType === 'unpaved') score -= 0.30;
+      if (!accessibility.hasCurbCuts) score -= 0.40; // Critical for wheelchair access
+      if (accessibility.width < 1.5) score -= 0.35; // Below minimum standard
+      if (accessibility.width < 1.0) score -= 0.60; // Completely inaccessible
+      if (accessibility.surfaceType === 'unpaved') score -= 0.45; // Non-compliant surface
+      if (accessibility.crossSlope > 2) score -= 0.30; // Exceeds 2% cross slope limit
     }
 
     if (userPrefs.visualImpairment) {

@@ -387,24 +387,32 @@ class ComprehensiveRoutingOrchestrator {
     let score = 100;
     const issues = [];
     
-    // Basic scoring based on user preferences
+    // CSA B651 compliant scoring based on user preferences
     if (userPrefs.avoidSteps) {
-      score -= 5; // Assume some steps might be present
-      issues.push('Route may contain steps');
+      score -= 15; // Stricter penalty for potential steps
+      issues.push('Route may contain steps - CSA B651 requires step-free access');
     }
     
     if (userPrefs.wheelchairAccessible) {
-      score -= 10; // Wheelchair routes are more restrictive
-      issues.push('Wheelchair accessibility requirements');
+      score -= 20; // Stricter requirements for wheelchair accessibility
+      issues.push('Wheelchair accessibility requirements - must meet CSA B651 standards');
+    }
+    
+    // Additional CSA B651 compliance checks
+    if (userPrefs.maxSlope && userPrefs.maxSlope > 5) {
+      score -= 10;
+      issues.push('Slope preference exceeds CSA B651 recommended maximum of 5%');
     }
     
     // Ensure score is within bounds
     score = Math.max(0, Math.min(100, score));
     
-    // Determine grade
-    let grade = 'C';
-    if (score >= 80) grade = 'A';
-    else if (score >= 60) grade = 'B';
+    // Determine grade - stricter thresholds for CSA B651 compliance
+    let grade = 'D';
+    if (score >= 90) grade = 'A'; // Excellent compliance
+    else if (score >= 75) grade = 'B'; // Good compliance  
+    else if (score >= 60) grade = 'C'; // Acceptable compliance
+    // Below 60 is non-compliant
     
     return {
       score: score,
