@@ -561,52 +561,70 @@ const BasicMapComponent = ({
             }
           }
 
+          // Log route information for debugging
+          console.log("BasicMapComponent: Route rendering details:", {
+            coordinatesCount: coordinates.length,
+            routeSource: firstFeature.properties?.source || 'unknown',
+            isEnhancedFallback: firstFeature.properties?.source === 'enhanced_fallback',
+            isMobile: window.innerWidth <= 768,
+            routeMode: firstFeature.properties?.mode || 'unknown'
+          });
+
           // Extract accessibility score and route properties
           const properties = firstFeature.properties || {};
           
           // Get route color using comprehensive scoring or fallback
           let routeColor = '#3b82f6'; // Default blue
           
-          try {
-            // Check if comprehensive accessibility data is already available
-            if (properties.comprehensiveAccessibility) {
-              routeColor = properties.comprehensiveAccessibility.color;
-              console.log(`🎨 Using cached comprehensive route color: ${routeColor}`);
-            } else {
-              // Calculate comprehensive score for this route
-              const { default: comprehensiveRouteScorer } = await import('../services/comprehensiveRouteScorer');
-              const userPreferences = {
-                maxSlope: 8,
-                avoidSteps: true,
-                mobilityDevice: localStorage.getItem('trek-iq-mobility-device') || 'none',
-                visualImpairment: localStorage.getItem('trek-iq-visual-impairment') === 'true'
-              };
+          // Special handling for enhanced fallback routes
+          if (properties.source === 'enhanced_fallback') {
+            routeColor = '#f59e0b'; // Orange color for fallback routes
+            console.log('🎨 Using fallback route color (orange) for enhanced fallback route');
+          } else {
+            try {
+              // Check if comprehensive accessibility data is already available
+              if (properties.comprehensiveAccessibility) {
+                routeColor = properties.comprehensiveAccessibility.color;
+                console.log(`🎨 Using cached comprehensive route color: ${routeColor}`);
+              } else {
+                // Calculate comprehensive score for this route
+                const { default: comprehensiveRouteScorer } = await import('../services/comprehensiveRouteScorer');
+                const userPreferences = {
+                  maxSlope: 8,
+                  avoidSteps: true,
+                  mobilityDevice: localStorage.getItem('trek-iq-mobility-device') || 'none',
+                  visualImpairment: localStorage.getItem('trek-iq-visual-impairment') === 'true'
+                };
+                
+                const scoringResult = await comprehensiveRouteScorer.calculateRouteScore(route, { userPreferences });
+                routeColor = scoringResult.color;
+                
+                console.log(`🎨 BasicMapComponent route color: ${routeColor} (Score: ${scoringResult.overallScore})`);
+                
+                // Cache the result
+                properties.comprehensiveAccessibility = scoringResult;
+              }
+            } catch (error) {
+              console.error('Failed to get comprehensive route color, using fallback:', error);
               
-              const scoringResult = await comprehensiveRouteScorer.calculateRouteScore(route, { userPreferences });
-              routeColor = scoringResult.color;
-              
-              console.log(`🎨 BasicMapComponent route color: ${routeColor} (Score: ${scoringResult.overallScore})`);
-              
-              // Cache the result
-              properties.comprehensiveAccessibility = scoringResult;
-            }
-          } catch (error) {
-            console.error('Failed to get comprehensive route color, using fallback:', error);
-            
-            // Fallback to existing logic
-            const accessibility = properties.accessibility || {};
-            const accessibilityScore =
-              accessibility.score ||
-              properties.accessibilityScore ||
-              accessibility.accessibility_score ||
-              85;
+              // Fallback to existing logic
+              const accessibility = properties.accessibility || {};
+              const accessibilityScore =
+                accessibility.score ||
+                properties.accessibilityScore ||
+                accessibility.accessibility_score ||
+                85;
 
-            routeColor = getRouteColor(accessibilityScore);
+              routeColor = getRouteColor(accessibilityScore);
+            }
           }
 
           // Define line width variables outside try block for scope
           const lineWidth = window.innerWidth <= 768 ? 12 : 8; // Thinner on mobile for better UX
           const backupLineWidth = window.innerWidth <= 768 ? 16 : 12; // Backup layer slightly thicker
+          
+          // Define fallback route check outside try block for scope
+          const isFallbackRoute = properties.source === 'enhanced_fallback';
 
           try {
             // Remove any existing route source and layers first
@@ -637,7 +655,8 @@ const BasicMapComponent = ({
             }
 
             // Add route layer with accessibility-based color and mobile-friendly width
-
+            // Use dashed line for fallback routes to indicate they're estimated
+            
             map.current.addLayer({
               id: routeLayerId,
               type: "line",
@@ -646,6 +665,7 @@ const BasicMapComponent = ({
                 "line-join": "round",
                 "line-cap": "round",
                 visibility: "visible",
+                ...(isFallbackRoute && { "line-dasharray": [2, 2] }) // Dashed line for fallback routes
               },
               paint: {
                 "line-color": routeColor,
@@ -675,6 +695,7 @@ const BasicMapComponent = ({
                 "line-join": "round",
                 "line-cap": "round",
                 visibility: "visible",
+                ...(isFallbackRoute && { "line-dasharray": [2, 2] }) // Dashed line for fallback routes
               },
               paint: {
                 "line-color": routeColor,
