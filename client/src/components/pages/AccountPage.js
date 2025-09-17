@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import PageWrapper from '../PageWrapper';
-import ProfileSettings from '../ProfileSettings';
+import ProfileSettings from '../ProfileSettings.jsx';
 
 const AccountPage = ({ onPageOpen, onPageClose }) => {
   // FIXED: Notify parent component when page opens/closes
