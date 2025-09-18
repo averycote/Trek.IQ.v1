@@ -433,6 +433,36 @@ class EnhancedSearchService {
     return uniqueResults;
   }
 
+  // Parse coordinate string (e.g., "44.6475, -63.5756" or "Your Current Location")
+  parseCoordinates(query) {
+    if (!query || typeof query !== 'string') return null;
+    
+    // Check if it's a coordinate pair (lat, lng)
+    const coordRegex = /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/;
+    const match = query.match(coordRegex);
+    
+    if (match) {
+      const lat = parseFloat(match[1]);
+      const lng = parseFloat(match[2]);
+      
+      // Validate coordinate ranges
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        return {
+          coordinates: [lng, lat], // Mapbox format [lng, lat]
+          lat: lat,
+          lng: lng,
+          name: `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+          address: `Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+          type: 'coordinates',
+          relevance: 1.0,
+          source: 'coordinate_parsing'
+        };
+      }
+    }
+    
+    return null;
+  }
+
   // Geocode location with performance optimizations
   async geocode(query, options = {}) {
     const cacheKey = `geocode_${query}_${JSON.stringify(options)}`;
@@ -440,7 +470,13 @@ class EnhancedSearchService {
     return await performanceService.getCachedData(
       cacheKey,
       async () => {
-        // Try Mapbox first
+        // First, try to parse as coordinates
+        const coordinateResult = this.parseCoordinates(query);
+        if (coordinateResult) {
+          return coordinateResult;
+        }
+        
+        // Try Mapbox geocoding
         const mapboxResults = await this.searchMapbox(query, { ...options, limit: 1 });
         if (mapboxResults.length > 0) {
           return mapboxResults[0];

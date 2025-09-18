@@ -28,6 +28,7 @@ import apiIntegrationManager from "../services/apiIntegrationManager";
 import comprehensiveRoutingOrchestrator from "../services/comprehensiveRoutingOrchestrator";
 import barrierDetectionRegistry from "../services/barrierDetectionRegistry";
 import elevationService from "../services/elevationService";
+import geolocationService from "../services/geolocationService";
 import "./BarrierDialog.css";
 
 const AccountPage = lazy(() => import("./pages/AccountPage"));
@@ -68,16 +69,16 @@ const AppShell = () => {
   const [mapInstance, setMapInstance] = useState(null);
   const [isMapLoading, setIsMapLoading] = useState(true);
   const [isNavigationMode, setIsNavigationMode] = useState(false);
-  const [barrierAlert, setBarrierAlert] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
+
+  // Geolocation state
+  const [isGeolocationEnabled, setIsGeolocationEnabled] = useState(false);
+  const [hasAttemptedGeolocation, setHasAttemptedGeolocation] = useState(false);
 
   // OPTIMIZATION: Removed mobile routing verification state
 
   // Enhanced routing state
   const [comprehensiveRoute, setComprehensiveRoute] = useState(null);
-  const [isBarrierAlertVisible, setIsBarrierAlertVisible] = useState(false);
-  const [isRouteSummaryVisible, setIsRouteSummaryVisible] = useState(false);
-  const [routeGenerationStatus, setRouteGenerationStatus] = useState("idle");
 
   // Memoize the onMapLoad callback to prevent unnecessary re-renders
   const handleMapLoad = useCallback((map) => {
@@ -145,6 +146,91 @@ const AppShell = () => {
     return isMobile;
   }, []);
 
+  // Manual location detection handler - called when user clicks the location button
+  const handleManualLocationDetection = useCallback(async () => {
+    if (!isGeolocationEnabled) {
+      toast.error("Geolocation service is not available.", {
+        duration: 3000,
+        position: isMobile ? 'bottom-center' : 'top-center'
+      });
+      return;
+    }
+
+    try {
+      console.log("🌍 Manual location detection requested...");
+
+      // Set up one-time geolocation event listeners
+      const handleGeolocationUpdate = (event, data) => {
+        switch (event) {
+          case 'positionUpdate':
+            console.log("📍 Location detected:", data);
+            setUserLocation(data);
+            
+            // Set as origin regardless of current value
+            const locationString = geolocationService.toAddressString(data);
+            console.log("🎯 Setting detected location as origin:", locationString);
+            setOrigin(locationString);
+            
+            // Show success message
+            toast.success("📍 Current location set as starting point!", {
+              duration: 4000,
+              position: isMobile ? 'bottom-center' : 'top-center'
+            });
+            
+            // Remove listener after successful detection
+            geolocationService.removeListener(handleGeolocationUpdate);
+            break;
+            
+          case 'error':
+            console.warn("❌ Geolocation error:", data);
+            
+            // Show user-friendly error message
+            if (data.type === 'permission_denied') {
+              toast.error("Location access denied. Please allow location access and try again.", {
+                duration: 5000,
+                position: isMobile ? 'bottom-center' : 'top-center'
+              });
+            } else if (data.type === 'timeout') {
+              toast.error("Location detection timed out. Please try again.", {
+                duration: 4000,
+                position: isMobile ? 'bottom-center' : 'top-center'
+              });
+            } else {
+              toast.error("Failed to detect location. Please enter manually.", {
+                duration: 4000,
+                position: isMobile ? 'bottom-center' : 'top-center'
+              });
+            }
+            
+            // Remove listener after error
+            geolocationService.removeListener(handleGeolocationUpdate);
+            break;
+            
+          default:
+            console.log("Unknown geolocation event:", event);
+            break;
+        }
+      };
+
+      // Add listener for geolocation events
+      geolocationService.addListener(handleGeolocationUpdate);
+
+      // Attempt to get current position
+      await geolocationService.getCurrentPosition({
+        timeout: 10000, // 10 seconds timeout for manual requests
+        maximumAge: 60000, // Accept 1-minute-old position for manual requests
+        enableHighAccuracy: true
+      });
+      
+    } catch (error) {
+      console.error("Manual location detection failed:", error);
+      toast.error("Failed to detect location. Please enter manually.", {
+        duration: 4000,
+        position: isMobile ? 'bottom-center' : 'top-center'
+      });
+    }
+  }, [isGeolocationEnabled, isMobile]);
+
   // Initialize app state on component mount
   useEffect(() => {
     // Ensure light theme is applied by default
@@ -180,6 +266,7 @@ const AppShell = () => {
           comprehensiveRoutingOrchestrator.initialize(),
           barrierDetectionRegistry.initialize(),
           elevationService.initialize(),
+          geolocationService.initialize(),
         ];
 
         // Initialize all services
@@ -229,6 +316,19 @@ const AppShell = () => {
             "⚠️ Elevation Service failed:",
             results[3].reason
           );
+        }
+
+        // Check if Geolocation Service initialized successfully
+        if (results[4].status === "fulfilled") {
+          console.log("✅ Geolocation Service initialized");
+          setIsGeolocationEnabled(true);
+          // Location detection is now manual via button click
+        } else {
+          console.warn(
+            "⚠️ Geolocation Service failed:",
+            results[4].reason
+          );
+          setIsGeolocationEnabled(false);
         }
 
         // Set up status listener
@@ -389,8 +489,6 @@ const AppShell = () => {
           return;
         }
 
-        // Set loading state
-        setRouteGenerationStatus("loading");
         const loadingToast = toast.loading("Generating comprehensive route...");
 
         // Use comprehensive routing orchestrator
@@ -423,112 +521,20 @@ const AppShell = () => {
           // Also update the legacy route state for compatibility
           setRoute(result.route);
 
-          setRouteGenerationStatus("success");
           toast.dismiss(loadingToast);
           toast.success("Route generated successfully!");
-
-          // Update legacy route state for compatibility
-          setRoute(result.route);
         } else {
-          setRouteGenerationStatus("error");
           toast.dismiss(loadingToast);
           toast.error(result.error || "Failed to generate route");
         }
       } catch (error) {
         console.error("Route generation failed:", error);
-        setRouteGenerationStatus("error");
         toast.error("Route generation failed. Please try again.");
       }
     },
-    [isSystemReady]
+    [isSystemReady, isMobile]
   );
 
-  // Handle enhanced barrier alert actions
-  const handleBarrierReroute = useCallback(async (routeData, barriers) => {
-    try {
-      console.log("User chose to reroute around barriers:", barriers);
-
-      // Show loading state
-      setRouteGenerationStatus("loading");
-      const loadingToast = toast.loading("Calculating alternative route...");
-
-      // Generate new route with barrier avoidance
-      const routeRequest = {
-        origin: routeData.origin,
-        destination: routeData.destination,
-        mode: routeData.mode || "walking",
-        time: { type: "now" },
-        userPrefs: {
-          ...routeData.userPrefs,
-          avoidBarriers: true,
-          barrierTypes: barriers.map((b) => b.type),
-        },
-      };
-
-      const result = await comprehensiveRoutingOrchestrator.generateRoute(
-        routeRequest
-      );
-
-      if (result.success && result.route) {
-        setComprehensiveRoute(result.route);
-        setRoute(result.route);
-
-        // Check for barriers in new route
-        if (result.barriers && result.barriers.length > 0) {
-          setBarrierAlert({
-            barriers: result.barriers,
-            routeData: result.route,
-            analysis: result.accessibilityScore,
-          });
-          setIsBarrierAlertVisible(true);
-        } else {
-          setIsRouteSummaryVisible(true);
-        }
-
-        setRouteGenerationStatus("success");
-        toast.dismiss(loadingToast);
-        toast.success("Alternative route found!");
-      } else {
-        setRouteGenerationStatus("error");
-        toast.dismiss(loadingToast);
-        toast.error("No alternative route available");
-      }
-    } catch (error) {
-      console.error("Reroute error:", error);
-      setRouteGenerationStatus("error");
-      toast.error("Failed to calculate alternative route");
-    }
-  }, []);
-
-  const handleBarrierProceed = useCallback(
-    (routeData, barriers, acknowledgmentTime) => {
-      console.log("User chose to proceed despite barriers:", barriers);
-
-      // Log user decision for analytics
-      comprehensiveRoutingOrchestrator.handleBarrierDecision("proceed", {
-        routeData,
-        barriers,
-        acknowledgmentTime,
-      });
-
-      toast.success("Proceeding with route");
-    },
-    []
-  );
-
-  const handleBarrierDismiss = useCallback(() => {
-    setIsBarrierAlertVisible(false);
-    setIsRouteSummaryVisible(false);
-    setComprehensiveRoute(null);
-    setRoute(null);
-    setRouteGenerationStatus("idle");
-  }, []);
-
-  const handleBarrierReport = useCallback((barrier) => {
-    console.log("User reported barrier:", barrier);
-    // TODO: Implement barrier reporting
-    toast.success("Barrier reported successfully");
-  }, []);
 
   // Handle route clear
   const handleRouteClear = useCallback(() => {
@@ -539,9 +545,6 @@ const AppShell = () => {
     setIsSearchPanelOpen(false);
     setIsRoutePanelOpen(false);
     setIsDirectionsPanelOpen(false);
-    setIsBarrierAlertVisible(false);
-    setIsRouteSummaryVisible(false);
-    setRouteGenerationStatus("idle");
   }, []);
 
   // OPTIMIZATION: Removed mobile routing verification toggle
@@ -558,8 +561,8 @@ const AppShell = () => {
       setIsNavigating(true);
       setIsNavigationMode(true);
 
-      // Hide route summary when navigation starts
-      setIsRouteSummaryVisible(false);
+      // Hide route summary when navigation starts (if it existed)
+      // setIsRouteSummaryVisible(false);
 
       // Close route details panel when navigation starts
       setIsRoutePanelOpen(false);
@@ -588,8 +591,8 @@ const AppShell = () => {
     // Close directions panel when navigation ends
     setIsDirectionsPanelOpen(false);
 
-    // Show the route summary again when navigation ends
-    setIsRouteSummaryVisible(true);
+    // Show the route summary again when navigation ends (if it existed)
+    // setIsRouteSummaryVisible(true);
 
     console.log("Navigation end completed");
   }, []);
@@ -772,6 +775,7 @@ const AppShell = () => {
           isReportingMode={false}
           routeMode={routeMode}
           isMobile={isMobile}
+          userLocation={userLocation}
         />
 
         {/* Debug Route Data */}
@@ -796,6 +800,7 @@ const AppShell = () => {
             onModeChange={handleRouteModeChange}
             isMobile={isMobile}
             onSearchToggle={handleSearchPanelToggle}
+            onLocationDetect={handleManualLocationDetection}
           />
         )}
 

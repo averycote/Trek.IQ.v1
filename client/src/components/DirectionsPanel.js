@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import accessibilityService from "../services/accessibilityService";
 import BarrierReportFAB from "./BarrierReportFAB";
 
-// Utility function to generate turn-by-turn directions from route coordinates
-const generateDirectionsFromRoute = (route) => {
+// Enhanced utility function to generate turn-by-turn directions with street names
+const generateDirectionsFromRoute = async (route) => {
   if (!route || !route.features || !route.features[0]) {
     return [];
   }
@@ -18,6 +18,33 @@ const generateDirectionsFromRoute = (route) => {
 
   const directions = [];
   let stepNumber = 1;
+
+  // Import geocoding service for street name resolution
+  let geocodingService = null;
+  try {
+    const { default: GeocodingService } = await import('../services/geocodingService');
+    geocodingService = new GeocodingService();
+  } catch (error) {
+    console.warn('Could not load geocoding service for street names:', error);
+  }
+
+  // Helper function to get street name from coordinates
+  const getStreetName = async (coordinates) => {
+    if (!geocodingService) return null;
+    
+    try {
+      const result = await geocodingService.reverseGeocode(coordinates);
+      if (result && result.address) {
+        // Extract street name from address
+        const addressParts = result.address.split(',');
+        const streetName = addressParts[0]?.trim();
+        return streetName || null;
+      }
+    } catch (error) {
+      console.warn('Failed to get street name for coordinates:', coordinates, error);
+    }
+    return null;
+  };
 
   // Calculate bearing between consecutive points to determine turns
   const calculateBearing = (coord1, coord2) => {
@@ -60,13 +87,23 @@ const generateDirectionsFromRoute = (route) => {
   if (coordinates.length >= 2) {
     const firstBearing = calculateBearing(coordinates[0], coordinates[1]);
     const distance = calculateDistance(coordinates[0], coordinates[1]);
+    const streetName = await getStreetName(coordinates[1]);
+
+    const distanceText = distance >= 1000 
+      ? `${(distance / 1000).toFixed(1)} km` 
+      : `${Math.round(distance)} m`;
+    
+    const instruction = streetName 
+      ? `Start heading ${getBearingDirection(firstBearing)} on ${streetName} (${distanceText})`
+      : `Start heading ${getBearingDirection(firstBearing)} (${distanceText})`;
 
     directions.push({
       step: stepNumber++,
-      instruction: `Start heading ${getBearingDirection(firstBearing)}`,
+      instruction: instruction,
       distance: Math.round(distance),
       mode: properties.mode || "walking",
       bearing: firstBearing,
+      streetName: streetName
     });
   }
 
@@ -85,22 +122,33 @@ const generateDirectionsFromRoute = (route) => {
     if (turnAngle > 180) turnAngle -= 360;
     if (turnAngle < -180) turnAngle += 360;
 
-    // Generate instruction based on turn angle
+    // Get street name for the next segment
+    const streetName = await getStreetName(nextCoord);
+
+    // Generate instruction based on turn angle with enhanced descriptions
     let instruction = "";
     if (Math.abs(turnAngle) < 10) {
-      instruction = "Continue straight";
+      instruction = streetName ? `Continue straight on ${streetName}` : "Continue straight";
     } else if (turnAngle > 10 && turnAngle < 45) {
-      instruction = "Bear right";
+      instruction = streetName ? `Bear right onto ${streetName}` : "Bear right";
     } else if (turnAngle >= 45 && turnAngle < 135) {
-      instruction = "Turn right";
+      instruction = streetName ? `Turn right onto ${streetName}` : "Turn right";
     } else if (turnAngle >= 135) {
-      instruction = "Sharp right";
+      instruction = streetName ? `Sharp right onto ${streetName}` : "Sharp right";
     } else if (turnAngle < -10 && turnAngle > -45) {
-      instruction = "Bear left";
+      instruction = streetName ? `Bear left onto ${streetName}` : "Bear left";
     } else if (turnAngle <= -45 && turnAngle > -135) {
-      instruction = "Turn left";
+      instruction = streetName ? `Turn left onto ${streetName}` : "Turn left";
     } else if (turnAngle <= -135) {
-      instruction = "Sharp left";
+      instruction = streetName ? `Sharp left onto ${streetName}` : "Sharp left";
+    }
+
+    // Add distance information to make instructions more helpful
+    if (distance > 100) {
+      const distanceText = distance >= 1000 
+        ? `${(distance / 1000).toFixed(1)} km` 
+        : `${Math.round(distance)} m`;
+      instruction += ` (${distanceText})`;
     }
 
     if (distance > 50) {
@@ -112,6 +160,7 @@ const generateDirectionsFromRoute = (route) => {
         mode: properties.mode || "walking",
         bearing: nextBearing,
         turnAngle: turnAngle,
+        streetName: streetName
       });
     }
   }
@@ -121,13 +170,19 @@ const generateDirectionsFromRoute = (route) => {
     const lastCoord = coordinates[coordinates.length - 1];
     const secondLastCoord = coordinates[coordinates.length - 2];
     const finalDistance = calculateDistance(secondLastCoord, lastCoord);
+    const destinationStreetName = await getStreetName(lastCoord);
+
+    const instruction = destinationStreetName 
+      ? `Arrive at destination on ${destinationStreetName}`
+      : "Arrive at destination";
 
     directions.push({
       step: stepNumber,
-      instruction: "Arrive at destination",
+      instruction: instruction,
       distance: Math.round(finalDistance),
       mode: properties.mode || "walking",
       bearing: 0,
+      streetName: destinationStreetName
     });
   }
 
@@ -153,14 +208,43 @@ const DirectionsPanel = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [isAutoPlay, setIsAutoPlay] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [directions, setDirections] = useState([]);
+  const [isLoadingDirections, setIsLoadingDirections] = useState(false);
 
-  // Handle different route data structures
-  const directions =
-    route?.directions ||
-    route?.steps ||
-    generateDirectionsFromRoute(route) ||
-    [];
   const accessibleParking = route?.accessibleParking || [];
+
+  // Generate directions when route changes
+  useEffect(() => {
+    const generateDirections = async () => {
+      if (!route) {
+        setDirections([]);
+        return;
+      }
+
+      setIsLoadingDirections(true);
+      try {
+        // Handle different route data structures
+        let generatedDirections = [];
+        
+        if (route.directions) {
+          generatedDirections = route.directions;
+        } else if (route.steps) {
+          generatedDirections = route.steps;
+        } else {
+          generatedDirections = await generateDirectionsFromRoute(route);
+        }
+        
+        setDirections(generatedDirections || []);
+      } catch (error) {
+        console.error('Error generating directions:', error);
+        setDirections([]);
+      } finally {
+        setIsLoadingDirections(false);
+      }
+    };
+
+    generateDirections();
+  }, [route]);
 
   // Extract route properties based on data structure
   const routeProperties = route?.features?.[0]?.properties || route || {};
@@ -240,6 +324,39 @@ const DirectionsPanel = ({
   };
 
   if (!isOpen || !route) return null;
+
+  // Show loading state while generating directions
+  if (isLoadingDirections) {
+    return (
+      <div
+        className={`fixed z-40 ${
+          window.innerWidth <= 768
+            ? "bottom-0 left-0 right-0"
+            : "bottom-4 right-4 w-96"
+        } bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700`}
+      >
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Generating Directions
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+        <div className="p-6 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">
+            Loading detailed directions with street names...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
