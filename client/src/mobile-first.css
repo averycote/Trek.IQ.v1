@@ -368,6 +368,57 @@ body {
   align-items: center;
 }
 
+/* Container for input with location button */
+.input-container-with-location {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-container-with-location .input-container {
+  flex: 1;
+}
+
+/* Location detection button */
+.location-detect-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: #10b981;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.location-detect-button:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.location-detect-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.location-detect-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.location-detect-button:disabled:hover {
+  background: #9ca3af;
+  transform: none;
+  box-shadow: none;
+}
+
 .search-input {
   width: 100% !important;
   padding: 16px 20px !important;

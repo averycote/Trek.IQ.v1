@@ -108,10 +108,13 @@ class ComprehensiveRouteScorer {
       // Generate grade and color
       this.assignGradeAndColor(scoringResult);
       
+      // Generate CSA B651 compliance report
+      this.generateComplianceReport(scoringResult);
+      
       // Cache the result
       this.setCachedScore(cacheKey, scoringResult);
       
-      console.log(`✅ Route scoring complete - Score: ${scoringResult.overallScore}, Grade: ${scoringResult.grade}`);
+      console.log(`✅ Route scoring complete - Score: ${scoringResult.overallScore}, Grade: ${scoringResult.grade}, CSA B651 Compliant: ${scoringResult.csaB651Compliance.compliant}`);
       return scoringResult;
 
     } catch (error) {
@@ -156,11 +159,16 @@ class ComprehensiveRouteScorer {
       // Score based on slope difficulty
       let elevationScore = this.baseScores.excellent;
       
-      // Penalize for steep segments
-      const maxSlope = options.userPreferences?.maxSlope || 8; // 8% default max slope
+      // Penalize for steep segments - Updated to CSA B651 compliance
+      const maxSlope = options.userPreferences?.maxSlope || 5; // 5% CSA B651 standard
+      const absoluteMaxSlope = 8.33; // 1:12 ratio - absolute maximum per CSA B651
       slopeAnalysis.steepSegments.forEach(segment => {
-        if (segment.grade > maxSlope) {
-          const penalty = Math.min(30, (segment.grade - maxSlope) * 3);
+        if (segment.grade > absoluteMaxSlope) {
+          // Severe penalty for slopes exceeding absolute maximum
+          elevationScore -= 50;
+        } else if (segment.grade > maxSlope) {
+          // Graduated penalty for slopes exceeding preferred maximum
+          const penalty = Math.min(40, (segment.grade - maxSlope) * 8);
           elevationScore -= penalty;
         }
       });
@@ -174,12 +182,40 @@ class ComprehensiveRouteScorer {
       
       // Add warnings for steep segments
       if (slopeAnalysis.steepSegments.length > 0) {
+        const criticalSegments = slopeAnalysis.steepSegments.filter(s => s.severity === 'critical');
         result.analysis.warnings.push({
           type: 'elevation',
-          severity: 'medium',
-          message: `${slopeAnalysis.steepSegments.length} steep segment(s) detected`,
-          details: slopeAnalysis.steepSegments
+          severity: criticalSegments.length > 0 ? 'high' : 'medium',
+          message: `${slopeAnalysis.steepSegments.length} steep segment(s) detected (${criticalSegments.length} exceed CSA B651 maximum)`,
+          details: slopeAnalysis.steepSegments,
+          csaCompliant: slopeAnalysis.csaB651Compliant
         });
+      }
+      
+      // Add warnings for cross-slope violations (CSA B651)
+      if (slopeAnalysis.crossSlopeViolations && slopeAnalysis.crossSlopeViolations.length > 0) {
+        result.analysis.warnings.push({
+          type: 'cross_slope',
+          severity: 'medium',
+          message: `${slopeAnalysis.crossSlopeViolations.length} cross-slope violation(s) detected (exceeds 2% CSA B651 limit)`,
+          details: slopeAnalysis.crossSlopeViolations,
+          csaCompliant: false
+        });
+        // Additional penalty for cross-slope violations
+        result.components.elevation.score -= slopeAnalysis.crossSlopeViolations.length * 5;
+      }
+      
+      // Add warnings for landing violations (CSA B651)
+      if (slopeAnalysis.landingViolations && slopeAnalysis.landingViolations.length > 0) {
+        result.analysis.warnings.push({
+          type: 'landing_requirements',
+          severity: 'medium',
+          message: `${slopeAnalysis.landingViolations.length} landing requirement violation(s) detected (CSA B651 requires level landings every 9m)`,
+          details: slopeAnalysis.landingViolations,
+          csaCompliant: false
+        });
+        // Additional penalty for landing violations
+        result.components.elevation.score -= slopeAnalysis.landingViolations.length * 8;
       }
 
     } catch (error) {
@@ -444,8 +480,11 @@ class ComprehensiveRouteScorer {
   calculateSlopes(elevationData) {
     const slopes = [];
     const steepSegments = [];
+    const crossSlopeViolations = []; // CSA B651 compliance tracking
+    const landingViolations = []; // CSA B651 requires level landings every 9m
     let totalElevationGain = 0;
     let totalElevationLoss = 0;
+    let distanceSinceLastLanding = 0;
 
     for (let i = 1; i < elevationData.length; i++) {
       const prev = elevationData[i - 1];
@@ -464,6 +503,24 @@ class ComprehensiveRouteScorer {
         elevationChange: elevationChange,
         distance: distance
       });
+      
+      // CSA B651: Track distance on slopes for landing requirements
+      if (grade > 5) {
+        distanceSinceLastLanding += distance;
+        // Check if we need a landing (every 9m on slopes >5%)
+        if (distanceSinceLastLanding > 9) {
+          landingViolations.push({
+            index: i,
+            distanceWithoutLanding: distanceSinceLastLanding,
+            location: [curr.longitude, curr.latitude],
+            severity: 'medium',
+            csaRequirement: 'Level landing required every 9m on slopes >5%'
+          });
+        }
+      } else if (grade < 2) {
+        // Reset distance counter when we hit a level area (potential landing)
+        distanceSinceLastLanding = 0;
+      }
 
       // Track elevation changes
       if (elevationChange > 0) {
@@ -472,25 +529,46 @@ class ComprehensiveRouteScorer {
         totalElevationLoss += Math.abs(elevationChange);
       }
 
-      // Identify steep segments (>6% grade)
-      if (grade > 6) {
+      // Identify steep segments (>5% grade per CSA B651)
+      if (grade > 5) {
         steepSegments.push({
           startIndex: i - 1,
           endIndex: i,
           grade: grade,
           elevationChange: elevationChange,
           distance: distance,
-          severity: grade > 12 ? 'high' : grade > 8 ? 'medium' : 'low'
+          severity: grade > 8.33 ? 'critical' : grade > 6 ? 'high' : 'medium',
+          csaCompliant: grade <= 5
         });
+      }
+      
+      // CSA B651: Check for cross slope violations (>2%)
+      // Note: This is a simplified cross-slope estimation
+      if (i > 1 && slopes.length > 0) {
+        const prevGrade = slopes[slopes.length - 1] || 0;
+        const crossSlopeEstimate = Math.abs(grade - prevGrade);
+        if (crossSlopeEstimate > 2) {
+          crossSlopeViolations.push({
+            index: i,
+            estimatedCrossSlope: crossSlopeEstimate,
+            location: [curr.longitude, curr.latitude],
+            severity: crossSlopeEstimate > 4 ? 'high' : 'medium'
+          });
+        }
       }
     }
 
     return {
       slopes,
       steepSegments,
+      crossSlopeViolations, // CSA B651 compliance tracking
+      landingViolations, // CSA B651 landing requirements
       totalElevationGain,
       totalElevationLoss,
       maxGrade: Math.max(...slopes.map(s => s.grade), 0),
+      csaB651Compliant: steepSegments.every(s => s.csaCompliant) && 
+                       crossSlopeViolations.length === 0 && 
+                       landingViolations.length === 0,
       avgGrade: slopes.length > 0 ? slopes.reduce((sum, s) => sum + s.grade, 0) / slopes.length : 0
     };
   }
@@ -680,8 +758,54 @@ class ComprehensiveRouteScorer {
         }],
         recommendations: []
       },
-      confidence: 0.3
+      confidence: 0.3,
+      csaB651Compliance: {
+        compliant: false,
+        reason: 'Unable to analyze route for compliance'
+      }
     };
+  }
+
+  /**
+   * Generate CSA B651 compliance report
+   */
+  generateComplianceReport(result) {
+    const violations = [];
+    const warnings = result.analysis.warnings || [];
+    
+    // Check for elevation compliance
+    const elevationWarnings = warnings.filter(w => 
+      w.type === 'elevation' || w.type === 'cross_slope' || w.type === 'landing_requirements'
+    );
+    
+    if (elevationWarnings.length > 0) {
+      violations.push(...elevationWarnings.map(w => ({
+        category: 'Elevation & Slopes',
+        violation: w.message,
+        severity: w.severity,
+        csaReference: w.type === 'elevation' ? 'CSA B651 Section 4.3.2 - Maximum 5% slope' :
+                     w.type === 'cross_slope' ? 'CSA B651 Section 4.3.3 - Maximum 2% cross slope' :
+                     'CSA B651 Section 4.3.4 - Level landings every 9m',
+        compliant: w.csaCompliant || false
+      })));
+    }
+    
+    // Overall compliance determination
+    const isCompliant = violations.every(v => v.compliant !== false) && 
+                       result.overallScore >= 75; // Minimum compliance score
+    
+    result.csaB651Compliance = {
+      compliant: isCompliant,
+      score: result.overallScore,
+      violations: violations,
+      summary: isCompliant ? 
+        'Route meets CSA B651 accessibility standards' :
+        `Route has ${violations.length} compliance issue(s) that should be addressed`,
+      lastAssessed: new Date().toISOString(),
+      standardVersion: 'CSA B651-18 (Accessible design for the built environment)'
+    };
+    
+    return result;
   }
 }
 
