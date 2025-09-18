@@ -1,0 +1,326 @@
+/* ===== MODE SELECTOR ACCESSIBILITY ENHANCEMENTS ===== */
+.mode-accessibility {
+  margin-top: 8px;
+}
+
+.accessibility-badges {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.accessibility-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.accessibility-badge:hover {
+  background: var(--color-primary-200);
+  transform: scale(1.1);
+  transition: all var(--transition-fast);
+}
+
+/* Enhanced mode button for transit */
+.mode-button[data-mode="transit"] {
+  position: relative;
+}
+
+.mode-button[data-mode="transit"]:hover .accessibility-badges {
+  opacity: 1;
+}
+
+.mode-button[data-mode="transit"] .accessibility-badges {
+  opacity: 0.8;
+  transition: opacity var(--transition-fast);
+}
+
+/* ===== ENHANCED TRANSIT INFO STYLES ===== */
+
+/* Schedules Grid */
+.schedules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.schedule-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: all var(--transition-fast);
+}
+
+.schedule-card:hover {
+  border-color: var(--color-primary-300);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.route-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.route-number {
+  background: var(--color-primary-500);
+  color: var(--text-inverse);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 1.1rem;
+  align-self: flex-start;
+}
+
+.route-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.route-type {
+  background: var(--color-secondary-100);
+  color: var(--color-secondary-700);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.schedule-details {
+  margin-bottom: 16px;
+}
+
+.service-hours {
+  margin-bottom: 12px;
+}
+
+.weekday-hours,
+.weekend-hours {
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.weekday-hours strong,
+.weekend-hours strong {
+  color: var(--text-primary);
+}
+
+.view-details-btn {
+  width: 100%;
+  background: var(--gradient-primary);
+  color: var(--text-inverse);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.view-details-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Accessible Transit Styles */
+.transit-accessible {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.accessibility-summary {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 16px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary-600);
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.feature-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.feature-card:hover {
+  border-color: var(--color-primary-300);
+  box-shadow: var(--shadow-sm);
+}
+
+.feature-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.feature-content h5 {
+  margin: 0 0 4px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.feature-content p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.stops-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.stop-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  transition: all var(--transition-fast);
+}
+
+.stop-card:hover {
+  border-color: var(--color-primary-300);
+  box-shadow: var(--shadow-sm);
+}
+
+.stop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.stop-number {
+  background: var(--color-secondary-100);
+  color: var(--color-secondary-700);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.stop-accessible {
+  font-size: 1.2rem;
+}
+
+.stop-location {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.stop-features {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.feature-tag {
+  background: var(--color-primary-100);
+  color: var(--color-primary-700);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Transit Logo Styles */
+.transit-logo-img {
+  height: 24px;
+  width: auto;
+  margin-right: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .schedules-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stops-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .summary-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .schedule-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .feature-card {
+    flex-direction: column;
+    text-align: center;
+  }
+}

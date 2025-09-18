@@ -389,12 +389,11 @@ class RoutingService {
   // Calculate transit route using Transit API
   async calculateTransitRouteWithAPI(originCoords, destCoords) {
     try {
-      // Get Transit API service from the API Integration Manager
-      const apiIntegrationManager = await import('./apiIntegrationManager.js');
-      const transitAPIService = apiIntegrationManager.default.getService('transitAPI');
+      // Get Transit API service directly
+      const { default: transitAPIService } = await import('./transitAPIService.js');
 
-      if (!transitAPIService) {
-        console.log('Transit API service not available through API Integration Manager');
+      if (!transitAPIService || !transitAPIService.isAvailable()) {
+        console.log('Transit API service not available');
         return null;
       }
 
@@ -407,7 +406,7 @@ class RoutingService {
         {
           mode: 'transit',
           maxWalkDistance: 1000,
-          numItineraries: 1
+          numItineraries: 3 // Get multiple options
         }
       );
 
@@ -449,19 +448,45 @@ class RoutingService {
               mode: 'transit',
               distance: leg.distance || 0,
               duration: leg.duration || 0,
-              accessibility: 'accessible_transit',
+              accessibility: leg.wheelchair_accessible ? ['wheelchair_accessible', 'priority_seating'] : ['accessible_transit'],
               route: leg.route || leg.route_name || 'Unknown Route',
               routeId: leg.route_id,
+              routeNumber: leg.route_short_name || leg.route,
               agency: leg.agency_name || 'Halifax Transit',
               headsign: leg.headsign || leg.trip_headsign,
               transitMode: leg.mode,
               poweredByTransit: true, // Flag for logo display
-              source: 'transit_api'
+              source: 'transit_api',
+              startLocation: leg.from,
+              endLocation: leg.to
             },
             geometry: {
               type: 'LineString',
               coordinates: transitCoords
             }
+          });
+        }
+      }
+
+      // Add alternative routes if available
+      const alternativeRoutes = [];
+      if (tripPlan.itineraries.length > 1) {
+        for (let i = 1; i < Math.min(tripPlan.itineraries.length, 3); i++) {
+          const altItinerary = tripPlan.itineraries[i];
+          alternativeRoutes.push({
+            duration: altItinerary.duration,
+            transfers: altItinerary.transfers || 0,
+            legs: altItinerary.legs.map(leg => ({
+              mode: leg.mode === 'WALK' ? 'walk' : 'bus',
+              routeId: leg.route_id || leg.route,
+              routeName: leg.route_name || leg.route,
+              routeNumber: leg.route_short_name || leg.route,
+              duration: leg.duration || 0,
+              distance: leg.distance || 0,
+              headsign: leg.headsign || leg.trip_headsign,
+              accessibility: leg.wheelchair_accessible ? ['wheelchair_accessible'] : [],
+              agency: leg.agency_name || 'Halifax Transit'
+            }))
           });
         }
       }
@@ -475,7 +500,14 @@ class RoutingService {
           transfers: itinerary.transfers || 0,
           fare: itinerary.fare,
           poweredByTransit: true,
-          source: 'transit_api'
+          source: 'transit_api',
+          alternatives: alternativeRoutes,
+          summary: {
+            totalDuration: itinerary.duration,
+            totalTransfers: itinerary.transfers || 0,
+            totalDistance: itinerary.distance,
+            accessibility: itinerary.legs.some(leg => leg.wheelchair_accessible) ? ['wheelchair_accessible'] : []
+          }
         }
       };
 

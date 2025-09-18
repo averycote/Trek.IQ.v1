@@ -16,6 +16,8 @@ const aiRoutes = require('./routes/ai');
 const geocodingRoutes = require('./routes/geocoding');
 const wheelmapRoutes = require('./routes/wheelmap');
 const accessibilityRoutes = require('./routes/accessibilityData');
+const transitDataRoutes = require('./routes/transitData');
+const transitProxyRoutes = require('./routes/transitProxy');
 
 const app = express();
 const PORT = process.env.PORT || 8081;
@@ -482,6 +484,9 @@ function calculateDistance(point1, point2) {
   return R * c;
 }
 
+// Transit data routes (must be before the generic /api/data/:filename route)
+app.use('/api/data', transitDataRoutes);
+
 // Optimized dataset serving with caching
 app.get('/api/data/:filename', async (req, res) => {
   try {
@@ -545,6 +550,9 @@ app.use('/api/wheelmap', wheelmapRoutes);
 
 // Accessibility data routes
 app.use('/api/accessibility', accessibilityRoutes);
+
+// Transit API proxy routes
+app.use('/api/transit', transitProxyRoutes);
 
 // Optimized data routes
 const optimizedDataRoutes = require('./routes/optimizedData');

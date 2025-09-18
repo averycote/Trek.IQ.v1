@@ -188,8 +188,16 @@ class WheelmapApiService {
           bounds.getEast(),
           bounds.getNorth()
         ];
+      } else if (bounds.west !== undefined && bounds.south !== undefined && bounds.east !== undefined && bounds.north !== undefined) {
+        // Custom bounds object with west, south, east, north properties
+        bbox = [
+          bounds.west,
+          bounds.south,
+          bounds.east,
+          bounds.north
+        ];
       } else {
-        throw new Error('Invalid bounds format');
+        throw new Error('Invalid bounds format. Expected array, Mapbox bounds object, or object with west/south/east/north properties');
       }
 
       // Create cache key

@@ -2,10 +2,75 @@ import React, { useState, useEffect } from "react";
 import accessibilityService from "../services/accessibilityService";
 import BarrierReportFAB from "./BarrierReportFAB";
 
+// Generate transit-specific directions from route features
+const generateTransitDirections = async (route) => {
+  const directions = [];
+  let stepNumber = 1;
+
+  for (const feature of route.features) {
+    const properties = feature.properties || {};
+    const mode = properties.mode;
+
+    if (mode === 'walk' || mode === 'walking') {
+      const distance = properties.distance || 0;
+      const duration = properties.duration || 0;
+      const instructions = properties.instructions || 'Walk to transit stop';
+      
+      directions.push({
+        step: stepNumber++,
+        instruction: instructions,
+        distance: distance,
+        duration: duration,
+        mode: 'walk',
+        icon: '🚶',
+        accessibility: properties.accessibility || []
+      });
+    } else if (mode === 'bus' || mode === 'transit') {
+      const routeName = properties.routeName || properties.route || 'Unknown Route';
+      const routeNumber = properties.routeNumber || properties.routeId || '';
+      const headsign = properties.headsign || '';
+      const duration = properties.duration || 0;
+      const distance = properties.distance || 0;
+      const accessibility = properties.accessibility || [];
+      
+      let instruction = `Take ${routeNumber ? `Route ${routeNumber}` : routeName}`;
+      if (headsign) {
+        instruction += ` towards ${headsign}`;
+      }
+      if (duration > 0) {
+        const minutes = Math.round(duration / 60);
+        instruction += ` (${minutes} min)`;
+      }
+
+      directions.push({
+        step: stepNumber++,
+        instruction: instruction,
+        distance: distance,
+        duration: duration,
+        mode: 'transit',
+        icon: '🚌',
+        routeName: routeName,
+        routeNumber: routeNumber,
+        headsign: headsign,
+        accessibility: accessibility,
+        agency: properties.agency || 'Halifax Transit',
+        poweredByTransit: properties.poweredByTransit || false
+      });
+    }
+  }
+
+  return directions;
+};
+
 // Enhanced utility function to generate turn-by-turn directions with street names
 const generateDirectionsFromRoute = async (route) => {
   if (!route || !route.features || !route.features[0]) {
     return [];
+  }
+
+  // Check if this is a transit route with multiple features (legs)
+  if (route.features.length > 1) {
+    return generateTransitDirections(route);
   }
 
   const feature = route.features[0];
@@ -556,6 +621,57 @@ const DirectionsPanel = ({
                             {step.accessibility.hasSidewalks && ", sidewalks"}
                             {step.accessibility.hasCurbCuts && ", curb cuts"}
                           </span>
+                        </div>
+                      )}
+
+                      {/* Transit-specific information */}
+                      {step.mode === 'transit' && (
+                        <div className="mt-2 space-y-1">
+                          {step.routeNumber && (
+                            <div className="flex items-center space-x-2">
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                Route {step.routeNumber}
+                              </span>
+                              {step.agency && (
+                                <span className="text-xs text-gray-500">
+                                  {step.agency}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          
+                          {step.accessibility && Array.isArray(step.accessibility) && step.accessibility.length > 0 && (
+                            <div className="flex items-center space-x-1">
+                              {step.accessibility.map((feature, idx) => (
+                                <span
+                                  key={idx}
+                                  className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                                    feature === 'wheelchair_accessible'
+                                      ? 'bg-green-100 text-green-800'
+                                      : 'bg-yellow-100 text-yellow-800'
+                                  }`}
+                                >
+                                  {feature === 'wheelchair_accessible' ? '♿' : '🪑'}
+                                  {feature === 'wheelchair_accessible' ? 'Wheelchair Accessible' : 'Priority Seating'}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {step.poweredByTransit && (
+                            <div className="flex items-center space-x-1 mt-1">
+                              <span className="text-xs text-gray-500">Powered by</span>
+                              <img
+                                src="/transit-api-badge@3x.png"
+                                alt="Powered by Transit"
+                                className="h-4 w-auto"
+                                onError={(e) => {
+                                  console.warn('Transit logo failed to load in directions');
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

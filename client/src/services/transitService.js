@@ -734,6 +734,44 @@ class TransitService {
     return buses;
   }
 
+  // Get nearby routes with real-time departures
+  async getNearbyRoutes(lat, lng, radius = 500) {
+    if (this.useTransitAPI && this.transitAPIService) {
+      try {
+        const nearbyRoutesData = await this.transitAPIService.getNearbyRoutes(lat, lng, radius);
+        if (nearbyRoutesData && nearbyRoutesData.routes) {
+          return nearbyRoutesData.routes.map(route => 
+            this.transitAPIService.convertRouteToInternalFormat(route)
+          );
+        }
+        return [];
+      } catch (error) {
+        console.warn('Error getting nearby routes from Transit API:', error);
+        return this.getSimulatedNearbyRoutes(lat, lng);
+      }
+    }
+    
+    return this.getSimulatedNearbyRoutes(lat, lng);
+  }
+
+  // Get service alerts for a region
+  async getServiceAlerts(lat, lng, radius = 10000) {
+    if (this.useTransitAPI && this.transitAPIService) {
+      try {
+        const alertsData = await this.transitAPIService.getServiceAlerts(lat, lng, radius);
+        if (alertsData && alertsData.alerts) {
+          return alertsData.alerts;
+        }
+        return [];
+      } catch (error) {
+        console.warn('Error getting service alerts from Transit API:', error);
+        return this.getSimulatedServiceAlerts();
+      }
+    }
+    
+    return this.getSimulatedServiceAlerts();
+  }
+
   // Generate simulated bus locations
   generateSimulatedBusLocations(routeId = null) {
     const buses = [];
@@ -1365,6 +1403,82 @@ class TransitService {
         }
       ]
     };
+  }
+
+  // Simulated nearby routes for fallback
+  getSimulatedNearbyRoutes(lat, lng) {
+    const routes = [
+      {
+        id: 'route_1',
+        route_short_name: '1',
+        short_name: '1',
+        route_long_name: 'Spring Garden Road',
+        long_name: 'Spring Garden Road',
+        route_type: 3, // Bus
+        departures: [
+          {
+            arrival_time: new Date(Date.now() + 5 * 60000).toISOString(),
+            departure_time: new Date(Date.now() + 5 * 60000).toISOString()
+          },
+          {
+            arrival_time: new Date(Date.now() + 15 * 60000).toISOString(),
+            departure_time: new Date(Date.now() + 15 * 60000).toISOString()
+          }
+        ]
+      },
+      {
+        id: 'route_2',
+        route_short_name: '2',
+        short_name: '2',
+        route_long_name: 'Barrington Street',
+        long_name: 'Barrington Street',
+        route_type: 3, // Bus
+        departures: [
+          {
+            arrival_time: new Date(Date.now() + 8 * 60000).toISOString(),
+            departure_time: new Date(Date.now() + 8 * 60000).toISOString()
+          },
+          {
+            arrival_time: new Date(Date.now() + 20 * 60000).toISOString(),
+            departure_time: new Date(Date.now() + 20 * 60000).toISOString()
+          }
+        ]
+      }
+    ];
+
+    return routes;
+  }
+
+  // Simulated service alerts for fallback
+  getSimulatedServiceAlerts() {
+    return [
+      {
+        id: 'alert_1',
+        alert_type: 'Service Alert',
+        severity: 'Info',
+        header_text: 'Route 1 - Minor Delays',
+        title: 'Route 1 - Minor Delays',
+        description_text: 'Route 1 is experiencing minor delays due to traffic conditions.',
+        description: 'Route 1 is experiencing minor delays due to traffic conditions.',
+        active_period: {
+          start: new Date().toISOString(),
+          end: new Date(Date.now() + 2 * 60 * 60000).toISOString() // 2 hours from now
+        }
+      },
+      {
+        id: 'alert_2',
+        alert_type: 'Accessibility Alert',
+        severity: 'Warning',
+        header_text: 'Accessible Bus Service',
+        title: 'Accessible Bus Service',
+        description_text: 'All buses on accessible routes are equipped with wheelchair ramps and priority seating.',
+        description: 'All buses on accessible routes are equipped with wheelchair ramps and priority seating.',
+        active_period: {
+          start: new Date().toISOString(),
+          end: new Date(Date.now() + 24 * 60 * 60000).toISOString() // 24 hours from now
+        }
+      }
+    ];
   }
 }
 

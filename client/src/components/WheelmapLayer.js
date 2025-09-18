@@ -451,7 +451,9 @@ const WheelmapLayer = ({
             z-index: 9999 !important;
           }
         `;
-        document.head.appendChild(style);
+        if (document.head) {
+          document.head.appendChild(style);
+        }
         console.log('🎨 Added popup styles');
       }
 

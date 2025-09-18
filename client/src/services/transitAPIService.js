@@ -3,9 +3,8 @@
 
 class TransitAPIService {
   constructor() {
-    // Use environment variables with fallbacks
-    this.baseUrl = process.env.REACT_APP_TRANSIT_API_URL || 'https://external.transitapp.com/v3';
-    this.apiKey = process.env.REACT_APP_TRANSIT_API_KEY;
+    // Use local proxy instead of direct API calls to avoid CORS issues
+    this.baseUrl = '/api/transit'; // Local proxy endpoint
     this.cache = new Map();
     this.cacheTimeout = 300000; // 5 minutes cache
     this.requestQueue = [];
@@ -136,10 +135,9 @@ class TransitAPIService {
 
     try {
       const response = await this.executeRequest(() =>
-        this.fetchWithTimeout(`${this.baseUrl}/public/stops_near_me?lat=${lat}&lon=${lng}&radius=${radius}`, {
+        this.fetchWithTimeout(`${this.baseUrl}/nearby_routes?lat=${lat}&lon=${lng}&radius=${radius}`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json'
           }
         })
@@ -178,10 +176,9 @@ class TransitAPIService {
     try {
       const stopIdsParam = stopIds.join(',');
       const response = await this.executeRequest(() =>
-        fetch(`${this.baseUrl}/public/routes_serving_stop?stop_ids=${stopIdsParam}`, {
+        fetch(`${this.baseUrl}/routes_serving_stop?stop_ids=${stopIdsParam}`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json'
           }
         })
@@ -213,10 +210,9 @@ class TransitAPIService {
     try {
       const stopIdsParam = stopIds.join(',');
       const response = await this.executeRequest(() =>
-        fetch(`${this.baseUrl}/public/realtime_arrivals?stop_ids=${stopIdsParam}`, {
+        fetch(`${this.baseUrl}/realtime_arrivals?stop_ids=${stopIdsParam}`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json'
           }
         })
@@ -251,7 +247,7 @@ class TransitAPIService {
     }
 
     try {
-      let url = `${this.baseUrl}/public/plan_trip?from_lat=${originLat}&from_lon=${originLng}&to_lat=${destLat}&to_lon=${destLng}`;
+      let url = `${this.baseUrl}/plan?from_lat=${originLat}&from_lon=${originLng}&to_lat=${destLat}&to_lon=${destLng}`;
 
       if (time) {
         url += `&time=${time}`;
@@ -263,7 +259,6 @@ class TransitAPIService {
         fetch(url, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json'
           }
         })
@@ -284,6 +279,120 @@ class TransitAPIService {
       return data;
     } catch (error) {
       console.error('Error fetching trip plan from Transit API:', error);
+      return null;
+    }
+  }
+
+  // Get nearby routes and real-time departures
+  async getNearbyRoutes(lat, lng, radius = 500) {
+    const cacheKey = `nearby_routes_${lat}_${lng}_${radius}`;
+    const cached = this.cache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < 60000) { // 1 minute cache for real-time data
+      return cached.data;
+    }
+
+    try {
+      const response = await this.executeRequest(() =>
+        this.fetchWithTimeout(`${this.baseUrl}/nearby_routes?lat=${lat}&lon=${lng}&radius=${radius}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+      );
+
+      if (!response.ok) {
+        throw new Error(`Transit API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Cache the result with shorter timeout for real-time data
+      this.cache.set(cacheKey, {
+        data: data,
+        timestamp: Date.now()
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching nearby routes from Transit API:', error);
+      return null;
+    }
+  }
+
+  // Get service alerts for a region
+  async getServiceAlerts(lat, lng, radius = 10000) {
+    const cacheKey = `alerts_${lat}_${lng}_${radius}`;
+    const cached = this.cache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < 300000) { // 5 minutes cache
+      return cached.data;
+    }
+
+    try {
+      const response = await this.executeRequest(() =>
+        this.fetchWithTimeout(`${this.baseUrl}/alerts?lat=${lat}&lon=${lng}&radius=${radius}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+      );
+
+      if (!response.ok) {
+        throw new Error(`Transit API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Cache the result
+      this.cache.set(cacheKey, {
+        data: data,
+        timestamp: Date.now()
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching service alerts from Transit API:', error);
+      return null;
+    }
+  }
+
+  // Get route details and schedules
+  async getRouteDetails(routeId) {
+    const cacheKey = `route_details_${routeId}`;
+    const cached = this.cache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      return cached.data;
+    }
+
+    try {
+      const response = await this.executeRequest(() =>
+        this.fetchWithTimeout(`${this.baseUrl}/route/${routeId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+      );
+
+      if (!response.ok) {
+        throw new Error(`Transit API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Cache the result
+      this.cache.set(cacheKey, {
+        data: data,
+        timestamp: Date.now()
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error fetching route details from Transit API:', error);
       return null;
     }
   }
@@ -436,22 +545,16 @@ class TransitAPIService {
     try {
       console.log('Initializing Transit API service...');
 
-      // Check if API key is available
-      if (!this.apiKey) {
-        console.warn('Transit API key not found in environment variables');
-        this.apiAvailable = false;
-        return false;
-      }
+      // API key is handled by the server proxy
 
       // Test API connectivity with a simple endpoint using timeout
       const testResponse = await this.executeRequest(() =>
-        this.fetchWithTimeout(`${this.baseUrl}/public/stops_near_me?lat=44.6488&lon=-63.5752&radius=100`, {
+        this.fetchWithTimeout(`${this.baseUrl}/nearby_routes?lat=44.6488&lon=-63.5752&radius=100`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json'
           }
-        }, 5000) // 5 second timeout for initialization
+        }, 20000) // 20 second timeout for initialization
       );
 
       if (testResponse.ok) {
