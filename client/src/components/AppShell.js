@@ -28,6 +28,7 @@ import apiIntegrationManager from "../services/apiIntegrationManager";
 import comprehensiveRoutingOrchestrator from "../services/comprehensiveRoutingOrchestrator";
 import barrierDetectionRegistry from "../services/barrierDetectionRegistry";
 import elevationService from "../services/elevationService";
+import barrierReportingService from "../services/barrierReportingService";
 import geolocationService from "../services/geolocationService";
 import "./BarrierDialog.css";
 
@@ -79,6 +80,10 @@ const AppShell = () => {
 
   // Enhanced routing state
   const [comprehensiveRoute, setComprehensiveRoute] = useState(null);
+  
+  // Barrier reporting state
+  const [barriers, setBarriers] = useState([]);
+  const [isBarrierServiceInitialized, setIsBarrierServiceInitialized] = useState(false);
 
   // Memoize the onMapLoad callback to prevent unnecessary re-renders
   const handleMapLoad = useCallback((map) => {
@@ -657,10 +662,16 @@ const AppShell = () => {
       // Initialize API integration manager
       await apiIntegrationManager.initialize();
 
+      // Initialize barrier reporting service
+      await barrierReportingService.initialize();
+      setBarriers(barrierReportingService.getBarriers());
+      setIsBarrierServiceInitialized(true);
+
       // Make services available globally for testing and analytics
       window.apiIntegrationManager = apiIntegrationManager;
       window.comprehensiveRoutingOrchestrator =
         comprehensiveRoutingOrchestrator;
+      window.barrierReportingService = barrierReportingService;
 
       // Expose individual services
       const barrierService = apiIntegrationManager.getService("barrier");
@@ -713,9 +724,15 @@ const AppShell = () => {
     [navigate]
   );
 
-  const handleReportSubmit = useCallback((result) => {
+  const handleReportSubmit = useCallback(async (result) => {
     console.log("Barrier report submitted successfully:", result);
-  }, []);
+    
+    // Refresh barriers to include the new report
+    if (isBarrierServiceInitialized) {
+      await barrierReportingService.refresh();
+      setBarriers(barrierReportingService.getBarriers());
+    }
+  }, [isBarrierServiceInitialized]);
 
   const handleRoutePanelClose = useCallback(() => {
     setIsRoutePanelOpen(false);
@@ -776,6 +793,7 @@ const AppShell = () => {
           routeMode={routeMode}
           isMobile={isMobile}
           userLocation={userLocation}
+          barriers={barriers}
         />
 
         {/* Debug Route Data */}

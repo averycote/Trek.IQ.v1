@@ -15,7 +15,8 @@ const MapCanvas = React.memo(({
   onMapLoad,
   onLayerToggle,
   isMobile = false,
-  userLocation = null
+  userLocation = null,
+  barriers = []
 }) => {
   // Convert Set to Array for compatibility with existing component
   const activeLayersArray = useMemo(() => {
@@ -59,6 +60,7 @@ const MapCanvas = React.memo(({
         mapPadding={mapPadding}
         isMobile={isMobile}
         userLocation={userLocation}
+        barriers={barriers}
       />
 
       {/* Debug overlay for route visibility */}

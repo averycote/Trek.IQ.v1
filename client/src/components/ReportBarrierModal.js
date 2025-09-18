@@ -259,15 +259,15 @@ const ReportBarrierModal = React.memo(
         submitData.append("type", formData.type);
         submitData.append("severity", formData.severity);
         submitData.append("description", formData.description);
-        submitData.append("latitude", formData.latitude);
-        submitData.append("longitude", formData.longitude);
+        submitData.append("lat", formData.latitude);
+        submitData.append("lng", formData.longitude);
         submitData.append("locationDetails", formData.locationDetails);
 
         if (formData.photo) {
           submitData.append("photo", formData.photo);
         }
 
-        const response = await fetch("/api/barriers", {
+        const response = await fetch("/api/barriers/report", {
           method: "POST",
           body: submitData,
         });

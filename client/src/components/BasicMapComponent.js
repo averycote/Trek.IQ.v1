@@ -45,7 +45,8 @@ const BasicMapComponent = ({
   mapPadding = { top: 0, bottom: 0, left: 0, right: 0 },
   isMobile = false,
   onLayerToggle,
-  userLocation = null
+  userLocation = null,
+  barriers = []
 }) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -787,6 +788,167 @@ const BasicMapComponent = ({
     // Start the rendering process with delay
     renderRouteWithDelay();
   }, [route, mapInitialized, styleLoaded, mapFullyReady]);
+
+  // Handle barrier display
+  useEffect(() => {
+    if (!map.current || !mapInitialized || !styleLoaded || !barriers.length) return;
+
+    const barrierSourceId = 'user-barriers';
+    const barrierLayerId = 'user-barriers-layer';
+
+    // Remove existing barriers
+    if (map.current.getLayer(barrierLayerId)) {
+      map.current.removeLayer(barrierLayerId);
+    }
+    if (map.current.getSource(barrierSourceId)) {
+      map.current.removeSource(barrierSourceId);
+    }
+
+    try {
+      // Create barrier features from the barriers array
+      const barrierFeatures = barriers.map(barrier => {
+        const coordinates = barrier.geometry ? 
+          barrier.geometry.coordinates : 
+          [barrier.lng || barrier.longitude, barrier.lat || barrier.latitude];
+        
+        const properties = barrier.properties || barrier;
+        
+        return {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: coordinates
+          },
+          properties: {
+            id: properties.id,
+            type: properties.type,
+            severity: properties.severity,
+            notes: properties.notes || properties.description,
+            status: properties.status || 'new',
+            created_at: properties.created_at
+          }
+        };
+      });
+
+      // Add barrier source
+      map.current.addSource(barrierSourceId, {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: barrierFeatures
+        }
+      });
+
+      // Add barrier layer
+      map.current.addLayer({
+        id: barrierLayerId,
+        type: 'circle',
+        source: barrierSourceId,
+        paint: {
+          'circle-radius': 8,
+          'circle-color': [
+            'case',
+            ['==', ['get', 'severity'], 'high'], '#ef4444',
+            ['==', ['get', 'severity'], 'medium'], '#f59e0b',
+            '#10b981'
+          ],
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 2,
+          'circle-opacity': 0.8
+        }
+      });
+
+      // Add barrier labels
+      map.current.addLayer({
+        id: barrierLayerId + '-labels',
+        type: 'symbol',
+        source: barrierSourceId,
+        layout: {
+          'text-field': [
+            'case',
+            ['==', ['get', 'type'], 'steps'], '🪜',
+            ['==', ['get', 'type'], 'construction'], '🚧',
+            ['==', ['get', 'type'], 'curb'], '🛑',
+            ['==', ['get', 'type'], 'icy'], '🧊',
+            '⚠️'
+          ],
+          'text-size': 16,
+          'text-offset': [0, 0],
+          'text-anchor': 'center'
+        }
+      });
+
+      // Add click handler for barriers
+      map.current.on('click', barrierLayerId, (e) => {
+        if (e.features.length > 0) {
+          const barrier = e.features[0];
+          const coordinates = barrier.geometry.coordinates.slice();
+          const properties = barrier.properties;
+
+          // Create popup content
+          const popupContent = `
+            <div class="barrier-popup" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 200px;">
+              <h3 style="margin: 0 0 8px 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 20px;">${getBarrierIcon(properties.type)}</span>
+                ${properties.type}
+              </h3>
+              <p style="margin: 4px 0; font-size: 14px;"><strong>Severity:</strong> 
+                <span style="color: ${getBarrierColor(properties.severity)}; font-weight: bold;">
+                  ${properties.severity}
+                </span>
+              </p>
+              <p style="margin: 4px 0; font-size: 14px;"><strong>Description:</strong> ${properties.notes || 'No description provided'}</p>
+              <p style="margin: 4px 0 0 0; font-size: 12px; color: #666;"><strong>Reported:</strong> ${new Date(properties.created_at).toLocaleDateString()}</p>
+            </div>
+          `;
+
+          new mapboxgl.Popup({ offset: 15 })
+            .setLngLat(coordinates)
+            .setHTML(popupContent)
+            .addTo(map.current);
+
+          if (onBarrierClick) {
+            onBarrierClick(barrier);
+          }
+        }
+      });
+
+      // Change cursor on hover
+      map.current.on('mouseenter', barrierLayerId, () => {
+        map.current.getCanvas().style.cursor = 'pointer';
+      });
+
+      map.current.on('mouseleave', barrierLayerId, () => {
+        map.current.getCanvas().style.cursor = '';
+      });
+
+      console.log(`✅ Displayed ${barriers.length} barriers on map`);
+
+    } catch (error) {
+      console.error('Error displaying barriers on map:', error);
+    }
+  }, [barriers, mapInitialized, styleLoaded, onBarrierClick]);
+
+  // Helper functions for barrier display
+  const getBarrierIcon = (type) => {
+    const icons = {
+      'steps': '🪜',
+      'construction': '🚧',
+      'curb': '🛑',
+      'icy': '🧊',
+      'other': '⚠️'
+    };
+    return icons[type] || '⚠️';
+  };
+
+  const getBarrierColor = (severity) => {
+    const colors = {
+      'low': '#10b981',
+      'medium': '#f59e0b',
+      'high': '#ef4444'
+    };
+    return colors[severity] || '#6b7280';
+  };
 
   return (
     <div

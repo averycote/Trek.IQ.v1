@@ -52,11 +52,13 @@ const upload = multer({
 
 // Validation schemas
 const barrierReportSchema = z.object({
-  lat: z.number().min(44.6).max(44.7),
-  lng: z.number().min(-63.7).max(-63.5),
+  lat: z.coerce.number().min(44.6).max(44.7),
+  lng: z.coerce.number().min(-63.7).max(-63.5),
   type: z.enum(['steps', 'construction', 'curb', 'icy', 'other']),
   severity: z.enum(['low', 'medium', 'high']),
   notes: z.string().optional(),
+  description: z.string().optional(),
+  locationDetails: z.string().optional(),
   contact: z.object({
     name: z.string().optional(),
     email: z.string().email().optional()
@@ -112,7 +114,7 @@ router.post('/report', reportLimiter, upload.single('photo'), async (req, res) =
       lng: validatedData.lng,
       type: validatedData.type,
       severity: validatedData.severity,
-      notes: validatedData.notes,
+      notes: validatedData.notes || validatedData.description || '',
       contact: validatedData.contact,
       photoUrl: photoUrl
     };
