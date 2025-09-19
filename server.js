@@ -10,7 +10,10 @@ import { LRUCache } from "lru-cache";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
+
+// Trust proxy for Railway deployment (fixes rate limiting with X-Forwarded-For headers)
+app.set('trust proxy', 1);
 
 // Enhanced middleware with optimizations
 app.use(helmet({
@@ -270,26 +273,159 @@ app.get('/api/data/:filename', async (req, res) => {
       return res.json(cachedData);
     }
     
-    // Load from server/data directory
-    const filePath = path.join(__dirname, 'server/data', decodeURIComponent(filename));
+    const { readFile, access } = await import('fs/promises');
+    const decodedFilename = decodeURIComponent(filename);
+    
+    // Define search paths in order of priority
+    const searchPaths = [
+      path.join(__dirname, 'server/data', decodedFilename), // Root data directory
+      path.join(__dirname, 'server/data/dynamic', decodedFilename), // Dynamic data
+      path.join(__dirname, 'server/data/static', decodedFilename), // Static data
+      path.join(__dirname, 'server/data/accessibility', decodedFilename), // Accessibility data
+    ];
+    
+    let filePath = null;
+    let data = null;
+    
+    // Try each path until we find the file
+    for (const searchPath of searchPaths) {
+      try {
+        await access(searchPath); // Check if file exists
+        data = await readFile(searchPath, 'utf8');
+        filePath = searchPath;
+        break;
+      } catch (fileError) {
+        // File not found in this path, try next
+        continue;
+      }
+    }
+    
+    if (!data) {
+      console.error(`File not found in any directory: ${decodedFilename}`);
+      return res.status(404).json({ 
+        error: 'Dataset not found', 
+        filename: decodedFilename,
+        searchedPaths: searchPaths.map(p => p.replace(__dirname, ''))
+      });
+    }
+    
+    const jsonData = JSON.parse(data);
+    
+    // Cache the dataset
+    datasetCache.set(cacheKey, jsonData);
+    
+    console.log(`✅ Served dataset: ${decodedFilename} from ${filePath.replace(__dirname, '')}`);
+    res.json(jsonData);
+  } catch (error) {
+    console.error(`Error serving dataset ${req.params.filename}:`, error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+});
+
+// Additional data endpoints for frontend compatibility
+app.get('/api/data/sidewalk-closures', async (req, res) => {
+  try {
+    const { readFile, access } = await import('fs/promises');
+    const searchPaths = [
+      path.join(__dirname, 'server/data/dynamic/Sidewalk Closures.geojson'),
+      path.join(__dirname, 'server/data/Sidewalk Closures.geojson'),
+    ];
+    
+    for (const filePath of searchPaths) {
+      try {
+        await access(filePath);
+        const data = await readFile(filePath, 'utf8');
+        const jsonData = JSON.parse(data);
+        return res.json(jsonData);
+      } catch (error) {
+        continue;
+      }
+    }
+    
+    res.status(404).json({ error: 'Sidewalk closures data not found' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/data/accessible-parking', async (req, res) => {
+  try {
+    const { readFile, access } = await import('fs/promises');
+    const filePath = path.join(__dirname, 'server/data/Accessible_Parking.geojson');
     
     try {
-      const { readFile } = await import('fs/promises');
-      await readFile(filePath, 'utf8'); // Check if file exists
+      await access(filePath);
+      const data = await readFile(filePath, 'utf8');
+      const jsonData = JSON.parse(data);
+      res.json(jsonData);
+    } catch (error) {
+      res.status(404).json({ error: 'Accessible parking data not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/data/transit-routes', async (req, res) => {
+  try {
+    const { readFile, access } = await import('fs/promises');
+    const filePath = path.join(__dirname, 'server/data/Transit_Bus_Routes.geojson');
+    
+    try {
+      await access(filePath);
+      const data = await readFile(filePath, 'utf8');
+      const jsonData = JSON.parse(data);
+      res.json(jsonData);
+    } catch (error) {
+      res.status(404).json({ error: 'Transit routes data not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/data/bus-stops', async (req, res) => {
+  try {
+    const { readFile, access } = await import('fs/promises');
+    const filePath = path.join(__dirname, 'server/data/Bus_Stops_2_9086297843420881686.geojson');
+    
+    try {
+      await access(filePath);
+      const data = await readFile(filePath, 'utf8');
+      const jsonData = JSON.parse(data);
+      res.json(jsonData);
+    } catch (error) {
+      res.status(404).json({ error: 'Bus stops data not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/data/accessible-stops', async (req, res) => {
+  try {
+    const { readFile, access } = await import('fs/promises');
+    const filePath = path.join(__dirname, 'server/data/Bus_Stops_2_9086297843420881686.geojson');
+    
+    try {
+      await access(filePath);
       const data = await readFile(filePath, 'utf8');
       const jsonData = JSON.parse(data);
       
-      // Cache the dataset
-      datasetCache.set(cacheKey, jsonData);
+      // Filter for accessible stops
+      const accessibleStops = {
+        type: 'FeatureCollection',
+        features: jsonData.features.filter(feature => 
+          feature.properties.ACCESSIBLE === 'Y'
+        )
+      };
       
-      res.json(jsonData);
-    } catch (fileError) {
-      console.error(`File not found: ${filePath}`);
-      return res.status(404).json({ error: 'Dataset not found', path: filePath });
+      res.json(accessibleStops);
+    } catch (error) {
+      res.status(404).json({ error: 'Accessible stops data not found' });
     }
   } catch (error) {
-    console.error(`Error serving dataset ${req.params.filename}:`, error);
-    res.status(404).json({ error: 'Dataset not found', details: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
