@@ -41,16 +41,121 @@ export async function buildPoiIndex(layers = DEFAULT_POI_LAYERS) {
       isLoaded: true
     };
     
-    // Add some mock POIs for testing
+    // Add comprehensive POI data for Halifax
     const mockPOIs = [
+      // Healthcare
       {
-        id: 'poi_1',
+        id: 'poi_hospital_1',
+        name: 'QEII Health Sciences Centre',
+        type: 'hospital',
+        category: 'healthcare',
+        lon: -63.5774,
+        lat: 44.6408,
+        displayName: 'QEII Health Sciences Centre',
+        source: 'local_poi'
+      },
+      {
+        id: 'poi_hospital_2',
+        name: 'Halifax Infirmary',
+        type: 'hospital',
+        category: 'healthcare',
+        lon: -63.5774,
+        lat: 44.6408,
+        displayName: 'Halifax Infirmary',
+        source: 'local_poi'
+      },
+      {
+        id: 'poi_clinic_1',
+        name: 'Halifax Medical Centre',
+        type: 'clinic',
+        category: 'healthcare',
+        lon: -63.5756,
+        lat: 44.6475,
+        displayName: 'Halifax Medical Centre',
+        source: 'local_poi'
+      },
+      
+      // Education
+      {
+        id: 'poi_university_1',
+        name: 'Dalhousie University',
+        type: 'university',
+        category: 'education',
+        lon: -63.5915,
+        lat: 44.6368,
+        displayName: 'Dalhousie University',
+        source: 'local_poi'
+      },
+      {
+        id: 'poi_university_2',
+        name: 'Saint Mary\'s University',
+        type: 'university',
+        category: 'education',
+        lon: -63.5833,
+        lat: 44.6500,
+        displayName: 'Saint Mary\'s University',
+        source: 'local_poi'
+      },
+      {
+        id: 'poi_university_3',
+        name: 'NSCAD University',
+        type: 'university',
+        category: 'education',
+        lon: -63.5756,
+        lat: 44.6475,
+        displayName: 'NSCAD University',
+        source: 'local_poi'
+      },
+      {
+        id: 'poi_library_1',
         name: 'Halifax Central Library',
         type: 'library',
-        category: 'public',
+        category: 'education',
         lon: -63.575,
         lat: 44.648,
         displayName: 'Halifax Central Library',
+        source: 'local_poi'
+      },
+      
+      // Shopping & Retail
+      {
+        id: 'poi_mall_1',
+        name: 'Halifax Shopping Centre',
+        type: 'mall',
+        category: 'shopping',
+        lon: -63.5833,
+        lat: 44.6500,
+        displayName: 'Halifax Shopping Centre',
+        source: 'local_poi'
+      },
+      {
+        id: 'poi_mall_2',
+        name: 'Mic Mac Mall',
+        type: 'mall',
+        category: 'shopping',
+        lon: -63.5167,
+        lat: 44.6833,
+        displayName: 'Mic Mac Mall',
+        source: 'local_poi'
+      },
+      {
+        id: 'poi_store_1',
+        name: 'Walmart',
+        type: 'store',
+        category: 'shopping',
+        lon: -63.5833,
+        lat: 44.6500,
+        displayName: 'Walmart',
+        source: 'local_poi'
+      },
+      {
+        id: 'poi_grocery_1',
+        name: 'Sobeys',
+        type: 'grocery',
+        category: 'shopping',
+        lon: -63.5756,
+        lat: 44.6475,
+        displayName: 'Sobeys',
         source: 'local_poi'
       },
       {
@@ -63,6 +168,18 @@ export async function buildPoiIndex(layers = DEFAULT_POI_LAYERS) {
         displayName: 'Scotia Square',
         source: 'local_poi'
       },
+      
+      // Food & Dining
+      {
+        id: 'poi_restaurant_1',
+        name: 'Tim Hortons',
+        type: 'restaurant',
+        category: 'food',
+        lon: -63.5756,
+        lat: 44.6475,
+        displayName: 'Tim Hortons',
+        source: 'local_poi'
+      },
       {
         id: 'poi_3',
         name: 'McDonald\'s',
@@ -71,6 +188,62 @@ export async function buildPoiIndex(layers = DEFAULT_POI_LAYERS) {
         lon: -63.570,
         lat: 44.645,
         displayName: 'McDonald\'s',
+        source: 'local_poi'
+      },
+      {
+        id: 'poi_restaurant_3',
+        name: 'Starbucks',
+        type: 'restaurant',
+        category: 'food',
+        lon: -63.5756,
+        lat: 44.6475,
+        displayName: 'Starbucks',
+        source: 'local_poi'
+      },
+      
+      // Recreation
+      {
+        id: 'poi_park_1',
+        name: 'Halifax Public Gardens',
+        type: 'park',
+        category: 'recreation',
+        lon: -63.5756,
+        lat: 44.6419,
+        displayName: 'Halifax Public Gardens',
+        source: 'local_poi'
+      },
+      {
+        id: 'poi_park_2',
+        name: 'Point Pleasant Park',
+        type: 'park',
+        category: 'recreation',
+        lon: -63.5667,
+        lat: 44.6167,
+        displayName: 'Point Pleasant Park',
+        source: 'local_poi'
+      },
+      
+      // Government
+      {
+        id: 'poi_government_1',
+        name: 'Halifax City Hall',
+        type: 'government',
+        category: 'government',
+        lon: -63.5756,
+        lat: 44.6475,
+        displayName: 'Halifax City Hall',
+        source: 'local_poi'
+      },
+      
+      // Transportation
+      {
+        id: 'poi_transit_1',
+        name: 'Halifax Ferry Terminal',
+        type: 'transit',
+        category: 'transportation',
+        lon: -63.5756,
+        lat: 44.6475,
+        displayName: 'Halifax Ferry Terminal',
         source: 'local_poi'
       },
       {
@@ -119,40 +292,70 @@ export function searchPoiIndex(index, normalizedQuery, limit = 10) {
   const results = [];
   const query = normalizedQuery.normalized.toLowerCase();
   
-  // Search by name
+  // Import the enhanced scoring function
+  const { calculatePOIScore } = require('./normalize');
+  
+  // Search by name with enhanced scoring
   for (const [nameKey, records] of index.nameIndex.entries()) {
     if (nameKey.includes(query) || query.includes(nameKey)) {
       records.forEach(record => {
-        const score = calculatePoiScore(record, normalizedQuery);
+        const score = calculatePOIScore(query, record.name, record.type);
         if (score > 0.3) {
           results.push({
             ...record,
             score,
-            matchType: score > 0.8 ? 'exact' : 'fuzzy'
+            matchType: score > 0.8 ? 'exact' : score > 0.6 ? 'partial' : 'fuzzy'
           });
         }
       });
     }
   }
   
-  // Search by type
+  // Search by type with enhanced scoring
   for (const [typeKey, records] of index.typeIndex.entries()) {
     if (typeKey.includes(query) || query.includes(typeKey)) {
       records.forEach(record => {
-        const score = calculatePoiScore(record, normalizedQuery) * 0.7; // Lower weight for type matches
+        const score = calculatePOIScore(query, record.name, record.type) * 0.7; // Lower weight for type matches
         if (score > 0.2) {
           results.push({
             ...record,
             score,
-            matchType: score > 0.8 ? 'exact' : 'fuzzy'
+            matchType: score > 0.8 ? 'exact' : score > 0.6 ? 'partial' : 'fuzzy'
           });
         }
       });
     }
   }
   
-  // Sort by score and limit results
-  return results
+  // Search by category if it's a POI search
+  if (normalizedQuery.isPOISearch && normalizedQuery.poiCategories.length > 0) {
+    for (const record of index.records) {
+      for (const category of normalizedQuery.poiCategories) {
+        if (record.category === category || record.type === category) {
+          const score = calculatePOIScore(query, record.name, record.type) * 0.8;
+          if (score > 0.3) {
+            results.push({
+              ...record,
+              score,
+              matchType: 'category'
+            });
+          }
+        }
+      }
+    }
+  }
+  
+  // Remove duplicates and sort by score
+  const uniqueResults = results.reduce((acc, current) => {
+    const existing = acc.find(item => item.id === current.id);
+    if (!existing || current.score > existing.score) {
+      acc = acc.filter(item => item.id !== current.id);
+      acc.push(current);
+    }
+    return acc;
+  }, []);
+  
+  return uniqueResults
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)
     .map(result => ({
@@ -163,7 +366,8 @@ export function searchPoiIndex(index, normalizedQuery, limit = 10) {
       source: result.source,
       matchType: result.matchType,
       originalRecord: result,
-      score: result.score
+      score: result.score,
+      category: result.category
     }));
 }
 

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import useGeocoding from '../hooks/useGeocoding';
+import { getSearchSuggestions } from '../search/normalize';
 
 const SearchBar = React.memo(({
   origin,
@@ -15,6 +16,7 @@ const SearchBar = React.memo(({
   const [activeInput, setActiveInput] = useState(null); // 'origin' or 'destination'
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   
@@ -32,6 +34,7 @@ const SearchBar = React.memo(({
       timeoutId = setTimeout(async () => {
         if (query.trim().length < 2) {
           setSearchResults([]);
+          setSearchSuggestions([]);
           setIsLoading(false);
           return;
         }
@@ -40,9 +43,17 @@ const SearchBar = React.memo(({
         setSelectedIndex(-1);
         
         try {
+          // Get search suggestions for partial queries
+          if (query.trim().length >= 2 && query.trim().length < 4) {
+            const suggestions = getSearchSuggestions(query.trim(), 5);
+            setSearchSuggestions(suggestions);
+          } else {
+            setSearchSuggestions([]);
+          }
+          
           // Enhanced search options for better results
           const results = await search(query, {
-            limit: 10, // Increased limit for better variety
+            limit: 12, // Increased limit for better variety
             types: 'address,poi,place',
             country: 'ca',
             bbox: '-63.8,44.5,-63.4,44.8', // Halifax area
@@ -54,6 +65,7 @@ const SearchBar = React.memo(({
         } catch (error) {
           console.error('Search failed:', error);
           setSearchResults([]);
+          setSearchSuggestions([]);
         } finally {
           setIsLoading(false);
         }
@@ -77,6 +89,15 @@ const SearchBar = React.memo(({
     }
   }, [onOriginChange, onDestinationChange, debouncedSearch]);
 
+  // Handle suggestion selection
+  const handleSuggestionSelect = useCallback((suggestion, inputType) => {
+    const setter = inputType === 'origin' ? onOriginChange : onDestinationChange;
+    setter(suggestion.text);
+    setSearchSuggestions([]);
+    setShowResults(false);
+    setSelectedIndex(-1);
+  }, [onOriginChange, onDestinationChange]);
+
   // Enhanced result selection with better coordinate handling
   const handleResultSelect = useCallback((result, inputType) => {
     const setter = inputType === 'origin' ? onOriginChange : onDestinationChange;
@@ -90,6 +111,7 @@ const SearchBar = React.memo(({
     
     setShowResults(false);
     setSearchResults([]);
+    setSearchSuggestions([]);
     setSelectedIndex(-1);
     
     // Focus the other input if both are filled
@@ -111,34 +133,43 @@ const SearchBar = React.memo(({
 
   // Enhanced keyboard navigation
   const handleKeyDown = useCallback((e, inputType) => {
-    if (!showResults || searchResults.length === 0) return;
+    const totalItems = searchSuggestions.length + searchResults.length;
+    if (!showResults || totalItems === 0) return;
 
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
         setSelectedIndex(prev => 
-          prev < searchResults.length - 1 ? prev + 1 : 0
+          prev < totalItems - 1 ? prev + 1 : 0
         );
         break;
       case 'ArrowUp':
         e.preventDefault();
         setSelectedIndex(prev => 
-          prev > 0 ? prev - 1 : searchResults.length - 1
+          prev > 0 ? prev - 1 : totalItems - 1
         );
         break;
       case 'Enter':
         e.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < searchResults.length) {
-          handleResultSelect(searchResults[selectedIndex], inputType);
+        if (selectedIndex >= 0) {
+          if (selectedIndex < searchSuggestions.length) {
+            handleSuggestionSelect(searchSuggestions[selectedIndex], inputType);
+          } else {
+            const resultIndex = selectedIndex - searchSuggestions.length;
+            if (resultIndex < searchResults.length) {
+              handleResultSelect(searchResults[resultIndex], inputType);
+            }
+          }
         }
         break;
       case 'Escape':
         setShowResults(false);
         setSearchResults([]);
+        setSearchSuggestions([]);
         setSelectedIndex(-1);
         break;
     }
-  }, [showResults, searchResults, selectedIndex, handleResultSelect]);
+  }, [showResults, searchResults, searchSuggestions, selectedIndex, handleResultSelect, handleSuggestionSelect]);
 
   // Enhanced result display with better formatting
   const getResultDisplayText = useCallback((result) => {
@@ -174,10 +205,40 @@ const SearchBar = React.memo(({
     }
   }, []);
 
+  // Render search suggestions
+  const renderSuggestion = useCallback((suggestion, index) => {
+    const isSelected = index === selectedIndex;
+    
+    const getSuggestionIcon = () => {
+      if (suggestion.type === 'category') {
+        return '🏷️'; // Category tag icon
+      } else if (suggestion.type === 'business') {
+        return '🏢'; // Business icon
+      }
+      return '💡'; // Default suggestion icon
+    };
+
+    return (
+      <div
+        key={`suggestion-${index}`}
+        className={`search-suggestion-item ${isSelected ? 'selected' : ''}`}
+        onClick={() => handleSuggestionSelect(suggestion, activeInput)}
+        onMouseEnter={() => setSelectedIndex(index)}
+      >
+        <div className="suggestion-icon">{getSuggestionIcon()}</div>
+        <div className="suggestion-content">
+          <div className="suggestion-text">{suggestion.text}</div>
+          <div className="suggestion-type">{suggestion.category}</div>
+        </div>
+      </div>
+    );
+  }, [selectedIndex, activeInput, handleSuggestionSelect]);
+
   // Enhanced result rendering with icons and better styling
   const renderSearchResult = useCallback((result, index) => {
     const displayText = getResultDisplayText(result);
-    const isSelected = index === selectedIndex;
+    const adjustedIndex = index + searchSuggestions.length;
+    const isSelected = adjustedIndex === selectedIndex;
     
     // Get icon based on result type
     const getIcon = () => {
@@ -197,7 +258,7 @@ const SearchBar = React.memo(({
         key={`${result.id}-${index}`}
         className={`search-result-item ${isSelected ? 'selected' : ''}`}
         onClick={() => handleResultSelect(result, activeInput)}
-        onMouseEnter={() => setSelectedIndex(index)}
+        onMouseEnter={() => setSelectedIndex(adjustedIndex)}
       >
         <div className="result-icon">{getIcon()}</div>
         <div className="result-content">
@@ -213,7 +274,7 @@ const SearchBar = React.memo(({
         )}
       </div>
     );
-  }, [selectedIndex, activeInput, handleResultSelect, getResultDisplayText]);
+  }, [selectedIndex, activeInput, handleResultSelect, getResultDisplayText, searchSuggestions.length]);
 
   // Handle input focus
   const handleFocus = useCallback((inputType) => {
@@ -295,7 +356,7 @@ const SearchBar = React.memo(({
       </div>
 
       {/* Search Results Dropdown */}
-      {showResults && (searchResults.length > 0 || isLoading) && (
+      {showResults && (searchResults.length > 0 || searchSuggestions.length > 0 || isLoading) && (
         <div ref={resultsRef} className="search-results">
           {isLoading && (
             <div className="loading-result">
@@ -304,9 +365,21 @@ const SearchBar = React.memo(({
             </div>
           )}
           
-          {!isLoading && searchResults.map((result, index) => renderSearchResult(result, index))}
+          {!isLoading && searchSuggestions.length > 0 && (
+            <div className="suggestions-section">
+              <div className="suggestions-header">Suggestions</div>
+              {searchSuggestions.map((suggestion, index) => renderSuggestion(suggestion, index))}
+            </div>
+          )}
           
-          {!isLoading && searchResults.length === 0 && (
+          {!isLoading && searchResults.length > 0 && (
+            <div className="results-section">
+              {searchSuggestions.length > 0 && <div className="results-header">Results</div>}
+              {searchResults.map((result, index) => renderSearchResult(result, index))}
+            </div>
+          )}
+          
+          {!isLoading && searchResults.length === 0 && searchSuggestions.length === 0 && (
             <div className="no-results">
               <span>No results found</span>
             </div>

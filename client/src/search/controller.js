@@ -91,21 +91,48 @@ class SearchController {
     if (!query.trim()) return [];
     
     try {
-      // Normalize query
+      // Normalize query with enhanced POI detection
       const normalizedQuery = normalizeQuery(query);
       
-      // Search local indexes
-      const localAddressResults = this.addressIndex ? 
-        searchAddressIndex(this.addressIndex, normalizedQuery, 10) : [];
-      const localPoiResults = this.poiIndex ? 
-        searchPoiIndex(this.poiIndex, normalizedQuery, 10) : [];
+      console.log('Search query analysis:', {
+        original: query,
+        isPOISearch: normalizedQuery.isPOISearch,
+        categories: normalizedQuery.poiCategories,
+        intent: normalizedQuery.searchIntent
+      });
       
-      // Search external POIs (non-blocking)
+      // Adjust search strategy based on intent
+      let localAddressResults = [];
+      let localPoiResults = [];
       let externalResults = [];
-      try {
-        externalResults = await geocodeExternal(query, HALIFAX_BBOX, 'ca', 5);
-      } catch (error) {
-        console.warn('External geocoding failed:', error);
+      
+      if (normalizedQuery.isPOISearch) {
+        // Prioritize POI search
+        localPoiResults = this.poiIndex ? 
+          searchPoiIndex(this.poiIndex, normalizedQuery, 15) : [];
+        
+        // Still search addresses but with lower limit
+        localAddressResults = this.addressIndex ? 
+          searchAddressIndex(this.addressIndex, normalizedQuery, 5) : [];
+        
+        // Search external POIs with higher limit for POI searches
+        try {
+          externalResults = await geocodeExternal(query, HALIFAX_BBOX, 'ca', 8);
+        } catch (error) {
+          console.warn('External geocoding failed:', error);
+        }
+      } else {
+        // Standard search for addresses
+        localAddressResults = this.addressIndex ? 
+          searchAddressIndex(this.addressIndex, normalizedQuery, 10) : [];
+        localPoiResults = this.poiIndex ? 
+          searchPoiIndex(this.poiIndex, normalizedQuery, 5) : [];
+        
+        try {
+          externalResults = await geocodeExternal(query, HALIFAX_BBOX, 'ca', 5);
+        } catch (error) {
+          console.warn('External geocoding failed:', error);
+        }
       }
       
       // Merge and rank results
@@ -120,10 +147,11 @@ class SearchController {
         mapCenter: this.searchContext.mapCenter || { lat: 44.647, lon: -63.572 },
         userLocation: this.searchContext.userLocation,
         recentSelections: this.recentSelections,
-        userPreferences: this.searchContext.userPreferences
-      }, 10);
+        userPreferences: this.searchContext.userPreferences,
+        searchIntent: normalizedQuery.searchIntent
+      }, 12);
       
-      // Convert to suggestions
+      // Convert to suggestions with enhanced display
       return rankedCandidates.map(candidate => ({
         id: candidate.id,
         displayName: candidate.displayName,
@@ -131,7 +159,9 @@ class SearchController {
         coordinates: candidate.coordinates,
         source: candidate.source,
         matchType: candidate.matchType,
-        originalRecord: candidate.originalRecord
+        originalRecord: candidate.originalRecord,
+        category: candidate.category,
+        score: candidate.finalScore
       }));
       
     } catch (error) {

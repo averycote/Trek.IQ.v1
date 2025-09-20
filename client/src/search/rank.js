@@ -96,10 +96,10 @@ function calculateFinalScore(candidate, context) {
 
 function getTypePriorityBoost(type) {
   const typePriorities = {
-    'address': 0.2,
-    'intersection': 0.15,
-    'poi': 0.1,
-    'external_poi': 0.05
+    'poi': 0.3,           // Prioritize POI results
+    'external_poi': 0.25, // External POIs are also important
+    'address': 0.15,      // Lower priority for addresses
+    'intersection': 0.1   // Lowest priority for intersections
   };
   
   return typePriorities[type] || 0;

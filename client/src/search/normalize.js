@@ -25,6 +25,54 @@ const STREET_TYPE_ABBREVIATIONS = {
   'parkway': 'parkway'
 };
 
+// POI category mappings for better search
+const POI_CATEGORY_MAPPINGS = {
+  // Healthcare
+  'hospital': ['hospital', 'medical center', 'health center', 'clinic', 'emergency'],
+  'clinic': ['clinic', 'medical clinic', 'health clinic', 'doctor'],
+  'pharmacy': ['pharmacy', 'drugstore', 'pharmacist'],
+  'dentist': ['dentist', 'dental', 'dental clinic'],
+  
+  // Education
+  'school': ['school', 'elementary', 'high school', 'secondary', 'academy'],
+  'university': ['university', 'college', 'university', 'institute'],
+  'library': ['library', 'public library', 'municipal library'],
+  
+  // Food & Dining
+  'restaurant': ['restaurant', 'cafe', 'coffee', 'diner', 'bistro', 'eatery'],
+  'fast food': ['fast food', 'mcdonalds', 'burger king', 'subway', 'tim hortons'],
+  'grocery': ['grocery', 'supermarket', 'food store', 'sobeys', 'loblaws'],
+  
+  // Shopping
+  'mall': ['mall', 'shopping center', 'shopping centre', 'plaza'],
+  'store': ['store', 'shop', 'retail'],
+  'bank': ['bank', 'credit union', 'atm', 'financial'],
+  
+  // Services
+  'gas station': ['gas station', 'gas', 'fuel', 'petro', 'esso', 'shell'],
+  'post office': ['post office', 'canada post', 'mail'],
+  'police': ['police', 'rcmp', 'police station'],
+  'fire station': ['fire station', 'fire department'],
+  
+  // Recreation
+  'park': ['park', 'playground', 'recreation'],
+  'gym': ['gym', 'fitness', 'workout', 'exercise'],
+  'pool': ['pool', 'swimming', 'aquatic'],
+  
+  // Transportation
+  'bus stop': ['bus stop', 'transit', 'halifax transit'],
+  'parking': ['parking', 'parkade', 'garage'],
+  
+  // Government
+  'city hall': ['city hall', 'municipal', 'government'],
+  'courthouse': ['courthouse', 'court', 'justice'],
+  
+  // Entertainment
+  'theater': ['theater', 'theatre', 'cinema', 'movie'],
+  'museum': ['museum', 'gallery', 'art gallery'],
+  'hotel': ['hotel', 'inn', 'motel', 'accommodation']
+};
+
 const DIRECTIONAL_ABBREVIATIONS = {
   'n': 'north',
   'north': 'north',
@@ -54,7 +102,10 @@ export function normalizeQuery(query) {
       streetName: '',
       streetType: '',
       directional: '',
-      unit: null
+      unit: null,
+      isPOISearch: false,
+      poiCategories: [],
+      searchIntent: 'address'
     };
   }
 
@@ -76,6 +127,9 @@ export function normalizeQuery(query) {
   // Tokenize
   const tokens = normalized.split(/\s+/).filter(token => token.length > 0);
   
+  // Detect POI search intent
+  const poiAnalysis = detectPOISearchIntent(normalized, tokens);
+  
   // Parse components
   const parsed = tokenizeAddress(normalized);
   
@@ -83,7 +137,10 @@ export function normalizeQuery(query) {
     original,
     normalized,
     tokens,
-    ...parsed
+    ...parsed,
+    isPOISearch: poiAnalysis.isPOISearch,
+    poiCategories: poiAnalysis.categories,
+    searchIntent: poiAnalysis.intent
   };
 }
 
@@ -268,4 +325,154 @@ function levenshteinDistance(str1, str2) {
   }
   
   return matrix[str2.length][str1.length];
+}
+
+// Detect if the search query is looking for a POI
+export function detectPOISearchIntent(normalizedQuery, tokens) {
+  const categories = [];
+  let isPOISearch = false;
+  let intent = 'address';
+  
+  // Check for POI category keywords
+  for (const [category, keywords] of Object.entries(POI_CATEGORY_MAPPINGS)) {
+    for (const keyword of keywords) {
+      if (normalizedQuery.includes(keyword.toLowerCase())) {
+        categories.push(category);
+        isPOISearch = true;
+        break;
+      }
+    }
+  }
+  
+  // Check for business name patterns (no numbers at start, common business suffixes)
+  const businessSuffixes = ['inc', 'ltd', 'corp', 'company', 'co', 'restaurant', 'cafe', 'store', 'shop', 'center', 'centre'];
+  const hasBusinessSuffix = businessSuffixes.some(suffix => normalizedQuery.includes(suffix));
+  const startsWithNumber = /^\d+/.test(normalizedQuery);
+  
+  if (hasBusinessSuffix || (!startsWithNumber && tokens.length >= 2)) {
+    // Check if it looks like a business name rather than an address
+    const hasStreetType = Object.keys(STREET_TYPE_ABBREVIATIONS).some(type => 
+      normalizedQuery.includes(type)
+    );
+    
+    if (!hasStreetType && !startsWithNumber) {
+      isPOISearch = true;
+      intent = 'poi';
+    }
+  }
+  
+  // Check for specific business names (common chains)
+  const commonBusinesses = [
+    'mcdonalds', 'tim hortons', 'starbucks', 'subway', 'burger king',
+    'walmart', 'sobeys', 'loblaws', 'canadian tire', 'home depot',
+    'halifax central library', 'dalhousie', 'smu', 'nscad'
+  ];
+  
+  for (const business of commonBusinesses) {
+    if (normalizedQuery.includes(business)) {
+      isPOISearch = true;
+      intent = 'poi';
+      break;
+    }
+  }
+  
+  return {
+    isPOISearch,
+    categories: [...new Set(categories)], // Remove duplicates
+    intent: isPOISearch ? 'poi' : intent
+  };
+}
+
+// Get search suggestions based on partial input
+export function getSearchSuggestions(partialQuery, limit = 5) {
+  if (!partialQuery || partialQuery.length < 2) {
+    return [];
+  }
+  
+  const normalized = partialQuery.toLowerCase();
+  const suggestions = [];
+  
+  // Add category suggestions
+  for (const [category, keywords] of Object.entries(POI_CATEGORY_MAPPINGS)) {
+    for (const keyword of keywords) {
+      if (keyword.toLowerCase().startsWith(normalized)) {
+        suggestions.push({
+          text: keyword,
+          type: 'category',
+          category: category
+        });
+        break; // Only add one suggestion per category
+      }
+    }
+  }
+  
+  // Add common business suggestions
+  const commonBusinesses = [
+    'Halifax Central Library',
+    'Dalhousie University',
+    'Saint Mary\'s University',
+    'NSCAD University',
+    'Halifax Shopping Centre',
+    'Mic Mac Mall',
+    'Halifax Infirmary',
+    'QEII Health Sciences Centre',
+    'Tim Hortons',
+    'McDonald\'s',
+    'Starbucks',
+    'Sobeys',
+    'Loblaws',
+    'Walmart',
+    'Canadian Tire'
+  ];
+  
+  for (const business of commonBusinesses) {
+    if (business.toLowerCase().startsWith(normalized)) {
+      suggestions.push({
+        text: business,
+        type: 'business',
+        category: 'business'
+      });
+    }
+  }
+  
+  return suggestions.slice(0, limit);
+}
+
+// Enhanced fuzzy matching for POI names
+export function calculatePOIScore(query, poiName, poiType = null) {
+  if (!query || !poiName) return 0;
+  
+  const queryLower = query.toLowerCase();
+  const nameLower = poiName.toLowerCase();
+  
+  // Exact match
+  if (queryLower === nameLower) return 1.0;
+  
+  // Starts with query
+  if (nameLower.startsWith(queryLower)) return 0.9;
+  
+  // Contains query
+  if (nameLower.includes(queryLower)) return 0.7;
+  
+  // Word boundary matches
+  const queryWords = queryLower.split(/\s+/);
+  const nameWords = nameLower.split(/\s+/);
+  
+  let wordMatches = 0;
+  for (const queryWord of queryWords) {
+    for (const nameWord of nameWords) {
+      if (nameWord.startsWith(queryWord) || queryWord.startsWith(nameWord)) {
+        wordMatches++;
+        break;
+      }
+    }
+  }
+  
+  if (wordMatches > 0) {
+    return 0.6 + (wordMatches / queryWords.length) * 0.2;
+  }
+  
+  // Fuzzy matching
+  const fuzzyScore = calculateFuzzyScore(query, poiName);
+  return fuzzyScore * 0.5; // Lower weight for fuzzy matches
 }
