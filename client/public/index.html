@@ -45,14 +45,30 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://api.mapbox.com" />
+    
+    <!-- DNS prefetch for performance -->
+    <link rel="dns-prefetch" href="//nominatim.openstreetmap.org" />
+    <link rel="dns-prefetch" href="//external.transitapp.com" />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="%PUBLIC_URL%/static/css/main.css" as="style" />
+    <link rel="preload" href="%PUBLIC_URL%/static/js/main.js" as="script" />
 
     <title>Trek.IQ - Accessible Routing for Halifax</title>
 
-    <!-- Mapbox GL CSS -->
+    <!-- Mapbox GL CSS with performance optimizations -->
     <link
       href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"
+        rel="stylesheet"
+      />
+    </noscript>
 
     <!-- Prevent zoom on input focus for iOS -->
     <style>

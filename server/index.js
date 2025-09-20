@@ -24,6 +24,19 @@ const transitProxyRoutes = require('./routes/transitProxy');
 const app = express();
 const PORT = process.env.PORT || 8081;
 
+// Optimize console.log for production (safe addition)
+if (process.env.NODE_ENV === 'production') {
+  // Keep error logging but reduce verbose logging
+  const originalLog = console.log;
+  console.log = (...args) => {
+    // Only log important messages in production
+    if (args[0] && typeof args[0] === 'string' && 
+        (args[0].includes('[API]') || args[0].includes('[SLOW REQUEST]') || args[0].includes('Error'))) {
+      originalLog.apply(console, args);
+    }
+  };
+}
+
 // Enhanced middleware with optimizations
 app.use(helmet({
   contentSecurityPolicy: false // Temporarily disable CSP to test Mapbox
@@ -40,6 +53,35 @@ app.use(compression({
     return compression.filter(req, res);
   }
 }));
+
+// Performance monitoring middleware
+app.use((req, res, next) => {
+  const startTime = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    const logData = {
+      method: req.method,
+      url: req.url,
+      status: res.statusCode,
+      duration: duration + 'ms',
+      userAgent: req.get('User-Agent')?.substring(0, 50) || 'unknown',
+      ip: req.ip || req.connection.remoteAddress
+    };
+    
+    // Log slow requests (>1 second)
+    if (duration > 1000) {
+      console.warn(`[SLOW REQUEST] ${JSON.stringify(logData)}`);
+    }
+    
+    // Log API performance metrics
+    if (req.url.startsWith('/api/')) {
+      console.log(`[API] ${logData.method} ${logData.url} - ${logData.status} (${logData.duration})`);
+    }
+  });
+  
+  next();
+});
 
 // Optimized logging
 app.use(morgan('combined', {
@@ -156,6 +198,9 @@ const geocodingCache = new LRUCache({
 
 // Health check endpoint with enhanced monitoring
 app.get('/api/health', (req, res) => {
+  const startTime = Date.now();
+  const memoryUsage = process.memoryUsage();
+  
   const health = {
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -164,14 +209,23 @@ app.get('/api/health', (req, res) => {
       routeCacheSize: routeCache.size,
       datasetCacheSize: datasetCache.size,
       geocodingCacheSize: geocodingCache.size,
-      memoryUsage: process.memoryUsage(),
-      uptime: process.uptime()
+      memoryUsage: {
+        rss: Math.round(memoryUsage.rss / 1024 / 1024) + ' MB',
+        heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + ' MB',
+        heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + ' MB',
+        external: Math.round(memoryUsage.external / 1024 / 1024) + ' MB'
+      },
+      uptime: Math.round(process.uptime()) + ' seconds',
+      nodeVersion: process.version,
+      platform: process.platform,
+      responseTime: Date.now() - startTime + ' ms'
     },
     uptime: process.uptime(),
     memory: process.memoryUsage(),
     cache: {
       routeCacheSize: routeCache.size,
-      datasetCacheSize: datasetCache.size
+      datasetCacheSize: datasetCache.size,
+      geocodingCacheSize: geocodingCache.size
     }
   };
   

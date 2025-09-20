@@ -271,10 +271,111 @@ function initializeDatabase() {
           
           completed++;
           if (completed === totalTables) {
-            console.log('All database tables ready');
-            resolve(db);
+            // Add performance indexes after tables are created
+            addPerformanceIndexes(db).then(() => {
+              console.log('All database tables and indexes ready');
+              resolve(db);
+            }).catch((indexErr) => {
+              console.error('Error creating indexes:', indexErr);
+              // Still resolve even if indexes fail
+              console.log('All database tables ready (indexes failed)');
+              resolve(db);
+            });
           }
         });
+      });
+    });
+  });
+}
+
+// Add performance indexes for better query performance
+function addPerformanceIndexes(db) {
+  return new Promise((resolve, reject) => {
+    const indexes = [
+      // Barriers indexes
+      'CREATE INDEX IF NOT EXISTS idx_barriers_lat_lng ON barriers(lat, lng)',
+      'CREATE INDEX IF NOT EXISTS idx_barriers_type ON barriers(type)',
+      'CREATE INDEX IF NOT EXISTS idx_barriers_status ON barriers(status)',
+      'CREATE INDEX IF NOT EXISTS idx_barriers_created_at ON barriers(created_at)',
+      
+      // Accessible parking indexes
+      'CREATE INDEX IF NOT EXISTS idx_accessible_parking_lat_lng ON accessible_parking(lat, lng)',
+      'CREATE INDEX IF NOT EXISTS idx_accessible_parking_name ON accessible_parking(name)',
+      
+      // Active travelways indexes
+      'CREATE INDEX IF NOT EXISTS idx_active_travelways_lat_lng ON active_travelways(lat, lng)',
+      'CREATE INDEX IF NOT EXISTS idx_active_travelways_type ON active_travelways(type)',
+      
+      // Bike infrastructure indexes
+      'CREATE INDEX IF NOT EXISTS idx_bike_infrastructure_lat_lng ON bike_infrastructure(lat, lng)',
+      'CREATE INDEX IF NOT EXISTS idx_bike_infrastructure_type ON bike_infrastructure(type)',
+      
+      // Bus stops indexes
+      'CREATE INDEX IF NOT EXISTS idx_bus_stops_lat_lng ON bus_stops(lat, lng)',
+      'CREATE INDEX IF NOT EXISTS idx_bus_stops_accessible ON bus_stops(accessible)',
+      'CREATE INDEX IF NOT EXISTS idx_bus_stops_route_numbers ON bus_stops(route_numbers)',
+      
+      // Civic addresses indexes
+      'CREATE INDEX IF NOT EXISTS idx_civic_addresses_lat_lng ON civic_addresses(lat, lng)',
+      'CREATE INDEX IF NOT EXISTS idx_civic_addresses_street_name ON civic_addresses(street_name)',
+      'CREATE INDEX IF NOT EXISTS idx_civic_addresses_civic_number ON civic_addresses(civic_number)',
+      
+      // Public washrooms indexes
+      'CREATE INDEX IF NOT EXISTS idx_public_washrooms_lat_lng ON public_washrooms(lat, lng)',
+      'CREATE INDEX IF NOT EXISTS idx_public_washrooms_accessible ON public_washrooms(accessible)',
+      
+      // Steps indexes
+      'CREATE INDEX IF NOT EXISTS idx_steps_lat_lng ON steps(lat, lng)',
+      'CREATE INDEX IF NOT EXISTS idx_steps_count ON steps(count)',
+      
+      // Street lights indexes
+      'CREATE INDEX IF NOT EXISTS idx_street_lights_lat_lng ON street_lights(lat, lng)',
+      'CREATE INDEX IF NOT EXISTS idx_street_lights_type ON street_lights(type)',
+      
+      // Traffic control indexes
+      'CREATE INDEX IF NOT EXISTS idx_traffic_control_lat_lng ON traffic_control(lat, lng)',
+      'CREATE INDEX IF NOT EXISTS idx_traffic_control_type ON traffic_control(type)',
+      
+      // Transit routes indexes
+      'CREATE INDEX IF NOT EXISTS idx_transit_routes_route_number ON transit_routes(route_number)',
+      'CREATE INDEX IF NOT EXISTS idx_transit_routes_accessible ON transit_routes(accessible)',
+      
+      // Transit shelters indexes
+      'CREATE INDEX IF NOT EXISTS idx_transit_shelters_lat_lng ON transit_shelters(lat, lng)',
+      'CREATE INDEX IF NOT EXISTS idx_transit_shelters_accessible ON transit_shelters(accessible)',
+      
+      // AI predictions cache indexes
+      'CREATE INDEX IF NOT EXISTS idx_ai_predictions_route_hash ON ai_predictions(route_hash)',
+      'CREATE INDEX IF NOT EXISTS idx_ai_predictions_expires_at ON ai_predictions(expires_at)',
+      
+      // Notifications indexes
+      'CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at)',
+      'CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(read)',
+      
+      // Route history indexes
+      'CREATE INDEX IF NOT EXISTS idx_route_history_user_id ON route_history(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_route_history_created_at ON route_history(created_at)',
+      'CREATE INDEX IF NOT EXISTS idx_route_history_origin_lat_lng ON route_history(origin_lat, origin_lng)',
+      'CREATE INDEX IF NOT EXISTS idx_route_history_destination_lat_lng ON route_history(destination_lat, destination_lng)'
+    ];
+    
+    let completed = 0;
+    const totalIndexes = indexes.length;
+    
+    indexes.forEach((sql, index) => {
+      db.run(sql, (err) => {
+        if (err) {
+          console.error(`Error creating index ${index}:`, err);
+        } else {
+          console.log(`Index ${index + 1}/${totalIndexes} created successfully`);
+        }
+        
+        completed++;
+        if (completed === totalIndexes) {
+          console.log('All performance indexes created');
+          resolve();
+        }
       });
     });
   });
