@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import authService from '../services/authService';
 import RouteDemo from './RouteDemo';
+import UserAuthModal from './UserAuthModal';
 
 // Toggle component for accessibility preferences
 const Toggle = ({ label, checked, onChange, description }) => {
@@ -36,92 +37,129 @@ export default function ProfileSettings({ apiBase = '/api' }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Helper function to get auth header
   const getAuthHeader = () => {
     return authService.getAuthHeaders();
   };
 
-  // Fetch user profile
+  // Check authentication status
   useEffect(() => {
-    async function fetchProfile() {
+    checkAuthentication();
+  }, []);
+
+  const checkAuthentication = () => {
+    const userToken = localStorage.getItem('userToken');
+    const userProfile = localStorage.getItem('userProfile');
+    
+    if (userToken && userProfile) {
+      try {
+        const profileData = JSON.parse(userProfile);
+        setProfile(profileData);
+        setIsAuthenticated(true);
+        setLoading(false);
+        return;
+      } catch (error) {
+        console.error('Error parsing user profile:', error);
+        localStorage.removeItem('userToken');
+        localStorage.removeItem('userProfile');
+      }
+    }
+    
+    // No valid session found, show auth modal
+    setLoading(false);
+    setShowAuthModal(true);
+  };
+
+  // Fetch user profile from server
+  const fetchProfile = async () => {
       try {
         setLoading(true);
         setError(null);
         
+      const userToken = localStorage.getItem('userToken');
         const res = await fetch(`${apiBase}/profile`, { 
-          headers: getAuthHeader() 
+        headers: {
+          'Authorization': `Bearer ${userToken}`,
+          'Content-Type': 'application/json'
+        }
         });
         
         if (!res.ok) {
           if (res.status === 401) {
-            // User not authenticated - try demo login
-            try {
-              await authService.login();
-              const demoProfile = authService.getCurrentUser();
-              setProfile(demoProfile);
+          // Token expired or invalid
+          localStorage.removeItem('userToken');
+          localStorage.removeItem('userProfile');
+          setShowAuthModal(true);
               return;
-            } catch (loginError) {
-              console.error('Demo login failed:', loginError);
-            }
           }
           throw new Error(`Failed to fetch profile: ${res.status}`);
         }
         
         const { profile: userProfile } = await res.json();
         setProfile(userProfile);
+      localStorage.setItem('userProfile', JSON.stringify(userProfile));
       } catch (err) {
         console.error('Error fetching profile:', err);
         setError(err.message);
-        
-        // Create demo profile on error for development
-        try {
-          await authService.login();
-          const demoProfile = authService.getCurrentUser();
-          setProfile(demoProfile);
-        } catch (loginError) {
-          console.error('Demo login failed:', loginError);
-          // Fallback demo profile
-          const demoProfile = {
-            id: 'demo_user',
-            email: 'demo@trek-iq.com',
-            name: 'Demo User',
-            accessibility_preferences: {},
-            metadata: {}
-          };
-          setProfile(demoProfile);
-        }
       } finally {
         setLoading(false);
       }
-    }
-    
+  };
+
+  // Handle user authentication
+  const handleAuthentication = (user) => {
+    setProfile(user);
+    setIsAuthenticated(true);
+    setShowAuthModal(false);
+    // Fetch fresh profile data from server
     fetchProfile();
-  }, [apiBase]);
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('userProfile');
+    setProfile(null);
+    setIsAuthenticated(false);
+    setShowAuthModal(true);
+    toast.success('Logged out successfully');
+  };
 
   // Save profile updates
   const saveProfile = async (updates) => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to save your preferences');
+      return;
+    }
+
     setSaving(true);
     setError(null);
     
     try {
-      const updatedProfile = { ...profile, ...updates };
-      
+      const userToken = localStorage.getItem('userToken');
       const res = await fetch(`${apiBase}/profile`, {
         method: 'PUT',
         headers: { 
-          'Content-Type': 'application/json', 
-          ...getAuthHeader() 
+          'Authorization': `Bearer ${userToken}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(updates)
       });
       
       if (!res.ok) {
+        if (res.status === 401) {
+          handleLogout();
+          return;
+        }
         throw new Error(`Save failed: ${res.status}`);
       }
       
       const { profile: savedProfile } = await res.json();
       setProfile(savedProfile);
+      localStorage.setItem('userProfile', JSON.stringify(savedProfile));
       toast.success('Preferences saved successfully!');
     } catch (err) {
       console.error('Error saving profile:', err);
@@ -193,57 +231,116 @@ export default function ProfileSettings({ apiBase = '/api' }) {
     );
   }
 
-  const prefs = profile.accessibility_preferences || {};
+  const prefs = profile?.accessibility_preferences || {};
 
   return (
     <div className="profile-settings">
+      {/* User Authentication Modal */}
+      <UserAuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onAuthenticated={handleAuthentication}
+        mode="login"
+      />
+
       <div className="profile-header">
-        <h2>Account & Settings — Profile</h2>
-        <p className="profile-subtitle">
-          Customize your accessibility preferences to get personalized navigation routes
-        </p>
+        <div className="profile-header-content">
+          <div>
+            <h2>Account & Settings — Profile</h2>
+            <p className="profile-subtitle">
+              Customize your accessibility preferences to get personalized navigation routes
+            </p>
+          </div>
+          {isAuthenticated && profile && (
+            <div className="user-status">
+              <div className="user-info">
+                <span className="user-name">{profile.name || 'User'}</span>
+                <span className="user-email">{profile.email}</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="logout-button"
+                title="Sign out"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16,17 21,12 16,7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Sign Out
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Show authentication prompt if not logged in */}
+      {!isAuthenticated && (
+        <div className="auth-required">
+          <div className="auth-required-content">
+            <div className="auth-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-16 h-16">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <h2>Sign In Required</h2>
+            <p>Please sign in to access your profile and customize your accessibility preferences.</p>
+            <div className="auth-actions">
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="modal-button primary"
+              >
+                Sign In
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Basic Profile Information */}
-      <div className="profile-section">
-        <SectionHeader 
-          title="Profile Information" 
-          description="Your basic account details"
-        />
-        
-        <div className="form-group">
-          <label htmlFor="user-name" className="form-label">
-            Name
-          </label>
-          <input
-            id="user-name"
-            type="text"
-            value={profile.name || ''}
-            onChange={e => handleNameChange(e.target.value)}
-            className="form-input"
-            placeholder="Enter your name"
+      {profile && (
+        <div className="profile-section">
+          <SectionHeader 
+            title="Profile Information" 
+            description="Your basic account details"
           />
-        </div>
+          
+          <div className="form-group">
+            <label htmlFor="user-name" className="form-label">
+              Name
+            </label>
+            <input
+              id="user-name"
+              type="text"
+              value={profile.name || ''}
+              onChange={e => handleNameChange(e.target.value)}
+              className="form-input"
+              placeholder="Enter your name"
+            />
+          </div>
 
-        <div className="form-group">
-          <label className="form-label">Email</label>
-          <input
-            type="email"
-            value={profile.email || ''}
-            className="form-input"
-            disabled
-            placeholder="Your email address"
-          />
-          <small className="form-help">Email cannot be changed</small>
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input
+              type="email"
+              value={profile.email || ''}
+              className="form-input"
+              disabled
+              placeholder="Your email address"
+            />
+            <small className="form-help">Email cannot be changed</small>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Accessibility Preferences */}
-      <div className="profile-section">
-        <SectionHeader 
-          title="Accessibility Preferences" 
-          description="Configure your unique accessibility needs for personalized routing"
-        />
+      {profile && (
+        <div className="profile-section">
+          <SectionHeader 
+            title="Accessibility Preferences" 
+            description="Configure your unique accessibility needs for personalized routing"
+          />
 
         {/* Mobility Preferences */}
         <div className="preference-group">
@@ -353,7 +450,8 @@ export default function ProfileSettings({ apiBase = '/api' }) {
             onChange={val => handleAccessibilityChange('simplifiedInstructions', val)}
           />
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Save Status */}
       <div className="profile-footer">
@@ -380,13 +478,15 @@ export default function ProfileSettings({ apiBase = '/api' }) {
       </div>
 
       {/* Route Demo Section */}
-      <div className="profile-section">
-        <SectionHeader 
-          title="Route Demo" 
-          description="Test how your preferences affect routing calculations"
-        />
-        <RouteDemo />
-      </div>
+      {profile && (
+        <div className="profile-section">
+          <SectionHeader 
+            title="Route Demo" 
+            description="Test how your preferences affect routing calculations"
+          />
+          <RouteDemo />
+        </div>
+      )}
     </div>
   );
 }

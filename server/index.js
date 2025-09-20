@@ -11,6 +11,8 @@ const rateLimit = require('express-rate-limit');
 
 // Import database and routes
 const db = require('./database');
+const authRoutes = require('./routes/auth');
+const profileRoutes = require('./routes/profile');
 const barrierRoutes = require('./routes/barriers');
 const aiRoutes = require('./routes/ai');
 const geocodingRoutes = require('./routes/geocoding');
@@ -535,6 +537,12 @@ app.get('/api/data/:filename', async (req, res) => {
 
 
 
+
+// Authentication routes
+app.use('/api/auth', authRoutes);
+
+// Profile routes
+app.use('/api/profile', profileRoutes);
 
 // Enhanced barrier routes
 app.use('/api/barriers', barrierRoutes);

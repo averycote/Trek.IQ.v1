@@ -323,7 +323,7 @@ const ReportBarrierModal = React.memo(
         <div
           className={`modal-container barrier-report-modal ${
             isDarkMode ? "dark-mode" : ""
-          }`}
+          } ${window.innerWidth <= 768 ? "mobile-white-bg" : ""}`}
         >
           <div className="modal-header ">
             <h2 className="modal-title">Report Accessibility Barrier</h2>

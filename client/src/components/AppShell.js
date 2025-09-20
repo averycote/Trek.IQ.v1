@@ -14,6 +14,7 @@ import FabCluster from "./FabCluster";
 import EnhancedSearchPanel from "./EnhancedSearchPanel";
 import SideMenu from "./SideMenu";
 import LayersPanel from "./LayersPanel";
+import SimplifiedLayersPanel from "./SimplifiedLayersPanel";
 import ReportBarrierModal from "./ReportBarrierModal";
 import LoadingSpinner from "./LoadingSpinner";
 import NavigationIntegration from "../navigation/NavigationIntegration";
@@ -92,16 +93,12 @@ const AppShell = () => {
     setIsMapLoading(false);
   }, []);
 
-  // Map and layer state
+  // Map and layer state - Start with a simplified set
   const [activeLayers, setActiveLayers] = useState(
     new Set([
       "accessibleParking",
-      "activeTravelways",
-      "sidewalkClosures",
       "transitRoutes",
-      "wheelmap_parking",
-      "wheelmap_food",
-      "wheelmap_toilets"
+      "wheelmap_food"
     ])
   );
 
@@ -902,18 +899,13 @@ const AppShell = () => {
           onNavigate={handleNavigate}
         />
 
-        {/* Layers Panel */}
-        <LayersPanel
+        {/* Simplified Layers Panel */}
+        <SimplifiedLayersPanel
           isOpen={isLayersPanelOpen}
           isDarkMode={currentTheme === "dark"}
           onClose={() => setIsLayersPanelOpen(false)}
           activeLayers={activeLayers}
           onLayerToggle={handleLayerToggle}
-          onWheelmapFilterChange={(filters) => {
-            // Handle wheelmap filter changes here
-            console.log('Wheelmap filters changed:', filters);
-            // You can add logic here to update the WheelmapLayer component with new filters
-          }}
         />
 
         {/* Report Barrier Modal */}

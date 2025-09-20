@@ -46,6 +46,50 @@ code {
     monospace;
 }
 
+/* Authentication required styles */
+.auth-required {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 2rem;
+}
+
+.auth-required-content {
+  text-align: center;
+  max-width: 400px;
+  padding: 2rem;
+  background: var(--card-background);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+}
+
+.auth-required .auth-icon {
+  margin: 0 auto 1.5rem;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.auth-required h2 {
+  margin: 0 0 0.5rem;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.auth-required p {
+  margin: 0 0 2rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.auth-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
 /* Accessibility focus styles */
 *:focus {
   outline: 2px solid #3b82f6;

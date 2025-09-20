@@ -85,12 +85,22 @@ const basicAuth = (req, res, next) => {
   const adminPass = process.env.ADMIN_PASS || 'changeme';
   
   if (username === adminUser && password === adminPass) {
+    req.adminUser = username;
     next();
   } else {
     res.setHeader('WWW-Authenticate', 'Basic realm="Admin Access"');
     res.status(401).json({ error: 'Invalid credentials' });
   }
 };
+
+// Admin verification endpoint
+router.get('/admin/verify', basicAuth, (req, res) => {
+  res.json({ 
+    authenticated: true, 
+    user: req.adminUser,
+    timestamp: new Date().toISOString()
+  });
+});
 
 // POST /api/barriers/report - Report a new barrier
 router.post('/report', reportLimiter, upload.single('photo'), async (req, res) => {

@@ -3,8 +3,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import PageWrapper from '../PageWrapper';
+import AdminAuthModal from '../AdminAuthModal';
 
 const AdminDashboardPage = ({ onPageOpen, onPageClose }) => {
+  // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminUser, setAdminUser] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
   // FIXED: Notify parent component when page opens/closes
   useEffect(() => {
     if (onPageOpen) {
@@ -16,6 +23,70 @@ const AdminDashboardPage = ({ onPageOpen, onPageClose }) => {
       }
     };
   }, [onPageOpen, onPageClose]);
+
+  // Check authentication on component mount
+  useEffect(() => {
+    checkAuthentication();
+  }, []);
+
+  const checkAuthentication = useCallback(() => {
+    const adminAuth = sessionStorage.getItem('adminAuth');
+    const storedUser = sessionStorage.getItem('adminUser');
+    
+    if (adminAuth && storedUser) {
+      // Verify the session is still valid
+      verifyAdminSession(adminAuth, storedUser);
+    } else {
+      setIsCheckingAuth(false);
+      setShowAuthModal(true);
+    }
+  }, []);
+
+  const verifyAdminSession = async (authToken, username) => {
+    try {
+      const response = await fetch('/api/admin/verify', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Basic ${authToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setIsAuthenticated(true);
+        setAdminUser(username);
+        setShowAuthModal(false);
+      } else {
+        // Session expired or invalid
+        sessionStorage.removeItem('adminAuth');
+        sessionStorage.removeItem('adminUser');
+        setShowAuthModal(true);
+      }
+    } catch (error) {
+      console.error('Session verification failed:', error);
+      sessionStorage.removeItem('adminAuth');
+      sessionStorage.removeItem('adminUser');
+      setShowAuthModal(true);
+    } finally {
+      setIsCheckingAuth(false);
+    }
+  };
+
+  const handleAuthentication = (username) => {
+    setIsAuthenticated(true);
+    setAdminUser(username);
+    setShowAuthModal(false);
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('adminAuth');
+    sessionStorage.removeItem('adminUser');
+    setIsAuthenticated(false);
+    setAdminUser(null);
+    setShowAuthModal(true);
+    toast.success('Logged out successfully');
+  };
+
   const [activeTab, setActiveTab] = useState('overview');
   const [barriers, setBarriers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +133,8 @@ const AdminDashboardPage = ({ onPageOpen, onPageClose }) => {
   };
 
   const fetchBarriers = useCallback(async () => {
+    if (!isAuthenticated) return;
+    
     setLoading(true);
     try {
       const queryParams = new URLSearchParams();
@@ -69,8 +142,21 @@ const AdminDashboardPage = ({ onPageOpen, onPageClose }) => {
       if (filters.severity) queryParams.append('severity', filters.severity);
       if (filters.type) queryParams.append('type', filters.type);
 
-      const response = await fetch(`/api/barriers?${queryParams}`);
-      if (!response.ok) throw new Error('Failed to fetch barriers');
+      const adminAuth = sessionStorage.getItem('adminAuth');
+      const response = await fetch(`/api/barriers?${queryParams}`, {
+        headers: {
+          'Authorization': `Basic ${adminAuth}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          handleLogout();
+          return;
+        }
+        throw new Error('Failed to fetch barriers');
+      }
       
       const data = await response.json();
       setBarriers(data.barriers);
@@ -80,7 +166,7 @@ const AdminDashboardPage = ({ onPageOpen, onPageClose }) => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, isAuthenticated]);
 
   // Fetch barriers on component mount
   useEffect(() => {
@@ -89,15 +175,23 @@ const AdminDashboardPage = ({ onPageOpen, onPageClose }) => {
 
   const updateBarrierStatus = useCallback(async (barrierId, newStatus) => {
     try {
+      const adminAuth = sessionStorage.getItem('adminAuth');
       const response = await fetch(`/api/barriers/${barrierId}`, {
         method: 'PATCH',
         headers: {
+          'Authorization': `Basic ${adminAuth}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ status: newStatus })
       });
 
-      if (!response.ok) throw new Error('Failed to update barrier');
+      if (!response.ok) {
+        if (response.status === 401) {
+          handleLogout();
+          return;
+        }
+        throw new Error('Failed to update barrier');
+      }
 
       toast.success('Barrier status updated successfully');
       fetchBarriers(); // Refresh the list
@@ -141,6 +235,25 @@ const AdminDashboardPage = ({ onPageOpen, onPageClose }) => {
 
   const stats = getBarrierStats();
 
+  // Show loading state while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <PageWrapper 
+        title="Admin Dashboard"
+        description="System analytics and barrier management"
+        onPageOpen={onPageOpen}
+        onPageClose={onPageClose}
+      >
+        <div className="page-content">
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <span>Verifying admin access...</span>
+          </div>
+        </div>
+      </PageWrapper>
+    );
+  }
+
   return (
     <PageWrapper 
       title="Admin Dashboard"
@@ -148,8 +261,36 @@ const AdminDashboardPage = ({ onPageOpen, onPageClose }) => {
       onPageOpen={onPageOpen}
       onPageClose={onPageClose}
     >
+      {/* Admin Authentication Modal */}
+      <AdminAuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onAuthenticated={handleAuthentication}
+      />
       
       <div className="page-content">
+        {/* Only show content if authenticated */}
+        {isAuthenticated ? (
+          <>
+            {/* Admin Header */}
+            <div className="admin-header">
+              <div className="admin-info">
+                <span className="admin-welcome">Welcome, {adminUser}</span>
+                <span className="admin-status">● Admin Access</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="logout-button"
+                title="Logout"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16,17 21,12 16,7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Logout
+              </button>
+            </div>
         {/* Tab Navigation */}
         <div className="admin-tabs">
           <button
@@ -433,6 +574,27 @@ const AdminDashboardPage = ({ onPageOpen, onPageClose }) => {
                   </table>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+          </>
+        ) : (
+          <div className="auth-required">
+            <div className="auth-required-content">
+              <div className="auth-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-16 h-16">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  <path d="M9 12l2 2 4-4"/>
+                </svg>
+              </div>
+              <h2>Admin Access Required</h2>
+              <p>Please authenticate to access the admin dashboard.</p>
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="modal-button primary"
+              >
+                Sign In
+              </button>
             </div>
           </div>
         )}
