@@ -51,8 +51,8 @@ const FabCluster = React.memo(
           id: "layers",
           onClick: handleLayersToggle,
           className: "fab-button fab-layers",
-          ariaLabel: `Toggle map layers (${activeLayerCount} active)`,
-          title: `Map Layers (${activeLayerCount} active)`,
+          ariaLabel: `Toggle filters (${activeLayerCount} active)`,
+          title: `Filters (${activeLayerCount} active)`,
           icon: (
             <svg
               viewBox="0 0 24 24"
@@ -99,7 +99,7 @@ const FabCluster = React.memo(
               {button.badge && (
                 <div
                   className="fab-badge"
-                  aria-label={`${button.badge} active layers`}
+                  aria-label={`${button.badge} active filters`}
                 >
                   {button.badge}
                 </div>

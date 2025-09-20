@@ -47,6 +47,7 @@ const WheelmapLayerManager = ({
     return mapping[layerId];
   };
 
+
   /**
    * Handle layer toggle for Wheelmap filters
    */
@@ -290,6 +291,23 @@ const WheelmapLayerManager = ({
       <div class="wheelmap-popup">
         <h4>${categoryConfig.icon} ${details.name}</h4>
         
+        <div class="category-tags" style="margin-bottom: 8px;">
+          <span style="
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #374151;
+          ">
+            <span>🏷️</span>
+            <span style="text-transform: capitalize;">${categoryConfig.id.replace('_', ' ')}</span>
+          </span>
+        </div>
+        
         <div class="accessibility-status" style="color: ${accessibilityColor}">
           <strong>${accessibilityIcon} ${accessibilityLabel}</strong>
         </div>
@@ -332,9 +350,8 @@ const WheelmapLayerManager = ({
         
         <div class="popup-footer">
           <small>
-            Community data from 
             <a href="https://wheelmap.org/nodes/${details.id}" target="_blank" rel="noopener noreferrer">
-              Wheelmap.org
+              View full accessibility details on wheelmap.org
             </a>
           </small>
         </div>

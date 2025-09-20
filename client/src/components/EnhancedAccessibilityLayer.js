@@ -423,7 +423,7 @@ const EnhancedAccessibilityLayer = ({
                gap: 4px;
              ">
             <span>🔗</span>
-            <span>View on ${place.source === 'wheelmap' ? 'Wheelmap' : 'OpenStreetMap'}</span>
+            <span>View full accessibility details on ${place.source === 'wheelmap' ? 'wheelmap.org' : 'OpenStreetMap'}</span>
           </a>
         </div>
       </div>
@@ -444,6 +444,7 @@ const EnhancedAccessibilityLayer = ({
     markers.forEach(marker => marker.remove());
     setMarkers([]);
   }, [markers]);
+
 
   // Don't render controls on mobile (handled by layers panel)
   if (!isVisible || isMobile) {

@@ -220,7 +220,7 @@ const LayersPanel = React.memo(
       ${isDarkMode ? "text-gray-100" : "text-gray-900"}
     `}
             >
-              Map Layers
+              Filters
             </h2>
             <button
               onClick={handleClose}
@@ -304,8 +304,53 @@ const LayersPanel = React.memo(
                 <select 
                   value={wheelmapCategory} 
                   onChange={(e) => {
-                    setWheelmapCategory(e.target.value);
-                    onWheelmapFilterChange?.({ category: e.target.value, accessibility: wheelmapAccessibility });
+                    const selectedCategory = e.target.value;
+                    setWheelmapCategory(selectedCategory);
+                    
+                    // Map category to layer IDs
+                    const categoryToLayerMap = {
+                      'all': null, // Show all layers
+                      'food': 'wheelmap_food',
+                      'shopping': 'wheelmap_shopping',
+                      'accommodation': 'wheelmap_accommodation',
+                      'leisure': 'wheelmap_leisure',
+                      'public_transfer': 'wheelmap_public_transport',
+                      'health': 'wheelmap_health',
+                      'toilets': 'wheelmap_toilets'
+                    };
+
+                    const targetLayerId = categoryToLayerMap[selectedCategory];
+                    
+                    if (selectedCategory === 'all') {
+                      // Turn on all wheelmap layers
+                      const wheelmapLayers = [
+                        'wheelmap_food', 'wheelmap_shopping', 'wheelmap_accommodation', 
+                        'wheelmap_leisure', 'wheelmap_health', 'wheelmap_toilets', 'wheelmap_parking'
+                      ];
+                      
+                      wheelmapLayers.forEach(layer => {
+                        if (!activeLayers.has(layer)) {
+                          onLayerToggle(layer);
+                        }
+                      });
+                    } else if (targetLayerId) {
+                      // First, turn off all wheelmap layers
+                      const wheelmapLayers = [
+                        'wheelmap_food', 'wheelmap_shopping', 'wheelmap_accommodation', 
+                        'wheelmap_leisure', 'wheelmap_health', 'wheelmap_toilets', 'wheelmap_parking'
+                      ];
+                      
+                      wheelmapLayers.forEach(layer => {
+                        if (activeLayers.has(layer)) {
+                          onLayerToggle(layer);
+                        }
+                      });
+                      
+                      // Then turn on the specific layer for this category
+                      onLayerToggle(targetLayerId);
+                    }
+                    
+                    onWheelmapFilterChange?.({ category: selectedCategory, accessibility: wheelmapAccessibility });
                   }}
                   className={`wheelmap-filter-select ${
                     isDarkMode 

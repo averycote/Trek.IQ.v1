@@ -148,7 +148,7 @@ const EnhancedMapOverlay = ({
           <div className="trek-iq-quick-actions show">
             <div className="trek-iq-quick-action" onClick={() => handleQuickAction('layers')}>
               <Squares2X2Icon className="w-5 h-5" />
-              <span>Map Layers</span>
+              <span>Filters</span>
             </div>
             <div className="trek-iq-quick-action" onClick={() => handleQuickAction('accessibility')}>
               <Cog6ToothIcon className="w-5 h-5" />

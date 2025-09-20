@@ -45,20 +45,40 @@ const WheelmapLayer = ({
     
     // Map Wheelmap categories to layer IDs
     const categoryToLayerMap = {
-      'accommodation': 'accessibleParking',
-      'food': 'accessibleParking', 
-      'leisure': 'elevators',
-      'public_transport': 'accessibleStops',
-      'shopping': 'accessibleParking',
-      'tourism': 'curbCuts',
-      'health': 'elevators',
-      'education': 'elevators'
+      'accommodation': 'wheelmap_accommodation',
+      'food': 'wheelmap_food', 
+      'restaurant': 'wheelmap_food',
+      'leisure': 'wheelmap_leisure',
+      'entertainment': 'wheelmap_leisure',
+      'public_transport': 'wheelmap_public_transport',
+      'shopping': 'wheelmap_shopping',
+      'tourism': 'wheelmap_leisure',
+      'health': 'wheelmap_health',
+      'healthcare': 'wheelmap_health',
+      'education': 'wheelmap_health',
+      'toilets': 'wheelmap_toilets',
+      'restroom': 'wheelmap_toilets',
+      'parking': 'wheelmap_parking'
     };
     
     const placeCategory = place.category || place.properties?.category || 'other';
-    const layerId = categoryToLayerMap[placeCategory] || 'accessibleParking';
+    const layerId = categoryToLayerMap[placeCategory.toLowerCase()] || 'wheelmap_food';
     
-    return activeLayers.has(layerId);
+    const shouldShow = activeLayers.has(layerId);
+    
+    // Debug logging (only for first few places to avoid spam)
+    if (Math.random() < 0.1) { // Log only 10% of places to avoid spam
+      console.log('🔍 Filtering place:', {
+        placeName: place.properties?.name || place.name?.en || 'Unknown',
+        placeCategory,
+        layerId,
+        activeLayers: Array.from(activeLayers),
+        shouldShow,
+        placeData: place
+      });
+    }
+    
+    return shouldShow;
   }, [activeLayers]);
 
   // Load accessible places when layer becomes visible
@@ -129,11 +149,13 @@ const WheelmapLayer = ({
   // Re-create markers when active layers change
   useEffect(() => {
     if (isVisible && map && (places.length > 0 || overpassPlaces.length > 0)) {
-      devLog('🔄 Active layers changed, recreating markers:', Array.from(activeLayers));
+      console.log('🔄 Active layers changed, recreating markers:', Array.from(activeLayers));
+      console.log('🔄 Total places available:', places.length + overpassPlaces.length);
       
       // Combine places from both sources
       const allPlaces = [...places, ...overpassPlaces];
       if (allPlaces.length > 0) {
+        console.log('🔄 Recreating markers with filtering...');
         createMarkersFromWidgetData(allPlaces, 'combined');
       }
     }
@@ -369,12 +391,14 @@ const WheelmapLayer = ({
 
     // OPTIMIZATION: Use more efficient array processing with early returns
     const newMarkers = [];
+    let filteredCount = 0;
     
     for (let i = 0; i < limitedPlaces.length; i++) {
       const place = limitedPlaces[i];
       
       // Filter based on active layers
       if (!shouldShowPlace(place)) {
+        filteredCount++;
         continue;
       }
       
@@ -601,7 +625,7 @@ const WheelmapLayer = ({
     }
 
     setMarkers(newMarkers);
-    console.log(`✅ Created ${newMarkers.length} accessibility markers`);
+    console.log(`✅ Created ${newMarkers.length} accessibility markers (filtered out ${filteredCount} places)`);
     console.log('🎉 Accessibility markers loaded successfully! Click any marker for details.');
 
     // Check if any markers are within current map bounds
@@ -1156,7 +1180,7 @@ const WheelmapLayer = ({
             border: 1px solid #e2e8f0;
           ">
             <span>🔗</span>
-            <span>View on Wheelmap</span>
+            <span>View full accessibility details on wheelmap.org</span>
           </a>
         </div>
       </div>
@@ -1251,6 +1275,7 @@ const WheelmapLayer = ({
   const handleWheelchairFilterChange = (filter) => {
     setWheelchairFilter(filter);
   };
+
 
   if (!isVisible) {
     return null;
