@@ -141,6 +141,9 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+// Trust proxy for Railway deployment
+app.set('trust proxy', 1);
+
 // Rate limiting for API protection
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -575,7 +578,13 @@ app.get('/api/data/:filename', async (req, res) => {
     }
     
     const data = await fs.promises.readFile(filePath, 'utf8');
-    const jsonData = JSON.parse(data);
+    let jsonData;
+    try {
+      jsonData = JSON.parse(data);
+    } catch (parseError) {
+      console.error(`Error serving dataset ${filename}:`, parseError.message);
+      return res.status(500).json({ error: 'Invalid JSON data', path: filePath });
+    }
     
     // Cache the dataset
     datasetCache.set(cacheKey, jsonData);
@@ -642,7 +651,13 @@ app.get('/api/optimized-data/:filename', async (req, res) => {
     
     // Load and cache the data
     const data = await fs.promises.readFile(filePath, 'utf8');
-    const jsonData = JSON.parse(data);
+    let jsonData;
+    try {
+      jsonData = JSON.parse(data);
+    } catch (parseError) {
+      console.error(`Error serving dataset ${filename}:`, parseError.message);
+      return res.status(500).json({ error: 'Invalid JSON data', path: filePath });
+    }
     
     datasetCache.set(cacheKey, {
       data: jsonData,
@@ -678,7 +693,13 @@ app.get('/api/data/dynamic/:filename', async (req, res) => {
     
     // Load and cache the data
     const data = await fs.promises.readFile(filePath, 'utf8');
-    const jsonData = JSON.parse(data);
+    let jsonData;
+    try {
+      jsonData = JSON.parse(data);
+    } catch (parseError) {
+      console.error(`Error serving dataset ${filename}:`, parseError.message);
+      return res.status(500).json({ error: 'Invalid JSON data', path: filePath });
+    }
     
     datasetCache.set(cacheKey, {
       data: jsonData,

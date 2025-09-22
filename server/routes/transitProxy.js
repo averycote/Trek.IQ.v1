@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const fetch = require('node-fetch');
 
 // Transit API configuration
 const TRANSIT_API_BASE_URL = 'https://external.transitapp.com/v3';

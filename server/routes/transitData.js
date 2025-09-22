@@ -14,14 +14,24 @@ async function loadTransitData() {
     console.log('🚌 Loading Halifax Transit data...');
     
     // Load transit routes
-    const routesPath = path.join(__dirname, '../data/Transit_Bus_Routes.geojson');
-    const routesData = await fs.readFile(routesPath, 'utf8');
-    transitRoutes = JSON.parse(routesData);
+    try {
+      const routesPath = path.join(__dirname, '../data/Transit_Bus_Routes.geojson');
+      const routesData = await fs.readFile(routesPath, 'utf8');
+      transitRoutes = JSON.parse(routesData);
+    } catch (error) {
+      console.warn('⚠️ Could not load transit routes:', error.message);
+      transitRoutes = { type: 'FeatureCollection', features: [] };
+    }
     
     // Load bus stops
-    const stopsPath = path.join(__dirname, '../data/Bus_Stops_2_9086297843420881686.geojson');
-    const stopsData = await fs.readFile(stopsPath, 'utf8');
-    busStops = JSON.parse(stopsData);
+    try {
+      const stopsPath = path.join(__dirname, '../data/Bus_Stops_2_9086297843420881686.geojson');
+      const stopsData = await fs.readFile(stopsPath, 'utf8');
+      busStops = JSON.parse(stopsData);
+    } catch (error) {
+      console.warn('⚠️ Could not load bus stops:', error.message);
+      busStops = { type: 'FeatureCollection', features: [] };
+    }
     
     // Filter accessible stops
     accessibleStops = {
