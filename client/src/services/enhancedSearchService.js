@@ -523,13 +523,43 @@ class EnhancedSearchService {
     }
   }
 
-  // Clean cache
+  // OPTIMIZATION: Enhanced cache cleanup with TTL
   cleanCache() {
+    const now = Date.now();
+    const ttl = 300000; // 5 minutes
+    
+    // Clean expired entries first
+    for (const [key, value] of this.cache.entries()) {
+      if (value.timestamp && (now - value.timestamp) > ttl) {
+        this.cache.delete(key);
+      }
+    }
+    
+    // Then clean by size if still too large
     if (this.cache.size > this.maxCacheSize) {
       const entries = Array.from(this.cache.entries());
       entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
       const toRemove = entries.slice(0, Math.floor(this.maxCacheSize / 2));
       toRemove.forEach(([key]) => this.cache.delete(key));
+    }
+  }
+
+  // OPTIMIZATION: Start automatic cache cleanup
+  startCacheCleanup() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
+    
+    this.cleanupInterval = setInterval(() => {
+      this.cleanCache();
+    }, 60000); // Clean every minute
+  }
+
+  // OPTIMIZATION: Stop cache cleanup
+  stopCacheCleanup() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
     }
   }
 

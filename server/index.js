@@ -736,10 +736,10 @@ process.on('SIGINT', () => {
 });
 
 // Initialize database and start server
-async function startServer() {
+function startServer() {
   try {
     console.log('🔄 Initializing database...');
-    await db.init();
+    db.init();
     console.log('✅ Database initialized successfully');
     
     // Start server with enhanced logging

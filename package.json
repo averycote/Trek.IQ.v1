@@ -43,7 +43,7 @@
     "compression": "^1.7.4",
     "express-rate-limit": "^7.1.5",
     "lru-cache": "^10.0.1",
-    "sqlite3": "^5.1.7",
+    "better-sqlite3": "^9.2.2",
     "cross-env": "^7.0.3"
   }
 }

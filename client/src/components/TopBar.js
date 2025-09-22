@@ -28,6 +28,7 @@ const TopBar = React.memo(({
     onSystemStatusToggle();
   }, [onSystemStatusToggle]);
 
+
   // Memoized theme icon for better performance
   const themeIcon = useMemo(() => {
     return currentTheme === 'light' ? (
@@ -114,6 +115,7 @@ const TopBar = React.memo(({
               </svg>
             </button>
           )}
+
         </div>
       </div>
 

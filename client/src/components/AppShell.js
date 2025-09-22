@@ -334,7 +334,7 @@ const AppShell = () => {
         }
 
         // Set up status listener
-        apiIntegrationManager.addStatusListener((type, data) => {
+        const statusListener = (type, data) => {
           if (type === "initialized" && data.success) {
             setIsSystemReady(true);
             setSystemStatus(apiIntegrationManager.getSystemStatus());
@@ -345,13 +345,20 @@ const AppShell = () => {
           } else if (type === "system_health") {
             setSystemStatus(apiIntegrationManager.getSystemStatus());
           }
-        });
+        };
+
+        apiIntegrationManager.addStatusListener(statusListener);
 
         // Check initial status
         setIsSystemReady(apiIntegrationManager.isSystemReady());
         setSystemStatus(apiIntegrationManager.getSystemStatus());
 
         console.log("System initialization completed successfully");
+
+        // Return cleanup function
+        return () => {
+          apiIntegrationManager.removeStatusListener(statusListener);
+        };
       } catch (error) {
         console.error("Failed to initialize system:", error);
 
@@ -371,7 +378,10 @@ const AppShell = () => {
       }
     };
 
-    initializeSystem();
+    let cleanupFunction;
+    initializeSystem().then(cleanup => {
+      cleanupFunction = cleanup;
+    });
 
     console.log("AppShell initialized with mobile-first state:", {
       isMobile,
@@ -384,6 +394,13 @@ const AppShell = () => {
       isLayersPanelOpen: false,
       isTransitInfoOpen: false,
     });
+
+    // Cleanup function
+    return () => {
+      if (cleanupFunction) {
+        cleanupFunction();
+      }
+    };
   }, [isMobile]);
 
   // FIXED: Apply theme changes when currentTheme changes
@@ -752,6 +769,7 @@ const AppShell = () => {
     []
   );
 
+
   //Cause the props make the component re-render each time
   const fabClassName = useMemo(() => {
     if (isMobile)
@@ -935,6 +953,7 @@ const AppShell = () => {
           isOpen={isSystemStatusOpen}
           onClose={() => setIsSystemStatusOpen(false)}
         />
+
 
         {/* Route Panels - Same for both mobile and desktop, just styled differently */}
 

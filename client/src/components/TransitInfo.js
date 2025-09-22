@@ -44,7 +44,11 @@ const TransitInfo = ({ isOpen, onClose }) => {
       
       loadTransitData();
       const interval = setInterval(loadTransitData, 30000); // Update every 30 seconds
-      return () => clearInterval(interval);
+      
+      // Cleanup function to clear interval
+      return () => {
+        clearInterval(interval);
+      };
     }
   }, [isOpen]);
 

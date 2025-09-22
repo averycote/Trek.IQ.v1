@@ -1,4 +1,4 @@
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const path = require('path');
 
 // Database file path
@@ -6,14 +6,8 @@ const dbPath = path.join(__dirname, 'data', 'trek-iq.db');
 
 // Initialize database with comprehensive municipal datasets
 function initializeDatabase() {
-  return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(dbPath, (err) => {
-      if (err) {
-        console.error('Error opening database:', err);
-        reject(err);
-        return;
-      }
-      
+  try {
+    const db = new Database(dbPath);
       console.log('Connected to SQLite database');
       
       // Create comprehensive tables for all municipal datasets
@@ -258,39 +252,33 @@ function initializeDatabase() {
       ];
       
       // Execute all table creation statements
-      let completed = 0;
-      const totalTables = createTables.length;
-      
       createTables.forEach((sql, index) => {
-        db.run(sql, (err) => {
-          if (err) {
+      try {
+        db.exec(sql);
+        console.log(`Table ${index + 1}/${createTables.length} created successfully`);
+      } catch (err) {
             console.error(`Error creating table ${index}:`, err);
-          } else {
-            console.log(`Table ${index + 1}/${totalTables} created successfully`);
           }
-          
-          completed++;
-          if (completed === totalTables) {
-            // Add performance indexes after tables are created
-            addPerformanceIndexes(db).then(() => {
-              console.log('All database tables and indexes ready');
-              resolve(db);
-            }).catch((indexErr) => {
-              console.error('Error creating indexes:', indexErr);
-              // Still resolve even if indexes fail
-              console.log('All database tables ready (indexes failed)');
-              resolve(db);
-            });
-          }
-        });
-      });
     });
-  });
+          
+            // Add performance indexes after tables are created
+    try {
+      addPerformanceIndexes(db);
+              console.log('All database tables and indexes ready');
+    } catch (indexErr) {
+              console.error('Error creating indexes:', indexErr);
+              console.log('All database tables ready (indexes failed)');
+    }
+    
+    return db;
+  } catch (err) {
+    console.error('Error opening database:', err);
+    throw err;
+  }
 }
 
 // Add performance indexes for better query performance
 function addPerformanceIndexes(db) {
-  return new Promise((resolve, reject) => {
     const indexes = [
       // Barriers indexes
       'CREATE INDEX IF NOT EXISTS idx_barriers_lat_lng ON barriers(lat, lng)',
@@ -360,25 +348,16 @@ function addPerformanceIndexes(db) {
       'CREATE INDEX IF NOT EXISTS idx_route_history_destination_lat_lng ON route_history(destination_lat, destination_lng)'
     ];
     
-    let completed = 0;
-    const totalIndexes = indexes.length;
-    
     indexes.forEach((sql, index) => {
-      db.run(sql, (err) => {
-        if (err) {
+    try {
+      db.exec(sql);
+      console.log(`Index ${index + 1}/${indexes.length} created successfully`);
+    } catch (err) {
           console.error(`Error creating index ${index}:`, err);
-        } else {
-          console.log(`Index ${index + 1}/${totalIndexes} created successfully`);
-        }
-        
-        completed++;
-        if (completed === totalIndexes) {
-          console.log('All performance indexes created');
-          resolve();
-        }
-      });
-    });
+    }
   });
+  
+  console.log('All performance indexes created');
 }
 
 // Database operations
@@ -387,19 +366,19 @@ class Database {
     this.db = null;
   }
   
-  async init() {
-    this.db = await initializeDatabase();
+  init() {
+    this.db = initializeDatabase();
   }
   
   // Insert new barrier
   insertBarrier(barrier) {
-    return new Promise((resolve, reject) => {
+    try {
       const stmt = this.db.prepare(`
         INSERT INTO barriers (id, lat, lng, type, severity, notes, contact_name, contact_email, photo_url, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
-      stmt.run([
+      const result = stmt.run([
         barrier.id,
         barrier.lat,
         barrier.lng,
@@ -410,88 +389,73 @@ class Database {
         barrier.contact?.email || null,
         barrier.photoUrl || null,
         'new'
-      ], function(err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(this.lastID);
-        }
-      });
+      ]);
       
-      stmt.finalize();
-    });
+      return result.lastInsertRowid;
+    } catch (err) {
+      throw err;
+    }
   }
   
   // Get all barriers
   getAllBarriers() {
-    return new Promise((resolve, reject) => {
-      this.db.all(`
+    try {
+      const stmt = this.db.prepare(`
         SELECT * FROM barriers 
         ORDER BY created_at DESC
-      `, (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows);
-        }
-      });
-    });
+      `);
+      return stmt.all();
+    } catch (err) {
+      throw err;
+    }
   }
   
   // Update barrier status
   updateBarrierStatus(id, status) {
-    return new Promise((resolve, reject) => {
-      this.db.run(`
+    try {
+      const stmt = this.db.prepare(`
         UPDATE barriers 
         SET status = ? 
         WHERE id = ?
-      `, [status, id], function(err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(this.changes);
-        }
-      });
-    });
+      `);
+      const result = stmt.run(status, id);
+      return result.changes;
+    } catch (err) {
+      throw err;
+    }
   }
   
   // Get barrier by ID
   getBarrierById(id) {
-    return new Promise((resolve, reject) => {
-      this.db.get(`
+    try {
+      const stmt = this.db.prepare(`
         SELECT * FROM barriers 
         WHERE id = ?
-      `, [id], (err, row) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(row);
-        }
-      });
-    });
+      `);
+      return stmt.get(id);
+    } catch (err) {
+      throw err;
+    }
   }
 
   // Dataset operations for all municipal datasets
-  async insertDatasetData(tableName, data) {
-    return new Promise((resolve, reject) => {
+  insertDatasetData(tableName, data) {
+    try {
       const columns = Object.keys(data).join(', ');
       const placeholders = Object.keys(data).map(() => '?').join(', ');
       const values = Object.values(data);
       
       const sql = `INSERT OR REPLACE INTO ${tableName} (${columns}) VALUES (${placeholders})`;
-      
-      this.db.run(sql, values, function(err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(this.lastID);
-        }
-      });
-    });
+      const stmt = this.db.prepare(sql);
+      const result = stmt.run(values);
+      return result.lastInsertRowid;
+    } catch (err) {
+      throw err;
+    }
   }
 
-  async getDatasetData(tableName, filters = {}) {
-    return new Promise((resolve, reject) => {
+  getDatasetData(tableName, filters = {}) {
+    try {
       let sql = `SELECT * FROM ${tableName}`;
       const values = [];
       
@@ -501,18 +465,15 @@ class Database {
         values.push(...Object.values(filters));
       }
       
-      this.db.all(sql, values, (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows);
-        }
-      });
-    });
+      const stmt = this.db.prepare(sql);
+      return stmt.all(values);
+    } catch (err) {
+      throw err;
+    }
   }
 
-  async getNearbyData(tableName, lat, lng, radius = 0.5) {
-    return new Promise((resolve, reject) => {
+  getNearbyData(tableName, lat, lng, radius = 0.5) {
+    try {
       const sql = `
         SELECT *, 
                ((lat - ?) * (lat - ?) + (lng - ?) * (lng - ?)) as distance_squared
@@ -522,19 +483,15 @@ class Database {
       `;
       
       const values = [lat, lat, lng, lng, lat, lat, lng, lng, radius * radius];
-      
-      this.db.all(sql, values, (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows);
-        }
-      });
-    });
+      const stmt = this.db.prepare(sql);
+      return stmt.all(values);
+    } catch (err) {
+      throw err;
+    }
   }
 
   // AI Predictions Cache
-  async cachePrediction(routeHash, predictions, ttlMinutes = 15) {
+  cachePrediction(routeHash, predictions, ttlMinutes = 15) {
     const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
     return this.insertDatasetData('ai_predictions', {
       id: routeHash,
@@ -544,23 +501,21 @@ class Database {
     });
   }
 
-  async getCachedPrediction(routeHash) {
-    return new Promise((resolve, reject) => {
-      this.db.get(`
+  getCachedPrediction(routeHash) {
+    try {
+      const stmt = this.db.prepare(`
         SELECT predictions FROM ai_predictions 
         WHERE route_hash = ? AND expires_at > datetime('now')
-      `, [routeHash], (err, row) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(row ? JSON.parse(row.predictions) : null);
-        }
-      });
-    });
+      `);
+      const row = stmt.get(routeHash);
+      return row ? JSON.parse(row.predictions) : null;
+    } catch (err) {
+      throw err;
+    }
   }
 
   // Notifications
-  async createNotification(notification) {
+  createNotification(notification) {
     return this.insertDatasetData('notifications', {
       id: notification.id,
       user_id: notification.userId,
@@ -571,41 +526,36 @@ class Database {
     });
   }
 
-  async getNotifications(userId, limit = 50) {
-    return new Promise((resolve, reject) => {
-      this.db.all(`
+  getNotifications(userId, limit = 50) {
+    try {
+      const stmt = this.db.prepare(`
         SELECT * FROM notifications 
         WHERE user_id = ? 
         ORDER BY created_at DESC 
         LIMIT ?
-      `, [userId, limit], (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows);
-        }
-      });
-    });
+      `);
+      return stmt.all(userId, limit);
+    } catch (err) {
+      throw err;
+    }
   }
 
-  async markNotificationRead(notificationId) {
-    return new Promise((resolve, reject) => {
-      this.db.run(`
+  markNotificationRead(notificationId) {
+    try {
+      const stmt = this.db.prepare(`
         UPDATE notifications 
         SET read = TRUE 
         WHERE id = ?
-      `, [notificationId], function(err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(this.changes);
-        }
-      });
-    });
+      `);
+      const result = stmt.run(notificationId);
+      return result.changes;
+    } catch (err) {
+      throw err;
+    }
   }
 
   // Route History
-  async saveRouteHistory(routeData) {
+  saveRouteHistory(routeData) {
     return this.insertDatasetData('route_history', {
       id: routeData.id,
       user_id: routeData.userId,
@@ -619,37 +569,31 @@ class Database {
     });
   }
 
-  async getRouteHistory(userId, limit = 20) {
-    return new Promise((resolve, reject) => {
-      this.db.all(`
+  getRouteHistory(userId, limit = 20) {
+    try {
+      const stmt = this.db.prepare(`
         SELECT * FROM route_history 
         WHERE user_id = ? 
         ORDER BY created_at DESC 
         LIMIT ?
-      `, [userId, limit], (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows);
-        }
-      });
-    });
+      `);
+      return stmt.all(userId, limit);
+    } catch (err) {
+      throw err;
+    }
   }
 
   // Clean up expired data
-  async cleanupExpiredData() {
-    return new Promise((resolve, reject) => {
-      this.db.run(`
+  cleanupExpiredData() {
+    try {
+      const stmt = this.db.prepare(`
         DELETE FROM ai_predictions 
         WHERE expires_at < datetime('now')
-      `, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-    });
+      `);
+      stmt.run();
+    } catch (err) {
+      throw err;
+    }
   }
 }
 

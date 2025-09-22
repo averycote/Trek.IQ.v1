@@ -1,6 +1,7 @@
 // Enhanced Routing Service for Trek.IQ with Mapbox Directions API and Rate Limiting
 class RoutingService {
   constructor() {
+    // OPTIMIZATION: Use bounded caches with TTL
     this.cache = new Map();
     this.datasets = {};
     this.notifications = [];
@@ -23,6 +24,82 @@ class RoutingService {
     this.minRequestInterval = 200; // 200ms between requests (5 requests per second)
     this.maxConcurrentRequests = 3;
     this.activeRequests = 0;
+
+    // OPTIMIZATION: Cache size limits and TTL
+    this.cacheConfig = {
+      maxSize: 100,
+      ttl: 300000, // 5 minutes
+      cleanupInterval: 60000 // 1 minute
+    };
+
+    // Start cache cleanup
+    this.startCacheCleanup();
+  }
+
+  // OPTIMIZATION: Start cache cleanup
+  startCacheCleanup() {
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupCaches();
+    }, this.cacheConfig.cleanupInterval);
+  }
+
+  // OPTIMIZATION: Cleanup expired and oversized caches
+  cleanupCaches() {
+    const now = Date.now();
+    const caches = [
+      { name: 'cache', cache: this.cache },
+      { name: 'datasetCache', cache: this.datasetCache },
+      { name: 'calculationCache', cache: this.calculationCache },
+      { name: 'routeCache', cache: this.routeCache },
+      { name: 'spatialIndex', cache: this.spatialIndex },
+      { name: 'transitSchedule', cache: this.transitSchedule },
+      { name: 'accessibilityFeatures', cache: this.accessibilityFeatures }
+    ];
+
+    caches.forEach(({ name, cache }) => {
+      let cleanedCount = 0;
+
+      // Clean expired entries
+      for (const [key, value] of cache.entries()) {
+        if (value.timestamp && (now - value.timestamp) > this.cacheConfig.ttl) {
+          cache.delete(key);
+          cleanedCount++;
+        }
+      }
+
+      // Enforce size limits
+      if (cache.size > this.cacheConfig.maxSize) {
+        const entries = Array.from(cache.entries());
+        entries.sort((a, b) => (a[1].timestamp || 0) - (b[1].timestamp || 0));
+        
+        const toRemove = entries.slice(0, cache.size - this.cacheConfig.maxSize);
+        toRemove.forEach(([key]) => {
+          cache.delete(key);
+          cleanedCount++;
+        });
+      }
+
+      if (cleanedCount > 0) {
+        console.log(`🧹 Cleaned ${cleanedCount} entries from ${name} cache`);
+      }
+    });
+  }
+
+  // OPTIMIZATION: Cleanup all resources
+  cleanup() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
+    
+    this.cache.clear();
+    this.datasetCache.clear();
+    this.calculationCache.clear();
+    this.routeCache.clear();
+    this.spatialIndex.clear();
+    this.transitSchedule.clear();
+    this.accessibilityFeatures.clear();
+    
+    console.log('🧹 RoutingService cleaned up');
   }
 
   // Rate limiting helper

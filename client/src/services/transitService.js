@@ -1039,17 +1039,21 @@ class TransitService {
   startSimulatedUpdates() {
     console.log('Starting simulated real-time updates');
 
+    // Store interval IDs for cleanup
+    this.updateIntervals = this.updateIntervals || [];
+
     // Update bus locations every 30 seconds
-    setInterval(async () => {
+    const busLocationInterval = setInterval(async () => {
       try {
         await this.getBusLocations();
       } catch (error) {
         console.warn('Failed to update bus locations:', error);
       }
     }, 30000);
+    this.updateIntervals.push(busLocationInterval);
 
     // Update arrival times every 60 seconds
-    setInterval(async () => {
+    const arrivalTimeInterval = setInterval(async () => {
       try {
         // Update arrival times for active stops
         const activeStops = this.getActiveStops();
@@ -1060,6 +1064,18 @@ class TransitService {
         console.warn('Failed to update arrival times:', error);
       }
     }, 60000);
+    this.updateIntervals.push(arrivalTimeInterval);
+  }
+
+  // Stop simulated updates and cleanup intervals
+  stopSimulatedUpdates() {
+    if (this.updateIntervals) {
+      this.updateIntervals.forEach(intervalId => {
+        clearInterval(intervalId);
+      });
+      this.updateIntervals = [];
+      console.log('Stopped simulated real-time updates');
+    }
   }
 
   // Get active stops (stops with recent activity)

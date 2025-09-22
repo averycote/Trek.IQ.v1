@@ -327,7 +327,10 @@ const DirectionsPanel = ({
         });
       }, 5000); // 5 seconds per step
 
-      return () => clearInterval(interval);
+      // Cleanup function to clear interval
+      return () => {
+        clearInterval(interval);
+      };
     }
   }, [isAutoPlay, directions.length]);
 

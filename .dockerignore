@@ -15,6 +15,10 @@ client/node_modules/
 # Ignore server development files  
 server/node_modules/
 
+# Ignore existing build files (will be rebuilt in container)
+public/
+client/build/
+
 # Ignore test files
 tests/
 *.test.js

@@ -6,7 +6,7 @@
  */
 
 import apiIntegrationManager from './apiIntegrationManager';
-import enhancedUnifiedRoutingService from './enhancedUnifiedRoutingService';
+import consolidatedMapboxRoutingService from './consolidatedMapboxRoutingService';
 
 class ComprehensiveRoutingOrchestrator {
   constructor() {
@@ -76,16 +76,16 @@ class ComprehensiveRoutingOrchestrator {
         console.warn('⚠️ API Integration Manager failed:', error.message);
       }
       
-      // Enhanced unified routing service (essential)
+      // Consolidated Mapbox routing service (essential)
       try {
-        const routingInit = enhancedUnifiedRoutingService.initialize();
+        const routingInit = consolidatedMapboxRoutingService.initialize();
         const routingTimeout = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Routing Service timeout')), 3000)
         );
         await Promise.race([routingInit, routingTimeout]);
-        console.log('✅ Enhanced Unified Routing Service initialized');
+        console.log('✅ Consolidated Mapbox Routing Service initialized');
       } catch (error) {
-        console.warn('⚠️ Enhanced Unified Routing Service failed:', error.message);
+        console.warn('⚠️ Consolidated Mapbox Routing Service failed:', error.message);
       }
       
       this.isInitialized = true;
@@ -296,7 +296,7 @@ class ComprehensiveRoutingOrchestrator {
           mode
         });
         
-        route = await enhancedUnifiedRoutingService.calculateIntelligentRoute(
+        route = await consolidatedMapboxRoutingService.calculateIntelligentRoute(
           origin,
           destination,
           {

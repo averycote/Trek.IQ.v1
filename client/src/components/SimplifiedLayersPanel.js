@@ -42,8 +42,19 @@ const SimplifiedLayersPanel = React.memo(
         description: 'Bus stops, routes, and transit information',
         layers: [
           { id: 'transitRoutes', name: 'Bus Routes', icon: '🚌' },
+          { id: 'busStops', name: 'Bus Stops', icon: '🚏' },
           { id: 'accessibleStops', name: 'Accessible Stops', icon: '♿' },
           { id: 'shelters', name: 'Bus Shelters', icon: '🏠' }
+        ]
+      },
+      {
+        id: 'amenities',
+        name: 'Amenities',
+        icon: '🏢',
+        description: 'Public facilities and amenities',
+        layers: [
+          { id: 'publicWashrooms', name: 'Public Washrooms', icon: '🚻' },
+          { id: 'accessibleParking', name: 'Accessible Parking', icon: '🅿️' }
         ]
       },
       {

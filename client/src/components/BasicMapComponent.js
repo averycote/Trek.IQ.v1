@@ -358,7 +358,7 @@ const BasicMapComponent = ({
 
     // Load accessible parking spots
     if (activeLayers.includes("accessibleParking")) {
-      safeFetchJSON("/api/data/accessible-parking", "Accessible parking")
+      safeFetchJSON("/api/data/Accessible_Parking.geojson", "Accessible parking")
         .then((data) => {
           if (!data) {
             console.log("No accessible parking data available, skipping layer");
@@ -390,7 +390,7 @@ const BasicMapComponent = ({
 
     // Load transit routes
     if (activeLayers.includes("transitRoutes")) {
-      safeFetchJSON("/api/data/transit-routes", "Transit routes")
+      safeFetchJSON("/api/data/Transit_Bus_Routes.geojson", "Transit routes")
         .then((data) => {
           if (!data) {
             console.log("No transit routes data available, skipping layer");
@@ -422,7 +422,7 @@ const BasicMapComponent = ({
 
     // Load sidewalk closures
     if (activeLayers.includes("sidewalkClosures")) {
-      safeFetchJSON("/api/data/sidewalk-closures", "Sidewalk closures")
+      safeFetchJSON("/api/data/dynamic/Sidewalk Closures.geojson", "Sidewalk closures")
         .then((data) => {
           if (!data) {
             console.log("No sidewalk closures data available, skipping layer");
@@ -448,6 +448,70 @@ const BasicMapComponent = ({
               "line-width": 4,
               "line-opacity": 0.8,
               "line-dasharray": [2, 2],
+            },
+          });
+        });
+    }
+
+    // Load public washrooms
+    if (activeLayers.includes("publicWashrooms")) {
+      safeFetchJSON("/api/data/HRM_Public_Washrooms_8937353538278970153.geojson", "Public washrooms")
+        .then((data) => {
+          if (!data) {
+            console.log("No public washrooms data available, skipping layer");
+            return;
+          }
+          
+          if (map.current.getSource("public-washrooms")) {
+            map.current.removeLayer("public-washrooms-layer");
+            map.current.removeSource("public-washrooms");
+          }
+
+          map.current.addSource("public-washrooms", {
+            type: "geojson",
+            data: data,
+          });
+
+          map.current.addLayer({
+            id: "public-washrooms-layer",
+            type: "circle",
+            source: "public-washrooms",
+            paint: {
+              "circle-radius": 5,
+              "circle-color": "#8b5cf6",
+              "circle-opacity": 0.8,
+            },
+          });
+        });
+    }
+
+    // Load bus stops
+    if (activeLayers.includes("busStops")) {
+      safeFetchJSON("/api/data/Bus_Stops_2_9086297843420881686.geojson", "Bus stops")
+        .then((data) => {
+          if (!data) {
+            console.log("No bus stops data available, skipping layer");
+            return;
+          }
+          
+          if (map.current.getSource("bus-stops")) {
+            map.current.removeLayer("bus-stops-layer");
+            map.current.removeSource("bus-stops");
+          }
+
+          map.current.addSource("bus-stops", {
+            type: "geojson",
+            data: data,
+          });
+
+          map.current.addLayer({
+            id: "bus-stops-layer",
+            type: "circle",
+            source: "bus-stops",
+            paint: {
+              "circle-radius": 4,
+              "circle-color": "#f59e0b",
+              "circle-opacity": 0.8,
             },
           });
         });
