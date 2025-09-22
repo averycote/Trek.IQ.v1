@@ -8,7 +8,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Ignore client source files (we only need the built version)
-client/src/
+# client/src/ - commented out because we need source files for building
 # client/public/ - needed for React build process
 client/node_modules/
 
