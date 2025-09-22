@@ -10,11 +10,11 @@ import * as turf from '@turf/turf';
 
 class WheelmapApiService {
   constructor() {
-    this.baseUrl = 'https://wheelmap.org/api';
-    this.localApiUrl = '/api/accessibility'; // Local accessibility API
+    this.baseUrl = 'https://accessibility-cloud.freetls.fastly.net';
+    this.localApiUrl = '/api/wheelmap'; // Local accessibility API proxy
     this.apiKey = 'eb848ae2fbaff7680ff34a9f31eabf06';
     this.cache = new Map();
-    this.cacheTimeout = 10 * 60 * 1000; // 10 minutes for Wheelmap data
+    this.cacheTimeout = 10 * 60 * 1000; // 10 minutes for Accessibility Cloud data
   }
 
   /**
@@ -212,16 +212,17 @@ class WheelmapApiService {
         }
       }
 
-      // Build API URL
+      // Build API URL for Accessibility Cloud
       const params = new URLSearchParams({
-        api_key: this.apiKey,
-        bbox: bbox.join(','),
-        per_page: options.limit || 50,
-        wheelchair: options.wheelchair || 'yes,limited,no,unknown'
+        appToken: this.apiKey,
+        latitude: (bbox[1] + bbox[3]) / 2, // Center latitude
+        longitude: (bbox[0] + bbox[2]) / 2, // Center longitude
+        accuracy: Math.max(bbox[2] - bbox[0], bbox[3] - bbox[1]) * 111000, // Convert to meters
+        limit: options.limit || 50
       });
 
-      if (options.category) {
-        params.append('category', options.category);
+      if (options.wheelchair === 'yes') {
+        params.append('filter', 'at-least-partially-accessible-by-wheelchair');
       }
 
       // Use backend proxy to avoid CORS issues
@@ -246,7 +247,7 @@ class WheelmapApiService {
       }
 
       const data = await response.json();
-      const features = this.transformWheelmapData(data.nodes || []);
+      const features = this.transformAccessibilityCloudData(data.places || []);
 
       console.log(`📍 WheelmapApiService: Found ${features.length} POIs`);
 
@@ -458,6 +459,37 @@ class WheelmapApiService {
         cuisine: node.cuisine,
         opening_hours: node.opening_hours,
         source: 'wheelmap'
+      }
+    }));
+  }
+
+  /**
+   * Transform Accessibility Cloud data to GeoJSON format
+   * @param {Array} places - Accessibility Cloud places array
+   * @returns {Array} Transformed GeoJSON features
+   */
+  transformAccessibilityCloudData(places) {
+    return places.map(place => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [parseFloat(place.longitude), parseFloat(place.latitude)]
+      },
+      properties: {
+        id: place.id,
+        name: place.name || 'Unnamed Place',
+        category: place.category || 'unknown',
+        wheelchair: place.wheelchair || 'unknown',
+        wheelchair_description: place.wheelchairDescription,
+        website: place.website,
+        phone: place.phone,
+        address: place.address || '',
+        amenity: place.amenity,
+        shop: place.shop,
+        cuisine: place.cuisine,
+        opening_hours: place.openingHours,
+        source: 'accessibility-cloud',
+        accessibility_info: place.accessibilityInfo || {}
       }
     }));
   }

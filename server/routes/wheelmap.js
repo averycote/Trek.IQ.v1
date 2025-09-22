@@ -1,19 +1,26 @@
 const express = require('express');
 const router = express.Router();
 
-// Wheelmap API proxy route to avoid CORS issues
+// Wheelmap API configuration
+const WHEELMAP_API_KEY = process.env.WHEELMAP_API_KEY || 'eb848ae2fbaff7680ff34a9f31eabf06';
+
+// Accessibility Cloud API proxy route to avoid CORS issues
 router.get('/nodes', async (req, res) => {
   try {
-    // Forward all query parameters to the Wheelmap API
-    const queryParams = new URLSearchParams(req.query).toString();
-    const wheelmapUrl = `https://wheelmap.org/api/nodes?${queryParams}`;
+    // Build Accessibility Cloud API URL with proper parameters
+    const params = new URLSearchParams({
+      appToken: WHEELMAP_API_KEY,
+      ...req.query
+    });
     
-    console.log('🌐 Wheelmap Proxy: Forwarding request to:', wheelmapUrl);
+    const accessibilityCloudUrl = `https://accessibility-cloud.freetls.fastly.net/place-infos?${params.toString()}`;
+    
+    console.log('🌐 Accessibility Cloud Proxy: Forwarding request to:', accessibilityCloudUrl);
     
     // Use dynamic import for node-fetch
     const fetch = (await import('node-fetch')).default;
     
-    const response = await fetch(wheelmapUrl, {
+    const response = await fetch(accessibilityCloudUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -23,20 +30,20 @@ router.get('/nodes', async (req, res) => {
     });
 
     if (!response.ok) {
-      console.error(`❌ Wheelmap API error: ${response.status} ${response.statusText}`);
+      console.error(`❌ Accessibility Cloud API error: ${response.status} ${response.statusText}`);
       return res.status(response.status).json({
-        error: 'Wheelmap API request failed',
+        error: 'Accessibility Cloud API request failed',
         status: response.status,
         statusText: response.statusText
       });
     }
 
     const data = await response.json();
-    console.log(`✅ Wheelmap Proxy: Successfully fetched ${data.nodes ? data.nodes.length : 0} nodes`);
+    console.log(`✅ Accessibility Cloud Proxy: Successfully fetched ${data.places ? data.places.length : 0} places`);
     
     // Log sample data for debugging
-    if (data.nodes && data.nodes.length > 0) {
-      console.log('📍 Sample Wheelmap node:', JSON.stringify(data.nodes[0], null, 2));
+    if (data.places && data.places.length > 0) {
+      console.log('📍 Sample Accessibility Cloud place:', JSON.stringify(data.places[0], null, 2));
     }
     
     // Forward the response with proper CORS headers
@@ -49,7 +56,7 @@ router.get('/nodes', async (req, res) => {
     res.json(data);
     
   } catch (error) {
-    console.error('❌ Wheelmap Proxy error:', error.message);
+    console.error('❌ Accessibility Cloud Proxy error:', error.message);
     res.status(500).json({
       error: 'Internal server error',
       message: error.message

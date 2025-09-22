@@ -3,7 +3,7 @@ const router = express.Router();
 
 // Transit API configuration
 const TRANSIT_API_BASE_URL = 'https://external.transitapp.com/v3';
-const TRANSIT_API_KEY = 'cff68f1b04298f22e86c2c46e91c6e4f39d825109694d9a4a0cab82a9446b71b';
+const TRANSIT_API_KEY = process.env.TRANSIT_API_KEY || 'cff68f1b04298f22e86c2c46e91c6e4f39d825109694d9a4a0cab82a9446b71b';
 
 // Rate limiting tracking
 let requestCount = 0;
