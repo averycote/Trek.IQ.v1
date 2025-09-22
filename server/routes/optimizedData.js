@@ -4,7 +4,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs').promises;
-const sqlite3 = require('sqlite3').verbose();
+const SQLite3 = require('better-sqlite3');
 const router = express.Router();
 
 // Cache for optimized datasets
@@ -241,11 +241,8 @@ router.post('/clear-cache', (req, res) => {
 // Helper function to query nearby features
 function queryNearbyFeatures(dbPath, lat, lng, radius, limit) {
   return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(dbPath, (err) => {
-      if (err) {
-        reject(err);
-        return;
-      }
+    try {
+      const db = new SQLite3(dbPath);
       
       // Calculate bounding box for radius search
       const latDelta = radius / 111000; // Approximate degrees per meter
@@ -264,42 +261,36 @@ function queryNearbyFeatures(dbPath, lat, lng, radius, limit) {
         LIMIT ?
       `;
       
-      db.all(query, [minLat, maxLat, minLng, maxLng, lat, lat, lng, lng, limit], (err, rows) => {
-        db.close();
-        
-        if (err) {
-          reject(err);
-          return;
-        }
-        
-        // Parse JSON properties and geometry
-        const features = rows.map(row => ({
-          id: row.id,
-          type: 'Feature',
-          geometry: JSON.parse(row.geometry),
-          properties: JSON.parse(row.properties),
-          distance: calculateDistance(lat, lng, row.lat, row.lng)
-        }));
-        
-        // Filter by actual radius and sort by distance
-        const filteredFeatures = features
-          .filter(f => f.distance <= radius)
-          .sort((a, b) => a.distance - b.distance);
-        
-        resolve(filteredFeatures);
-      });
-    });
+      const stmt = db.prepare(query);
+      const rows = stmt.all(minLat, maxLat, minLng, maxLng, lat, lat, lng, lng, limit);
+      db.close();
+      
+      // Parse JSON properties and geometry
+      const features = rows.map(row => ({
+        id: row.id,
+        type: 'Feature',
+        geometry: JSON.parse(row.geometry),
+        properties: JSON.parse(row.properties),
+        distance: calculateDistance(lat, lng, row.lat, row.lng)
+      }));
+      
+      // Filter by actual radius and sort by distance
+      const filteredFeatures = features
+        .filter(f => f.distance <= radius)
+        .sort((a, b) => a.distance - b.distance);
+      
+      resolve(filteredFeatures);
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
 // Helper function to query features in bounding box
 function queryBBoxFeatures(dbPath, minLat, minLng, maxLat, maxLng, limit) {
   return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(dbPath, (err) => {
-      if (err) {
-        reject(err);
-        return;
-      }
+    try {
+      const db = new SQLite3(dbPath);
       
       const query = `
         SELECT id, lat, lng, type, properties, geometry
@@ -308,25 +299,22 @@ function queryBBoxFeatures(dbPath, minLat, minLng, maxLat, maxLng, limit) {
         LIMIT ?
       `;
       
-      db.all(query, [minLat, maxLat, minLng, maxLng, limit], (err, rows) => {
-        db.close();
-        
-        if (err) {
-          reject(err);
-          return;
-        }
-        
-        // Parse JSON properties and geometry
-        const features = rows.map(row => ({
-          id: row.id,
-          type: 'Feature',
-          geometry: JSON.parse(row.geometry),
-          properties: JSON.parse(row.properties)
-        }));
-        
-        resolve(features);
-      });
-    });
+      const stmt = db.prepare(query);
+      const rows = stmt.all(minLat, maxLat, minLng, maxLng, limit);
+      db.close();
+      
+      // Parse JSON properties and geometry
+      const features = rows.map(row => ({
+        id: row.id,
+        type: 'Feature',
+        geometry: JSON.parse(row.geometry),
+        properties: JSON.parse(row.properties)
+      }));
+      
+      resolve(features);
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
