@@ -1,4 +1,4 @@
-const Database = require('better-sqlite3');
+const SQLite3 = require('better-sqlite3');
 const path = require('path');
 
 // Database file path
@@ -7,7 +7,7 @@ const dbPath = path.join(__dirname, 'data', 'trek-iq.db');
 // Initialize database with comprehensive municipal datasets
 function initializeDatabase() {
   try {
-    const db = new Database(dbPath);
+    const db = new SQLite3(dbPath);
       console.log('Connected to SQLite database');
       
       // Create comprehensive tables for all municipal datasets
