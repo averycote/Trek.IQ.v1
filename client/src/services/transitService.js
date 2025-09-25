@@ -957,14 +957,18 @@ class TransitService {
 
     console.log('Starting real-time Transit API updates');
 
+    // Store interval IDs for cleanup
+    this.updateIntervals = this.updateIntervals || [];
+
     // Update bus locations and arrival times every 30 seconds
-    setInterval(async () => {
+    const realtimeInterval = setInterval(async () => {
       try {
         await this.updateRealtimeData();
       } catch (error) {
         console.warn('Failed to update real-time data:', error);
       }
     }, 30000);
+    this.updateIntervals.push(realtimeInterval);
   }
 
   // Update real-time data using Transit API

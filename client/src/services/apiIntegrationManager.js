@@ -349,20 +349,39 @@ class APIIntegrationManager {
 
   // Start monitoring and maintenance tasks
   startMonitoringTasks() {
+    // Clear existing intervals
+    this.stopMonitoringTasks();
+    
+    // Store interval IDs for cleanup
+    this.monitoringIntervals = this.monitoringIntervals || [];
+    
     // Periodic health checks
-    setInterval(() => {
+    const healthCheckInterval = setInterval(() => {
       this.performHealthChecks();
     }, 60000); // Every minute
+    this.monitoringIntervals.push(healthCheckInterval);
     
     // Periodic data harmonization
-    setInterval(() => {
+    const harmonizationInterval = setInterval(() => {
       this.performDataHarmonization();
     }, 300000); // Every 5 minutes
+    this.monitoringIntervals.push(harmonizationInterval);
     
     // Performance monitoring
-    setInterval(() => {
+    const performanceInterval = setInterval(() => {
       this.updatePerformanceMetrics();
     }, 30000); // Every 30 seconds
+    this.monitoringIntervals.push(performanceInterval);
+  }
+
+  // Stop monitoring and maintenance tasks
+  stopMonitoringTasks() {
+    if (this.monitoringIntervals) {
+      this.monitoringIntervals.forEach(intervalId => {
+        clearInterval(intervalId);
+      });
+      this.monitoringIntervals = [];
+    }
   }
 
   // Perform health checks
