@@ -31,6 +31,16 @@ const ensureServiceInitialized = async (req, res, next) => {
  * Get places within a bounding box with optional filters
  */
 router.get('/places', ensureServiceInitialized, (req, res) => {
+  // Set timeout for this specific route
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      res.status(504).json({ 
+        error: 'Request timeout', 
+        message: 'Accessibility data request took too long to process' 
+      });
+    }
+  }, 15000); // 15 second timeout for data queries
+
   try {
     const { bbox, wheelchair, category, limit } = req.query;
     
@@ -56,6 +66,7 @@ router.get('/places', ensureServiceInitialized, (req, res) => {
     
     const places = accessibilityService.getPlacesInBounds(bboxArray, options);
     
+    clearTimeout(timeout);
     res.json({
       success: true,
       count: places.length,
@@ -64,6 +75,7 @@ router.get('/places', ensureServiceInitialized, (req, res) => {
     });
     
   } catch (error) {
+    clearTimeout(timeout);
     console.error('Error fetching places:', error);
     res.status(500).json({
       error: 'Failed to fetch places',
@@ -236,6 +248,8 @@ router.get('/health', (req, res) => {
 });
 
 module.exports = router;
+
+
 
 
 

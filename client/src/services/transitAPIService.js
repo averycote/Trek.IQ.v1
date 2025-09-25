@@ -9,10 +9,12 @@ class TransitAPIService {
     this.cacheTimeout = 300000; // 5 minutes cache
     this.requestQueue = [];
     this.lastRequestTime = 0;
-    this.minRequestInterval = 12000; // 12 seconds between requests (5 calls/minute = 1 call per 12 seconds)
+    this.minRequestInterval = 15000; // 15 seconds between requests (4 calls/minute = 1 call per 15 seconds)
     this.maxConcurrentRequests = 1;
     this.activeRequests = 0;
     this.apiAvailable = true; // Track if API is available
+    this.retryDelay = 30000; // 30 seconds retry delay after 429 error
+    this.last429Error = 0; // Track last 429 error time
 
     // Halifax coordinates for region filtering
     this.halifaxRegion = {
@@ -29,6 +31,14 @@ class TransitAPIService {
   // Rate limiting helper
   async throttleRequest() {
     const now = Date.now();
+    
+    // Check if we're in a 429 error cooldown period
+    if (now - this.last429Error < this.retryDelay) {
+      const waitTime = this.retryDelay - (now - this.last429Error);
+      console.log(`429 cooldown: Waiting ${waitTime}ms before retry`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+    
     const timeSinceLastRequest = now - this.lastRequestTime;
 
     if (timeSinceLastRequest < this.minRequestInterval) {
@@ -84,9 +94,19 @@ class TransitAPIService {
       // Handle API errors gracefully
       console.warn('Transit API request failed:', error.message);
 
-      // If it's an authentication or rate limit error, mark API as unavailable
-      if (error.message.includes('401') || error.message.includes('403') || error.message.includes('429')) {
-        console.warn('Transit API authentication or rate limit issue detected');
+      // Handle 429 rate limit errors specifically
+      if (error.message.includes('429')) {
+        console.warn('Transit API rate limit exceeded, setting cooldown period');
+        this.last429Error = Date.now();
+        this.apiAvailable = false;
+        
+        // Return cached data if available instead of throwing error
+        return null;
+      }
+
+      // If it's an authentication error, mark API as unavailable
+      if (error.message.includes('401') || error.message.includes('403')) {
+        console.warn('Transit API authentication issue detected');
         this.apiAvailable = false;
       }
 

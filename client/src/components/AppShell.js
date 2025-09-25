@@ -26,7 +26,8 @@ import DirectionsPanel from "./DirectionsPanel";
 // OPTIMIZATION: Removed MobileRoutingVerification import
 
 import apiIntegrationManager from "../services/apiIntegrationManager";
-import comprehensiveRoutingOrchestrator from "../services/comprehensiveRoutingOrchestrator";
+import restoredRoutingService from "../services/restoredRoutingService";
+import simpleRouteRenderingService from "../services/simpleRouteRenderingService";
 import barrierDetectionRegistry from "../services/barrierDetectionRegistry";
 import elevationService from "../services/elevationService";
 import barrierReportingService from "../services/barrierReportingService";
@@ -265,7 +266,7 @@ const AppShell = () => {
 
         const initPromises = [
           apiIntegrationManager.initialize(),
-          comprehensiveRoutingOrchestrator.initialize(),
+          restoredRoutingService.initialize(),
           barrierDetectionRegistry.initialize(),
           elevationService.initialize(),
           geolocationService.initialize(),
@@ -524,8 +525,13 @@ const AppShell = () => {
           routeRequest
         );
 
-        const result = await comprehensiveRoutingOrchestrator.generateRoute(
-          routeRequest
+        const result = await restoredRoutingService.calculateRoute(
+          routeRequest.origin,
+          routeRequest.destination,
+          {
+            avoidSteps: routeRequest.userPrefs?.avoidSteps,
+            preferAccessible: routeRequest.userPrefs?.preferAccessible
+          }
         );
 
         console.log("Comprehensive route generation result:", result);
@@ -533,6 +539,20 @@ const AppShell = () => {
         if (result.success && result.route) {
           // Store comprehensive route data
           setComprehensiveRoute(result.route);
+
+          // Initialize rendering service if map is available
+          if (mapInstance) {
+            try {
+              simpleRouteRenderingService.initialize(mapInstance);
+              await simpleRouteRenderingService.renderRoute(result.route);
+              if (result.directions) {
+                await simpleRouteRenderingService.renderDirections(result.directions);
+              }
+            } catch (error) {
+              console.warn('⚠️ Route rendering failed (Leaflet may not be loaded yet):', error.message);
+              // Route calculation succeeded, just rendering failed
+            }
+          }
 
           // Always show route panel directly - barriers are handled within the panel
           setIsRoutePanelOpen(true);
@@ -683,8 +703,8 @@ const AppShell = () => {
 
       // Make services available globally for testing and analytics
       window.apiIntegrationManager = apiIntegrationManager;
-      window.comprehensiveRoutingOrchestrator =
-        comprehensiveRoutingOrchestrator;
+      window.restoredRoutingService = restoredRoutingService;
+      window.simpleRouteRenderingService = simpleRouteRenderingService;
       window.barrierReportingService = barrierReportingService;
 
       // Expose individual services
@@ -710,9 +730,9 @@ const AppShell = () => {
       window.nominatimService = searchService; // Search service uses Nominatim as fallback
       window.layersService = apiIntegrationManager; // API manager handles layers
       window.poiService = apiIntegrationManager; // API manager handles POIs
-      window.accessibilityService = comprehensiveRoutingOrchestrator; // Routing orchestrator handles accessibility
-      window.scoringService = comprehensiveRoutingOrchestrator; // Routing orchestrator handles scoring
-      window.rankingService = comprehensiveRoutingOrchestrator; // Routing orchestrator handles ranking
+      window.accessibilityService = restoredRoutingService; // Restored routing service handles accessibility
+      window.scoringService = restoredRoutingService; // Restored routing service handles scoring
+      window.rankingService = restoredRoutingService; // Restored routing service handles ranking
       window.slopeService = elevationService; // Elevation service handles slopes
       window.openElevationService = elevationService; // Same as elevation service
       window.fallbackService = apiIntegrationManager; // API manager handles fallbacks

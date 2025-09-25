@@ -15,6 +15,86 @@ class WheelmapApiService {
     this.apiKey = 'eb848ae2fbaff7680ff34a9f31eabf06';
     this.cache = new Map();
     this.cacheTimeout = 10 * 60 * 1000; // 10 minutes for Accessibility Cloud data
+    
+    // Rate limiting configuration
+    this.requestQueue = [];
+    this.lastRequestTime = 0;
+    this.minRequestInterval = 20000; // 20 seconds between requests (3 calls/minute)
+    this.maxConcurrentRequests = 1;
+    this.activeRequests = 0;
+    this.retryDelay = 60000; // 60 seconds retry delay after 429 error
+    this.last429Error = 0; // Track last 429 error time
+    this.apiAvailable = true;
+  }
+
+  /**
+   * Rate limiting helper
+   */
+  async throttleRequest() {
+    const now = Date.now();
+    
+    // Check if we're in a 429 error cooldown period
+    if (now - this.last429Error < this.retryDelay) {
+      const waitTime = this.retryDelay - (now - this.last429Error);
+      console.log(`Wheelmap 429 cooldown: Waiting ${waitTime}ms before retry`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+    
+    const timeSinceLastRequest = now - this.lastRequestTime;
+
+    if (timeSinceLastRequest < this.minRequestInterval) {
+      const waitTime = this.minRequestInterval - timeSinceLastRequest;
+      console.log(`Wheelmap rate limiting: Waiting ${waitTime}ms before next request`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+
+    this.lastRequestTime = Date.now();
+  }
+
+  /**
+   * Execute request with rate limiting
+   */
+  async executeRequest(requestFn) {
+    if (this.activeRequests >= this.maxConcurrentRequests) {
+      // Wait for current request to complete
+      await new Promise(resolve => {
+        this.requestQueue.push(resolve);
+      });
+    }
+
+    this.activeRequests++;
+
+    try {
+      await this.throttleRequest();
+      const result = await requestFn();
+      return result;
+    } catch (error) {
+      // Handle 429 rate limit errors specifically
+      if (error.message.includes('429')) {
+        console.warn('Wheelmap API rate limit exceeded, setting cooldown period');
+        this.last429Error = Date.now();
+        this.apiAvailable = false;
+        
+        // Return cached data if available instead of throwing error
+        return null;
+      }
+
+      // If it's an authentication error, mark API as unavailable
+      if (error.message.includes('401') || error.message.includes('403')) {
+        console.warn('Wheelmap API authentication issue detected');
+        this.apiAvailable = false;
+      }
+
+      throw error;
+    } finally {
+      this.activeRequests--;
+
+      // Process next request in queue
+      if (this.requestQueue.length > 0) {
+        const nextRequest = this.requestQueue.shift();
+        nextRequest();
+      }
+    }
   }
 
   /**
@@ -229,21 +309,31 @@ class WheelmapApiService {
       const proxyUrl = `/api/wheelmap/nodes?${params.toString()}`;
       console.log('🌐 WheelmapApiService: Fetching POIs via proxy:', proxyUrl);
 
-      const response = await fetch(proxyUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
+      const response = await this.executeRequest(async () => {
+        return await fetch(proxyUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
       });
 
-      if (!response.ok) {
+      if (!response || !response.ok) {
+        // Handle 429 rate limit errors
+        if (response && response.status === 429) {
+          console.warn('Wheelmap API rate limited, returning cached data if available');
+          const cached = this.cache.get(cacheKey);
+          return cached ? cached.data : [];
+        }
+        
         // If proxy fails, use fallback data for Halifax area
-        if (response.status === 504) {
+        if (response && response.status === 504) {
           console.log('🔄 WheelmapApiService: Proxy timeout, using Halifax accessibility fallback data');
           return this.getHalifaxAccessibilityFallback(bounds, options);
         }
-        throw new Error(`Wheelmap API request failed: ${response.status} ${response.statusText}`);
+        
+        throw new Error(`Wheelmap API request failed: ${response?.status || 'No response'} ${response?.statusText || 'Unknown error'}`);
       }
 
       const data = await response.json();

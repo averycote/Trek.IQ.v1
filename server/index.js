@@ -20,6 +20,7 @@ const wheelmapRoutes = require('./routes/wheelmap');
 const accessibilityRoutes = require('./routes/accessibilityData');
 const transitDataRoutes = require('./routes/transitData');
 const transitProxyRoutes = require('./routes/transitProxy');
+const optimizedDataRoutes = require('./routes/optimizedData');
 
 const app = express();
 const PORT = process.env.PORT || 8081;
@@ -94,6 +95,27 @@ app.use(morgan('combined', {
 }));
 
 app.use(express.json({ limit: '10mb' }));
+
+// Global timeout handling middleware
+app.use((req, res, next) => {
+  // Set a 30-second timeout for all requests
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      console.error(`[TIMEOUT] Request timeout for ${req.method} ${req.url}`);
+      res.status(504).json({ 
+        error: 'Gateway timeout', 
+        message: 'Request took too long to process',
+        timeout: '30s'
+      });
+    }
+  }, 30000);
+
+  // Clear timeout when response is sent
+  res.on('finish', () => clearTimeout(timeout));
+  res.on('close', () => clearTimeout(timeout));
+  
+  next();
+});
 
 // Enhanced CORS configuration
 const corsOptions = {
@@ -185,6 +207,9 @@ const datasetCache = new LRUCache({
     return JSON.stringify(value).length;
   }
 });
+
+// Track active requests to prevent duplicate loads
+const activeRequests = new Map();
 
 // Geocoding cache for search performance
 const geocodingCache = new LRUCache({
@@ -546,60 +571,126 @@ function calculateDistance(point1, point2) {
 // Transit data routes (must be before the generic /api/data/:filename route)
 app.use('/api/data', transitDataRoutes);
 
-// Optimized dataset serving with caching
+// Optimized dataset serving with caching and timeout handling
 app.get('/api/data/:filename', async (req, res) => {
+  // Set response timeout
+  res.setTimeout(30000, () => {
+    console.error(`Timeout serving dataset: ${req.params.filename}`);
+    if (!res.headersSent) {
+      res.status(504).json({ error: 'Gateway Timeout', message: 'Dataset loading timed out' });
+    }
+  });
+
   try {
     const { filename } = req.params;
-    
-    // Check cache
     const cacheKey = `dataset_${filename}`;
+    
+    // Check cache first
     const cachedData = datasetCache.get(cacheKey);
     if (cachedData) {
+      console.log(`Serving cached dataset: ${filename}`);
       return res.json(cachedData);
+    }
+    
+    // Check if request is already in progress
+    if (activeRequests.has(cacheKey)) {
+      console.log(`Request already in progress for: ${filename}, waiting...`);
+      try {
+        const result = await activeRequests.get(cacheKey);
+        return res.json(result);
+      } catch (error) {
+        console.error(`Error waiting for dataset ${filename}:`, error.message);
+        return res.status(500).json({ error: 'Internal Server Error', details: error.message });
+      }
     }
     
     // Decode URL-encoded filename
     const decodedFilename = decodeURIComponent(filename);
-    
-    // Load dataset
     const filePath = path.join(__dirname, 'data', decodedFilename);
-    console.log(`Attempting to load dataset: ${filePath}`);
-    console.log(`Original filename: ${filename}`);
-    console.log(`Decoded filename: ${decodedFilename}`);
     
-    // Check if file exists
+    // Create promise for this request
+    const loadPromise = (async () => {
+      console.log(`Loading dataset: ${decodedFilename}`);
+      
+      // Check if file exists
+      try {
+        await fs.promises.access(filePath);
+      } catch (accessError) {
+        console.error(`File not found: ${filePath}`);
+        throw new Error(`Dataset not found: ${filePath}`);
+      }
+      
+      // Read file with timeout
+      const data = await Promise.race([
+        fs.promises.readFile(filePath, 'utf8'),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('File read timeout')), 20000)
+        )
+      ]);
+      
+      let jsonData;
+      try {
+        jsonData = JSON.parse(data);
+      } catch (parseError) {
+        console.error(`JSON parse error for ${filename}:`, parseError.message);
+        throw new Error(`Invalid JSON data: ${parseError.message}`);
+      }
+      
+      // Cache the dataset
+      datasetCache.set(cacheKey, jsonData);
+      
+      console.log(`Successfully loaded and cached dataset: ${decodedFilename} (${jsonData.features?.length || 0} features)`);
+      return jsonData;
+    })();
+    
+    // Store the promise to prevent duplicate requests
+    activeRequests.set(cacheKey, loadPromise);
+    
     try {
-      await fs.promises.access(filePath);
-      console.log(`File exists: ${filePath}`);
-    } catch (accessError) {
-      console.error(`File does not exist: ${filePath}`);
-      console.error(`Access error: ${accessError.message}`);
-      return res.status(404).json({ error: 'Dataset not found', path: filePath });
+      const result = await loadPromise;
+      res.json(result);
+    } finally {
+      // Clean up the active request
+      activeRequests.delete(cacheKey);
     }
-    
-    const data = await fs.promises.readFile(filePath, 'utf8');
-    let jsonData;
-    try {
-      jsonData = JSON.parse(data);
-    } catch (parseError) {
-      console.error(`Error serving dataset ${filename}:`, parseError.message);
-      return res.status(500).json({ error: 'Invalid JSON data', path: filePath });
-    }
-    
-    // Cache the dataset
-    datasetCache.set(cacheKey, jsonData);
-    
-    console.log(`Successfully loaded dataset: ${decodedFilename}`);
-    res.json(jsonData);
   } catch (error) {
-    console.error(`Error serving dataset ${req.params.filename}:`, error);
-    res.status(404).json({ error: 'Dataset not found', details: error.message });
+    console.error(`Error serving dataset ${req.params.filename}:`, error.message);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal Server Error', details: error.message });
+    }
   }
 });
 
 
 
 
+
+// Simple data serving route for real Halifax GeoJSON files
+app.get('/api/data/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const dataPath = path.join(__dirname, 'data', filename);
+    
+    // Check if file exists
+    try {
+      await fs.access(dataPath);
+    } catch (error) {
+      return res.status(404).json({ error: 'Data file not found' });
+    }
+    
+    // Set appropriate headers
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    
+    // Stream the file
+    const fileStream = fs.createReadStream(dataPath);
+    fileStream.pipe(res);
+    
+  } catch (error) {
+    console.error('Error serving data file:', error);
+    res.status(500).json({ error: 'Failed to serve data file' });
+  }
+});
 
 // Authentication routes
 app.use('/api/auth', authRoutes);
@@ -626,7 +717,6 @@ app.use('/api/accessibility', accessibilityRoutes);
 app.use('/api/transit', transitProxyRoutes);
 
 // Optimized data routes
-const optimizedDataRoutes = require('./routes/optimizedData');
 app.use('/api/optimized-data', optimizedDataRoutes);
 
 // Serve optimized data files

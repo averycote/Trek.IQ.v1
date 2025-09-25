@@ -12,6 +12,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// Set server timeouts for large file handling
+app.use((req, res, next) => {
+  // Set a longer timeout for data endpoints (5 minutes)
+  if (req.path.startsWith('/api/data/')) {
+    req.setTimeout(300000); // 5 minutes
+    res.setTimeout(300000); // 5 minutes
+  } else {
+    req.setTimeout(30000); // 30 seconds for other endpoints
+    res.setTimeout(30000); // 30 seconds for other endpoints
+  }
+  next();
+});
+
 // Trust proxy for Railway deployment (fixes rate limiting with X-Forwarded-For headers)
 app.set('trust proxy', 1);
 
@@ -261,6 +274,50 @@ function calculateDistance(point1, point2) {
   return R * c;
 }
 
+// Specific redirect endpoints (must come before the general /api/data/:filename endpoint)
+app.get('/api/data/steps.geojson', async (req, res) => {
+  // Redirect to the correct file name
+  res.redirect('/api/data/Steps_577353981712784942.geojson');
+});
+
+app.get('/api/data/sidewalk_closures.geojson', async (req, res) => {
+  // Redirect to the correct file name
+  res.redirect('/api/data/Sidewalk%20Closures.geojson');
+});
+
+app.get('/api/data/street_lights.geojson', async (req, res) => {
+  // Redirect to the correct file name
+  res.redirect('/api/data/Street_Lights_-8646609400635809433.geojson');
+});
+
+app.get('/api/data/transit_shelters.geojson', async (req, res) => {
+  // Redirect to the correct file name
+  res.redirect('/api/data/Transit_Shelters_1139561051208148127.geojson');
+});
+
+app.get('/api/data/accessible-parking', async (req, res) => {
+  // Redirect to the correct file name
+  res.redirect('/api/data/Accessible_Parking.geojson');
+});
+
+app.get('/api/data/transit-routes', async (req, res) => {
+  // Redirect to the correct file name
+  res.redirect('/api/data/Transit_Bus_Routes.geojson');
+});
+
+app.get('/api/data/sidewalk-closures', async (req, res) => {
+  // Redirect to the correct file name
+  res.redirect('/api/data/Sidewalk%20Closures.geojson');
+});
+
+app.get('/api/data/winter_maintenance.geojson', async (req, res) => {
+  // Return empty GeoJSON for missing winter maintenance data
+  res.json({
+    type: 'FeatureCollection',
+    features: []
+  });
+});
+
 // Data serving endpoint for GeoJSON files
 app.get('/api/data/:filename', async (req, res) => {
   try {
@@ -273,7 +330,7 @@ app.get('/api/data/:filename', async (req, res) => {
       return res.json(cachedData);
     }
     
-    const { readFile, access } = await import('fs/promises');
+    const { readFile, access, stat } = await import('fs/promises');
     const decodedFilename = decodeURIComponent(filename);
     
     // Define search paths in order of priority
@@ -285,13 +342,13 @@ app.get('/api/data/:filename', async (req, res) => {
     ];
     
     let filePath = null;
-    let data = null;
+    let fileStats = null;
     
     // Try each path until we find the file
     for (const searchPath of searchPaths) {
       try {
         await access(searchPath); // Check if file exists
-        data = await readFile(searchPath, 'utf8');
+        fileStats = await stat(searchPath);
         filePath = searchPath;
         break;
       } catch (fileError) {
@@ -300,7 +357,7 @@ app.get('/api/data/:filename', async (req, res) => {
       }
     }
     
-    if (!data) {
+    if (!filePath) {
       console.error(`File not found in any directory: ${decodedFilename}`);
       return res.status(404).json({ 
         error: 'Dataset not found', 
@@ -309,21 +366,121 @@ app.get('/api/data/:filename', async (req, res) => {
       });
     }
     
+    const fileSizeMB = fileStats.size / (1024 * 1024);
+    console.log(`📁 Loading dataset: ${decodedFilename} (${fileSizeMB.toFixed(2)} MB)`);
+    
+    // For very large files (>50MB), provide a warning and consider streaming
+    if (fileSizeMB > 50) {
+      console.warn(`⚠️ Large file detected: ${decodedFilename} (${fileSizeMB.toFixed(2)} MB) - this may take a while to load`);
+    }
+    
+    const data = await readFile(filePath, 'utf8');
     const jsonData = JSON.parse(data);
     
-    // Cache the dataset
-    datasetCache.set(cacheKey, jsonData);
+    // Cache the dataset (but limit cache size for very large files)
+    if (fileSizeMB < 100) { // Don't cache files larger than 100MB
+      datasetCache.set(cacheKey, jsonData);
+    }
     
     console.log(`✅ Served dataset: ${decodedFilename} from ${filePath.replace(__dirname, '')}`);
     res.json(jsonData);
   } catch (error) {
     console.error(`Error serving dataset ${req.params.filename}:`, error);
+    
+    // Provide more specific error messages
+    if (error.code === 'ENOENT') {
+      return res.status(404).json({ error: 'Dataset file not found' });
+    } else if (error instanceof SyntaxError) {
+      return res.status(500).json({ error: 'Invalid JSON in dataset file' });
+    } else if (error.code === 'EMFILE' || error.code === 'ENFILE') {
+      return res.status(503).json({ error: 'Server temporarily unavailable - too many open files' });
+    }
+    
     res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 });
 
+// Wheelmap API proxy endpoints
+app.get('/api/wheelmap/nodes', async (req, res) => {
+  try {
+    const { readFile } = await import('fs/promises');
+    const wheelmapDataPath = path.join(__dirname, 'server/data/accessibility/wheelmap-accessibility.geojson');
+    
+    console.log('🌍 Serving Wheelmap accessibility data from local file');
+    const data = await readFile(wheelmapDataPath, 'utf8');
+    const wheelmapData = JSON.parse(data);
+    
+    // Transform to match expected API format
+    const places = wheelmapData.features.map(feature => ({
+      id: feature.properties.originalId,
+      name: feature.properties.name?.en || 'Unnamed Place',
+      category: feature.properties.category,
+      wheelchair: feature.properties.accessibility?.wheelchair || 'unknown',
+      wheelchair_description: feature.properties.accessibility?.wheelchair_description,
+      coordinates: feature.geometry.coordinates,
+      properties: feature.properties
+    }));
+    
+    res.json({ places });
+  } catch (error) {
+    console.error('Error serving Wheelmap data:', error);
+    res.status(500).json({ error: 'Failed to load accessibility data' });
+  }
+});
+
+app.get('/api/wheelmap/places', async (req, res) => {
+  try {
+    const { readFile } = await import('fs/promises');
+    const wheelmapDataPath = path.join(__dirname, 'server/data/accessibility/wheelmap-accessibility.geojson');
+    
+    console.log('🌍 Serving Wheelmap places data from local file');
+    const data = await readFile(wheelmapDataPath, 'utf8');
+    const wheelmapData = JSON.parse(data);
+    
+    // Get query parameters for filtering
+    const { bbox, limit = 100, wheelchair, category } = req.query;
+    
+    // Transform to match expected API format
+    let places = wheelmapData.features.map(feature => ({
+      id: feature.properties.originalId,
+      name: feature.properties.name?.en || 'Unnamed Place',
+      category: feature.properties.category,
+      wheelchair: feature.properties.accessibility?.wheelchair || 'unknown',
+      wheelchair_description: feature.properties.accessibility?.wheelchair_description,
+      coordinates: feature.geometry.coordinates,
+      properties: feature.properties
+    }));
+    
+    // Apply filters
+    if (wheelchair && wheelchair !== 'all') {
+      places = places.filter(place => place.wheelchair === wheelchair);
+    }
+    
+    if (category && category !== 'all') {
+      places = places.filter(place => place.category === category);
+    }
+    
+    // Apply bbox filter if provided
+    if (bbox) {
+      const [west, south, east, north] = bbox.split(',').map(Number);
+      places = places.filter(place => {
+        const [lng, lat] = place.coordinates;
+        return lng >= west && lng <= east && lat >= south && lat <= north;
+      });
+    }
+    
+    // Apply limit
+    places = places.slice(0, parseInt(limit));
+    
+    res.json({ places });
+  } catch (error) {
+    console.error('Error serving Wheelmap places data:', error);
+    res.status(500).json({ error: 'Failed to load accessibility data' });
+  }
+});
+
 // Additional data endpoints for frontend compatibility
-app.get('/api/data/sidewalk-closures', async (req, res) => {
+app.get('/api/data/sidewalk-closures-legacy', async (req, res) => {
   try {
     const { readFile, access } = await import('fs/promises');
     const searchPaths = [

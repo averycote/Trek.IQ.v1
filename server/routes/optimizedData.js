@@ -4,8 +4,16 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs').promises;
-const SQLite3 = require('better-sqlite3');
 const router = express.Router();
+
+// Fallback for better-sqlite3
+let SQLite3;
+try {
+  SQLite3 = require('better-sqlite3');
+} catch (error) {
+  console.log('better-sqlite3 not available, using fallback for optimized data');
+  SQLite3 = null;
+}
 
 // Cache for optimized datasets
 const datasetCache = new Map();
@@ -242,6 +250,11 @@ router.post('/clear-cache', (req, res) => {
 function queryNearbyFeatures(dbPath, lat, lng, radius, limit) {
   return new Promise((resolve, reject) => {
     try {
+      if (!SQLite3) {
+        // Fallback: return empty result
+        resolve([]);
+        return;
+      }
       const db = new SQLite3(dbPath);
       
       // Calculate bounding box for radius search
@@ -290,6 +303,11 @@ function queryNearbyFeatures(dbPath, lat, lng, radius, limit) {
 function queryBBoxFeatures(dbPath, minLat, minLng, maxLat, maxLng, limit) {
   return new Promise((resolve, reject) => {
     try {
+      if (!SQLite3) {
+        // Fallback: return empty result
+        resolve([]);
+        return;
+      }
       const db = new SQLite3(dbPath);
       
       const query = `

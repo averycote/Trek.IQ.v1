@@ -1,9 +1,0 @@
-[33mc9b66b2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m  Final Railway deployment updates
-[33md15c4fc[m  Fix Railway build - include client/build directory
-[33m1bee6bd[m  Fix Railway Nixpacks build errors
-[33mc58e1d5[m  Fix Railway deployment build process
-[33m4411eca[m  Configure Trek.iQ for Railway deployment
-[33m8e827bf[m Complete merge and prepare for Railway deployment
-[33m1ef56d0[m Fix Railway deployment configuration
-[33m1c5da2f[m Add files via upload
-[33m69c7528[m  Major Trek.IQ improvements: Performance optimization, accessibility enhancements, and bug fixes
