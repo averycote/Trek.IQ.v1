@@ -1,5 +1,5 @@
 // API Integration Manager - Central coordinator for all Trek.IQ APIs
-import enhancedUnifiedRoutingService from './enhancedUnifiedRoutingService.js';
+import productionRoutingService from './productionRouting/ProductionRoutingService.js';
 import enhancedSearchService from './enhancedSearchService.js';
 import enhancedAIService from './enhancedAIService.js';
 import transitService from './transitService.js';
@@ -19,7 +19,7 @@ class APIIntegrationManager {
     
     // Service registry
     this.services = {
-      routing: enhancedUnifiedRoutingService,
+      routing: productionRoutingService,
       search: enhancedSearchService,
       ai: enhancedAIService,
       transit: transitService,

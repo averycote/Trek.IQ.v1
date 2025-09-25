@@ -26,7 +26,8 @@ import DirectionsPanel from "./DirectionsPanel";
 // OPTIMIZATION: Removed MobileRoutingVerification import
 
 import apiIntegrationManager from "../services/apiIntegrationManager";
-import restoredRoutingService from "../services/restoredRoutingService";
+import productionRoutingService from "../services/productionRouting/ProductionRoutingService.js";
+import DataManager from "../services/productionRouting/DataManager.js";
 import simpleRouteRenderingService from "../services/simpleRouteRenderingService";
 import barrierDetectionRegistry from "../services/barrierDetectionRegistry";
 import elevationService from "../services/elevationService";
@@ -264,9 +265,15 @@ const AppShell = () => {
 
         // OPTIMIZATION: Removed unused initTimeout variable
 
+        // Initialize DataManager first
+        const dataManager = new DataManager();
+        await dataManager.initialize();
+        
+        // Initialize ProductionRoutingService with DataManager
+        await productionRoutingService.initialize({ dataManager });
+
         const initPromises = [
           apiIntegrationManager.initialize(),
-          restoredRoutingService.initialize(),
           barrierDetectionRegistry.initialize(),
           elevationService.initialize(),
           geolocationService.initialize(),
@@ -525,12 +532,14 @@ const AppShell = () => {
           routeRequest
         );
 
-        const result = await restoredRoutingService.calculateRoute(
+        const result = await productionRoutingService.calculateRoute(
           routeRequest.origin,
           routeRequest.destination,
           {
             avoidSteps: routeRequest.userPrefs?.avoidSteps,
-            preferAccessible: routeRequest.userPrefs?.preferAccessible
+            preferAccessible: routeRequest.userPrefs?.preferAccessible,
+            accessibility: routeRequest.userPrefs?.preferAccessible,
+            profile: 'walking'
           }
         );
 
@@ -703,7 +712,7 @@ const AppShell = () => {
 
       // Make services available globally for testing and analytics
       window.apiIntegrationManager = apiIntegrationManager;
-      window.restoredRoutingService = restoredRoutingService;
+      window.productionRoutingService = productionRoutingService;
       window.simpleRouteRenderingService = simpleRouteRenderingService;
       window.barrierReportingService = barrierReportingService;
 
@@ -730,9 +739,9 @@ const AppShell = () => {
       window.nominatimService = searchService; // Search service uses Nominatim as fallback
       window.layersService = apiIntegrationManager; // API manager handles layers
       window.poiService = apiIntegrationManager; // API manager handles POIs
-      window.accessibilityService = restoredRoutingService; // Restored routing service handles accessibility
-      window.scoringService = restoredRoutingService; // Restored routing service handles scoring
-      window.rankingService = restoredRoutingService; // Restored routing service handles ranking
+      window.accessibilityService = productionRoutingService; // Production routing service handles accessibility
+      window.scoringService = productionRoutingService; // Production routing service handles scoring
+      window.rankingService = productionRoutingService; // Production routing service handles ranking
       window.slopeService = elevationService; // Elevation service handles slopes
       window.openElevationService = elevationService; // Same as elevation service
       window.fallbackService = apiIntegrationManager; // API manager handles fallbacks
