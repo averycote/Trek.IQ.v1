@@ -160,11 +160,11 @@ class ProductionRoutingService {
     
     try {
       // Validate inputs
-      this._validateRouteRequest(origin, destination, options);
+      await this._validateRouteRequest(origin, destination, options);
       
-      // Normalize coordinates
-      const normalizedOrigin = this._normalizeCoordinates(origin);
-      const normalizedDestination = this._normalizeCoordinates(destination);
+      // Normalize coordinates (may involve geocoding)
+      const normalizedOrigin = await this._normalizeCoordinates(origin);
+      const normalizedDestination = await this._normalizeCoordinates(destination);
       
       // Check cache first
       const cacheKey = this._generateCacheKey(normalizedOrigin, normalizedDestination, options);
@@ -434,13 +434,13 @@ class ProductionRoutingService {
     }
   }
 
-  _validateRouteRequest(origin, destination, options) {
+  async _validateRouteRequest(origin, destination, options) {
     if (!origin || !destination) {
       throw new Error('Origin and destination are required');
     }
     
-    const originCoords = this._normalizeCoordinates(origin);
-    const destCoords = this._normalizeCoordinates(destination);
+    const originCoords = await this._normalizeCoordinates(origin);
+    const destCoords = await this._normalizeCoordinates(destination);
     
     // Check coordinate validity
     if (!this._isValidCoordinate(originCoords) || !this._isValidCoordinate(destCoords)) {
@@ -454,13 +454,51 @@ class ProductionRoutingService {
     }
   }
 
-  _normalizeCoordinates(coords) {
+  async _normalizeCoordinates(coords) {
     if (Array.isArray(coords)) {
       return [coords[0], coords[1]];
     } else if (coords.lng !== undefined && coords.lat !== undefined) {
       return [coords.lng, coords.lat];
+    } else if (typeof coords === 'string') {
+      // Geocode string address
+      const geocoded = await this._geocodeAddress(coords);
+      return geocoded;
     } else {
       throw new Error('Invalid coordinate format');
+    }
+  }
+
+  async _geocodeAddress(address) {
+    try {
+      // Use the DataManager to geocode the address
+      if (this.dataManager && this.dataManager.geocodeAddress) {
+        const result = await this.dataManager.geocodeAddress(address);
+        if (result && result.coordinates) {
+          return result.coordinates;
+        }
+      }
+      
+      // Fallback to Mapbox geocoding
+      const mapboxToken = 'pk.eyJ1IjoiYXZlcnljb3RlIiwiYSI6ImNtZWxpdmpxMzBpOWQyanE0Z2p2YWRicjIifQ.fQzZ_KDIxILvcV471Z3EjQ';
+      const encodedAddress = encodeURIComponent(address);
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxToken}&country=CA&proximity=-63.5752,44.6488`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Geocoding failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (data.features && data.features.length > 0) {
+        const feature = data.features[0];
+        return feature.center; // [lng, lat]
+      }
+      
+      throw new Error('No geocoding results found');
+      
+    } catch (error) {
+      console.error('❌ Geocoding failed:', error);
+      throw new Error(`Could not geocode address: ${address}`);
     }
   }
 
