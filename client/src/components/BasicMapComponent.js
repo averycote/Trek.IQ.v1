@@ -61,6 +61,19 @@ const BasicMapComponent = ({
   // Halifax center coordinates
   const HALIFAX_CENTER = useMemo(() => [-63.5756, 44.6475], []);
 
+  // Helper function to safely call map methods
+  const safeMapCall = (callback, fallback = null) => {
+    try {
+      if (map.current && map.current.isStyleLoaded && map.current.isStyleLoaded()) {
+        return callback(map.current);
+      }
+      return fallback;
+    } catch (error) {
+      console.warn('Map method call failed:', error);
+      return fallback;
+    }
+  };
+
   // Get route color based on accessibility score
   const getRouteColor = (accessibilityScore) => {
     const score = accessibilityScore || 50;
@@ -109,6 +122,13 @@ const BasicMapComponent = ({
           zoom: 12,
           maxZoom: 18,
           minZoom: 10,
+          // Add defensive options to prevent undefined state errors
+          antialias: true,
+          preserveDrawingBuffer: true,
+          failIfMajorPerformanceCaveat: false,
+          // Disable fog/atmosphere effects that might cause undefined state issues
+          fog: false,
+          sky: false
         });
 
         map.current.on("load", () => {
@@ -144,6 +164,22 @@ const BasicMapComponent = ({
               }
             }, 100);
           }
+        });
+
+        // Add error handling for map events
+        map.current.on("error", (e) => {
+          console.error("Mapbox GL JS error:", e);
+          setStatus("Map error occurred");
+        });
+
+        // Add error handling for style loading
+        map.current.on("style.load", () => {
+          console.log("Map style loaded successfully");
+        });
+
+        // Add error handling for style errors
+        map.current.on("style.error", (e) => {
+          console.error("Mapbox GL JS style error:", e);
         });
 
         // Listen for style data to be loaded
@@ -527,7 +563,7 @@ const BasicMapComponent = ({
     // Add a small delay to ensure style is fully loaded
     const renderRouteWithDelay = () => {
       setTimeout(async () => {
-        if (map.current && map.current.isStyleLoaded()) {
+        if (map.current && map.current.isStyleLoaded && map.current.isStyleLoaded()) {
           // Route rendering logic
           const routeSourceId = "route-source";
           const routeLayerId = "route-layer";
