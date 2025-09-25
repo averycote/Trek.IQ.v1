@@ -2,6 +2,9 @@
  * Unit Tests for Hardened Routing Service
  * 
  * Tests all routing functionality including distance verification, scoring, and rendering.
+ * 
+ * TODO: Fix Jest ES module configuration - currently failing due to import statements
+ * Need to either install proper Babel dependencies or convert to CommonJS require()
  */
 
 import hardenedRoutingService from '../hardenedRoutingService.js';
@@ -33,7 +36,19 @@ jest.mock('@turf/turf', () => ({
     for (let i = 0; i < coords.length - 1; i++) {
       const from = { coordinates: coords[i] };
       const to = { coordinates: coords[i + 1] };
-      totalLength += turf.distance(from, to, options);
+      // Use the mocked distance function directly
+      const R = 6371e3; // Earth's radius in meters
+      const [lng1, lat1] = from.coordinates;
+      const [lng2, lat2] = to.coordinates;
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      totalLength += R * c;
     }
     return totalLength;
   }),

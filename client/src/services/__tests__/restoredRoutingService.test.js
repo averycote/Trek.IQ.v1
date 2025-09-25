@@ -3,6 +3,9 @@
  * 
  * Tests the core functionality of the restored routing service
  * to ensure it works correctly with real Halifax data.
+ * 
+ * TODO: Fix Jest ES module configuration - currently failing due to import statements
+ * Need to either install proper Babel dependencies or convert to CommonJS require()
  */
 
 import restoredRoutingService from '../restoredRoutingService.js';
