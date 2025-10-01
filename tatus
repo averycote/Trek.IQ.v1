@@ -1,0 +1,48 @@
+warning: in the working copy of 'client/src/components/AppShell.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'client/src/components/UnifiedRoutePanel.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'client/src/components/WheelmapLayer.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'client/src/navigation/NavigationIntegration.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'client/src/services/apiHealthMonitor.js', LF will be replaced by CRLF the next time Git touches it
+client/src/components/AppShell.js
+client/src/components/BasicMapComponent.js
+client/src/components/UnifiedRoutePanel.js
+client/src/components/WheelmapLayer.js
+client/src/navigation/NavigationIntegration.js
+client/src/services/FINAL_SYSTEM_ARCHITECTURE.md
+client/src/services/__tests__/systemIntegration.test.js
+client/src/services/advancedRoutingService.js
+client/src/services/aiLearningService.js
+client/src/services/aiService.js
+client/src/services/apiHealthMonitor.js
+client/src/services/apiIntegrationManager.js
+client/src/services/barrierDetectionRegistry.js
+client/src/services/comprehensiveRoutingOrchestrator.js
+client/src/services/consolidatedMapboxRoutingService.js
+client/src/services/elevationService.js
+client/src/services/enhancedAIService.js
+client/src/services/enhancedAccessibleRoutingService.js
+client/src/services/enhancedOverpassService.js
+client/src/services/enhancedSearchService.js
+client/src/services/enhancedUnifiedRoutingService.js
+client/src/services/geocodingService.js
+client/src/services/halifaxTransitDataService.js
+client/src/services/hardenedRoutingService.js
+client/src/services/mapboxRoutingService.js
+client/src/services/mapboxSearchService.js
+client/src/services/openElevationService.js
+client/src/services/openRouteService.js
+client/src/services/optimizedRoutingService.js
+client/src/services/overpassApiService.js
+client/src/services/productionRouting/ProductionRoutingService.js
+client/src/services/restoredRoutingService.js
+client/src/services/routeRenderingService.js
+client/src/services/routingService.js
+client/src/services/simpleAIService.js
+client/src/services/simpleGeocodingService.js
+client/src/services/simpleRouteRenderingService.js
+client/src/services/systemIntegrationService.js
+client/src/services/transitAPIService.js
+client/src/services/transitService.js
+client/src/services/unifiedAccessibleRoutingService.js
+client/src/services/unifiedRoutingService.js
+client/src/services/wheelmapApiService.js

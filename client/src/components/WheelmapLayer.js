@@ -2,6 +2,7 @@
 // OPTIMIZATION: Lazy load Overpass API service to reduce initial bundle size
 import React, { useState, useEffect, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
+import apiHealthMonitor from '../services/apiHealthMonitor';
 
 // OPTIMIZATION: Production-safe logging to reduce console overhead
 const devLog = (...args) => {
@@ -160,6 +161,35 @@ const WheelmapLayer = ({
       }
     }
   }, [activeLayers, places, overpassPlaces, isVisible, map]);
+
+  // Register services with health monitor
+  useEffect(() => {
+    const registerServices = async () => {
+      try {
+        // Register WheelmapApiService
+        const { default: wheelmapApiService } = await import('../services/wheelmapApiService.js');
+        apiHealthMonitor.registerService('wheelmap', wheelmapApiService, {
+          maxFailureRate: 0.3,
+          maxResponseTime: 15000,
+          circuitBreakerThreshold: 5
+        });
+
+        // Register OverpassApiService
+        const { default: overpassApiService } = await import('../services/overpassApiService');
+        apiHealthMonitor.registerService('overpass', overpassApiService, {
+          maxFailureRate: 0.4,
+          maxResponseTime: 30000,
+          circuitBreakerThreshold: 3
+        });
+
+        console.log('✅ API services registered with health monitor');
+      } catch (error) {
+        console.error('❌ Failed to register services with health monitor:', error);
+      }
+    };
+
+    registerServices();
+  }, []);
 
   // Load accessibility data from local API
   const loadFromLocalAPI = async (centerLat, centerLng) => {

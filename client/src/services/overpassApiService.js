@@ -1,9 +1,10 @@
 /**
  * Overpass API Service
  * 
- * Integrates with the Overpass API to fetch rich OpenStreetMap accessibility data
- * Complements Wheelmap data with more comprehensive OSM information
+ * Provides access to OpenStreetMap accessibility data via Overpass API
  */
+
+import fallbackDataService from './fallbackDataService.js';
 
 class OverpassApiService {
   constructor() {
@@ -11,107 +12,244 @@ class OverpassApiService {
     this.baseUrl = 'https://overpass-api.de/api/interpreter';
     this.timeout = 30000; // 30 second timeout for complex queries
     
-    // OPTIMIZATION: Add caching for expensive Overpass queries
+    // Enhanced caching for expensive Overpass queries
     this.cache = new Map();
     this.cacheTimeout = 15 * 60 * 1000; // 15 minutes for OSM data
+
+    // Rate limiting configuration for Overpass API
+    this.requestQueue = [];
+    this.lastRequestTime = 0;
+    this.minRequestInterval = 60000; // 60 seconds between requests (1 call/minute)
+    this.maxConcurrentRequests = 1;
+    this.activeRequests = 0;
+    this.retryDelay = 300000; // 5 minutes retry delay after 429 error
+    this.last429Error = 0;
+    this.apiAvailable = true;
+
+    // Circuit breaker configuration
+    this.circuitBreaker = {
+      failureThreshold: 3, // Open circuit after 3 failures (more conservative for Overpass)
+      recoveryTimeout: 600000, // 10 minutes before attempting recovery
+      halfOpenMaxCalls: 2, // Max calls in half-open state
+      failures: 0,
+      lastFailureTime: 0,
+      state: 'CLOSED' // CLOSED, OPEN, HALF_OPEN
+    };
+
+    // Exponential backoff configuration
+    this.backoffConfig = {
+      baseDelay: 2000, // 2 second base delay
+      maxDelay: 600000, // 10 minutes max delay
+      multiplier: 2,
+      jitter: true
+    };
+
+    // Request deduplication
+    this.pendingRequests = new Map();
+
+    // Health monitoring
+    this.healthMetrics = {
+      totalRequests: 0,
+      successfulRequests: 0,
+      failedRequests: 0,
+      rateLimitedRequests: 0,
+      averageResponseTime: 0
+    };
   }
 
   /**
-   * Execute an Overpass QL query with caching
-   * @param {string} query - Overpass QL query string
-   * @returns {Promise<Object>} Query results
+   * Check circuit breaker state
    */
-  async executeQuery(query) {
-    // OPTIMIZATION: Check cache first
-    const cacheKey = this.generateCacheKey(query);
-    const cached = this.getCachedData(cacheKey);
-    if (cached) {
-      console.log('✅ Overpass API: Using cached data');
-      return cached;
+  checkCircuitBreaker() {
+    const now = Date.now();
+    
+    if (this.circuitBreaker.state === 'OPEN') {
+      if (now - this.circuitBreaker.lastFailureTime > this.circuitBreaker.recoveryTimeout) {
+        this.circuitBreaker.state = 'HALF_OPEN';
+        this.circuitBreaker.failures = 0;
+        console.log('🔄 Overpass circuit breaker moved to HALF_OPEN state');
+        return true;
+      }
+      return false;
+    }
+    
+    if (this.circuitBreaker.state === 'HALF_OPEN') {
+      if (this.circuitBreaker.failures >= this.circuitBreaker.halfOpenMaxCalls) {
+        this.circuitBreaker.state = 'OPEN';
+        this.circuitBreaker.lastFailureTime = now;
+        console.log('❌ Overpass circuit breaker moved to OPEN state');
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  /**
+   * Record successful request
+   */
+  recordSuccess() {
+    this.circuitBreaker.failures = 0;
+    if (this.circuitBreaker.state === 'HALF_OPEN') {
+      this.circuitBreaker.state = 'CLOSED';
+      console.log('✅ Overpass circuit breaker moved to CLOSED state');
+    }
+  }
+
+  /**
+   * Record failed request
+   */
+  recordFailure(error) {
+    // Don't count rate limiting errors as circuit breaker failures
+    if (error && (error.message.includes('rate limited') || error.message.includes('429'))) {
+      console.log('⚠️ Rate limiting error - not counting as circuit breaker failure');
+      return;
+    }
+    
+    this.circuitBreaker.failures++;
+    this.circuitBreaker.lastFailureTime = Date.now();
+    
+    if (this.circuitBreaker.failures >= this.circuitBreaker.failureThreshold) {
+      this.circuitBreaker.state = 'OPEN';
+      console.log('❌ Overpass circuit breaker moved to OPEN state');
+    }
+  }
+
+  /**
+   * Calculate backoff delay
+   */
+  calculateBackoffDelay(attempt) {
+    const delay = Math.min(
+      this.backoffConfig.baseDelay * Math.pow(this.backoffConfig.multiplier, attempt),
+      this.backoffConfig.maxDelay
+    );
+    
+    if (this.backoffConfig.jitter) {
+      return delay + Math.random() * 1000; // Add jitter
+    }
+    
+    return delay;
+  }
+
+  /**
+   * Generate cache key for deduplication
+   */
+  generateCacheKey(query) {
+    return `overpass_${btoa(query).slice(0, 50)}`;
+  }
+
+  /**
+   * Execute request with enhanced error handling
+   */
+  async executeEnhancedRequest(requestFn, cacheKey) {
+    // Check for pending request
+    if (this.pendingRequests.has(cacheKey)) {
+      console.log('🔄 Overpass request already pending, waiting...');
+      return await this.pendingRequests.get(cacheKey);
     }
 
+    // Check circuit breaker
+    if (!this.checkCircuitBreaker()) {
+      throw new Error('Overpass circuit breaker is OPEN - service temporarily unavailable');
+    }
+
+    // Rate limiting
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+    
+    if (timeSinceLastRequest < this.minRequestInterval) {
+      const waitTime = this.minRequestInterval - timeSinceLastRequest;
+      console.log(`⏳ Overpass rate limiting: waiting ${waitTime}ms`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+
+    // Check for 429 errors - instead of throwing, return fallback data
+    if (now - this.last429Error < this.retryDelay) {
+      console.warn('⚠️ Overpass API rate limited, using fallback data');
+      // Return a promise that resolves to fallback data instead of throwing
+      return this.getFallbackData({ south: 0, west: 0, north: 0, east: 0 });
+    }
+
+    // Create request promise
+    const requestPromise = this._executeRequestWithRetry(requestFn, cacheKey);
+    this.pendingRequests.set(cacheKey, requestPromise);
+
     try {
-      console.log('🔍 Overpass API: Executing query:', query.substring(0, 200) + '...');
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-      const response = await fetch(this.baseUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain',
-        },
-        body: query,
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`Overpass API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log('✅ Overpass API: Query successful, received', data.elements?.length || 0, 'elements');
-      
-      // OPTIMIZATION: Cache the result
-      this.setCachedData(cacheKey, data);
-      
-      return data;
+      const result = await requestPromise;
+      this.recordSuccess();
+      return result;
     } catch (error) {
-      console.error('❌ Overpass API: Query failed:', error);
+      this.recordFailure(error);
+      throw error;
+    } finally {
+      this.pendingRequests.delete(cacheKey);
+    }
+  }
+
+  /**
+   * Execute request with retry logic
+   */
+  async _executeRequestWithRetry(requestFn, cacheKey, attempt = 0) {
+    const maxRetries = 2; // Fewer retries for Overpass due to rate limits
+    
+    try {
+      const startTime = performance.now();
+      const result = await requestFn();
+      const responseTime = performance.now() - startTime;
+      
+      // Update health metrics
+      this.healthMetrics.totalRequests++;
+      this.healthMetrics.successfulRequests++;
+      this.healthMetrics.averageResponseTime = 
+        (this.healthMetrics.averageResponseTime * (this.healthMetrics.totalRequests - 1) + responseTime) / 
+        this.healthMetrics.totalRequests;
+      
+      return result;
+    } catch (error) {
+      this.healthMetrics.totalRequests++;
+      this.healthMetrics.failedRequests++;
+      
+      if (error.message.includes('429') || error.message.includes('Too Many Requests') || error.message.includes('rate limited')) {
+        this.healthMetrics.rateLimitedRequests++;
+        this.last429Error = Date.now();
+        console.warn('⚠️ Overpass rate limited by API');
+        // Don't retry on rate limiting - return fallback data instead
+        throw new Error('Overpass rate limited - using fallback data');
+      }
+      
+      if (attempt < maxRetries) {
+        const delay = this.calculateBackoffDelay(attempt);
+        console.log(`🔄 Retrying Overpass request in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return this._executeRequestWithRetry(requestFn, cacheKey, attempt + 1);
+      }
+      
       throw error;
     }
   }
 
   /**
-   * Generate cache key for query
-   * @param {string} query - Query string
-   * @returns {string} Cache key
+   * Execute Overpass query
    */
-  generateCacheKey(query) {
-    // Simple hash of query for cache key
-    return btoa(query.replace(/\s+/g, ' ').trim()).slice(0, 50);
-  }
-
-  /**
-   * Get cached data if still valid
-   * @param {string} key - Cache key
-   * @returns {Object|null} Cached data or null
-   */
-  getCachedData(key) {
-    const cached = this.cache.get(key);
-    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
-      return cached.data;
-    }
-    if (cached) {
-      this.cache.delete(key); // Remove expired cache
-    }
-    return null;
-  }
-
-  /**
-   * Set cached data
-   * @param {string} key - Cache key
-   * @param {Object} data - Data to cache
-   */
-  setCachedData(key, data) {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now()
+  async executeQuery(query) {
+    const response = await fetch(this.baseUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `data=${encodeURIComponent(query)}`
     });
-    
-    // OPTIMIZATION: Limit cache size to prevent memory leaks
-    if (this.cache.size > 50) {
-      const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+
+    if (!response.ok) {
+      throw new Error(`Overpass API error: ${response.status} ${response.statusText}`);
     }
+
+    const data = await response.json();
+    return data;
   }
 
   /**
-   * Get comprehensive accessibility data for a bounding box
-   * @param {Object} bounds - Bounding box {south, west, north, east}
-   * @returns {Promise<Object>} Comprehensive accessibility data
+   * Get accessibility data from Overpass
    */
   async getAccessibilityData(bounds) {
     const { south, west, north, east } = bounds;
@@ -149,339 +287,116 @@ out geom;
 `;
 
     try {
-      const data = await this.executeQuery(query);
+      // Generate cache key for deduplication
+      const cacheKey = this.generateCacheKey(query);
+
+      // Use enhanced request execution with circuit breaker, backoff, and deduplication
+      const data = await this.executeEnhancedRequest(async () => {
+        return await this.executeQuery(query);
+      }, cacheKey);
+
       return this.processAccessibilityData(data);
     } catch (error) {
       console.error('❌ Failed to fetch Overpass accessibility data:', error);
-      return { elements: [], summary: { total: 0, categories: {} } };
+
+      // Check if it's a rate limiting error
+      if (error.message.includes('rate limited') || error.message.includes('429')) {
+        console.log('🔄 Overpass API rate limited, using fallback data...');
+        this.last429Error = Date.now();
+        return await this.getFallbackData(bounds);
+      }
+
+      // Try fallback data service for other errors
+      try {
+        console.log('🔄 Using Halifax fallback data for Overpass...');
+        return await this.getFallbackData(bounds);
+      } catch (fallbackError) {
+        console.error('❌ Fallback data also failed:', fallbackError);
+        return { elements: [], summary: { total: 0, categories: {} } };
+      }
     }
   }
 
   /**
-   * Get detailed pedestrian infrastructure data
-   * @param {Object} bounds - Bounding box
-   * @returns {Promise<Object>} Pedestrian infrastructure data
-   */
-  async getPedestrianInfrastructure(bounds) {
-    const { south, west, north, east } = bounds;
-    
-    const query = `
-[out:json][timeout:25];
-(
-  // Sidewalks and footways with surface information
-  way["highway"="footway"](${south},${west},${north},${east});
-  way["highway"="path"]["foot"!="no"](${south},${west},${north},${east});
-  
-  // Curb cuts and tactile paving
-  node["barrier"="kerb"](${south},${west},${north},${east});
-  node["tactile_paving"="yes"](${south},${west},${north},${east});
-  way["tactile_paving"="yes"](${south},${west},${north},${east});
-  
-  // Crossings
-  node["highway"="crossing"](${south},${west},${north},${east});
-  
-  // Steps and ramps
-  way["highway"="steps"](${south},${west},${north},${east});
-  way["ramp"="yes"](${south},${west},${north},${east});
-);
-out geom;
-`;
-
-    try {
-      const data = await this.executeQuery(query);
-      return this.processPedestrianData(data);
-    } catch (error) {
-      console.error('❌ Failed to fetch pedestrian infrastructure data:', error);
-      return { elements: [], summary: { total: 0, types: {} } };
-    }
-  }
-
-  /**
-   * Get accessible public transport information
-   * @param {Object} bounds - Bounding box
-   * @returns {Promise<Object>} Public transport accessibility data
-   */
-  async getPublicTransportAccessibility(bounds) {
-    const { south, west, north, east } = bounds;
-    
-    const query = `
-[out:json][timeout:25];
-(
-  // Bus stops with accessibility info
-  node["highway"="bus_stop"](${south},${west},${north},${east});
-  node["public_transport"="stop_position"](${south},${west},${north},${east});
-  
-  // Train/subway stations
-  node["railway"="station"](${south},${west},${north},${east});
-  way["railway"="platform"](${south},${west},${north},${east});
-  
-  // Elevators at transport hubs
-  node["highway"="elevator"]["level"](${south},${west},${north},${east});
-);
-out geom;
-`;
-
-    try {
-      const data = await this.executeQuery(query);
-      return this.processTransportData(data);
-    } catch (error) {
-      console.error('❌ Failed to fetch public transport data:', error);
-      return { elements: [], summary: { total: 0, accessible: 0 } };
-    }
-  }
-
-  /**
-   * Process raw Overpass accessibility data
-   * @param {Object} data - Raw Overpass response
-   * @returns {Object} Processed accessibility data
+   * Process accessibility data from Overpass
    */
   processAccessibilityData(data) {
     const elements = data.elements || [];
     const categories = {};
-    let accessibleCount = 0;
 
     elements.forEach(element => {
-      const tags = element.tags || {};
-      
-      // Categorize by amenity type or building type
-      const category = tags.amenity || tags.building || tags.public_transport || 'other';
-      
+      const category = this.categorizeElements(element);
       if (!categories[category]) {
-        categories[category] = { total: 0, accessible: 0, elements: [] };
+        categories[category] = 0;
       }
-      
-      categories[category].total++;
-      categories[category].elements.push({
-        id: element.id,
-        type: element.type,
-        lat: element.lat || (element.center && element.center.lat),
-        lon: element.lon || (element.center && element.center.lon),
-        tags: tags,
-        wheelchair: tags.wheelchair,
-        name: tags.name,
-        amenity: tags.amenity,
-        building: tags.building
-      });
-
-      if (tags.wheelchair === 'yes') {
-        categories[category].accessible++;
-        accessibleCount++;
-      }
+      categories[category]++;
     });
 
     return {
       elements: elements,
       summary: {
         total: elements.length,
-        accessible: accessibleCount,
         categories: categories
       }
     };
   }
 
   /**
-   * Process pedestrian infrastructure data
-   * @param {Object} data - Raw Overpass response
-   * @returns {Object} Processed pedestrian data
+   * Categorize elements by type
    */
-  processPedestrianData(data) {
-    const elements = data.elements || [];
-    const types = {};
-
-    elements.forEach(element => {
-      const tags = element.tags || {};
-      const highway = tags.highway;
-      const barrier = tags.barrier;
-      
-      let type = 'other';
-      if (highway === 'footway') type = 'footway';
-      else if (highway === 'path') type = 'path';
-      else if (highway === 'crossing') type = 'crossing';
-      else if (highway === 'steps') type = 'steps';
-      else if (barrier === 'kerb') type = 'curb';
-      else if (tags.tactile_paving) type = 'tactile_paving';
-
-      if (!types[type]) {
-        types[type] = [];
-      }
-
-      types[type].push({
-        id: element.id,
-        type: element.type,
-        lat: element.lat || (element.center && element.center.lat),
-        lon: element.lon || (element.center && element.center.lon),
-        tags: tags,
-        surface: tags.surface,
-        wheelchair: tags.wheelchair,
-        tactile_paving: tags.tactile_paving,
-        kerb: tags.kerb
-      });
-    });
-
-    return {
-      elements: elements,
-      summary: {
-        total: elements.length,
-        types: types
-      }
-    };
-  }
-
-  /**
-   * Process public transport data
-   * @param {Object} data - Raw Overpass response
-   * @returns {Object} Processed transport data
-   */
-  processTransportData(data) {
-    const elements = data.elements || [];
-    let accessibleCount = 0;
-
-    const processedElements = elements.map(element => {
-      const tags = element.tags || {};
-      const isAccessible = tags.wheelchair === 'yes';
-      
-      if (isAccessible) accessibleCount++;
-
-      return {
-        id: element.id,
-        type: element.type,
-        lat: element.lat || (element.center && element.center.lat),
-        lon: element.lon || (element.center && element.center.lon),
-        tags: tags,
-        name: tags.name,
-        wheelchair: tags.wheelchair,
-        public_transport: tags.public_transport,
-        highway: tags.highway,
-        railway: tags.railway,
-        operator: tags.operator,
-        network: tags.network
-      };
-    });
-
-    return {
-      elements: processedElements,
-      summary: {
-        total: elements.length,
-        accessible: accessibleCount,
-        accessibility_percentage: elements.length > 0 ? Math.round((accessibleCount / elements.length) * 100) : 0
-      }
-    };
-  }
-
-  /**
-   * Get route-specific accessibility analysis
-   * @param {Array} routeCoordinates - Array of [lng, lat] coordinates
-   * @param {number} bufferDistance - Buffer distance in meters (default: 100m)
-   * @returns {Promise<Object>} Route accessibility analysis
-   */
-  async analyzeRouteAccessibility(routeCoordinates, bufferDistance = 100) {
-    if (!routeCoordinates || routeCoordinates.length < 2) {
-      throw new Error('Invalid route coordinates provided');
+  categorizeElements(element) {
+    if (element.tags) {
+      if (element.tags.building) return 'building';
+      if (element.tags.amenity) return 'amenity';
+      if (element.tags.public_transport) return 'transit';
+      if (element.tags.highway) return 'highway';
     }
+    return 'other';
+  }
 
-    // Create a simplified bounding box for the route
-    const lats = routeCoordinates.map(coord => coord[1]);
-    const lngs = routeCoordinates.map(coord => coord[0]);
-    
-    const bounds = {
-      south: Math.min(...lats) - 0.001, // Add small buffer
-      west: Math.min(...lngs) - 0.001,
-      north: Math.max(...lats) + 0.001,
-      east: Math.max(...lngs) + 0.001
-    };
-
+  /**
+   * Get fallback data
+   */
+  async getFallbackData(bounds) {
     try {
-      const [accessibilityData, pedestrianData, transportData] = await Promise.all([
-        this.getAccessibilityData(bounds),
-        this.getPedestrianInfrastructure(bounds),
-        this.getPublicTransportAccessibility(bounds)
-      ]);
-
+      console.log('🔄 Loading fallback accessibility data...');
+      const result = await fallbackDataService.getAccessibilityPlaces(bounds);
+      
       return {
-        route_analysis: {
-          bounds: bounds,
-          buffer_distance: bufferDistance,
-          total_accessibility_points: accessibilityData.summary.total,
-          accessible_points: accessibilityData.summary.accessible,
-          pedestrian_infrastructure: pedestrianData.summary.total,
-          transport_accessibility: transportData.summary.accessible
-        },
-        accessibility_data: accessibilityData,
-        pedestrian_data: pedestrianData,
-        transport_data: transportData,
-        recommendations: this.generateRouteRecommendations(accessibilityData, pedestrianData, transportData)
+        elements: result.places || [],
+        summary: {
+          total: result.count || 0,
+          categories: { 'fallback': result.count || 0 }
+        }
       };
     } catch (error) {
-      console.error('❌ Route accessibility analysis failed:', error);
-      throw error;
+      console.error('❌ Fallback data service failed:', error);
+      
+      // Return minimal fallback data structure
+      return {
+        elements: [],
+        summary: {
+          total: 0,
+          categories: { 'fallback': 0 }
+        }
+      };
     }
   }
 
   /**
-   * Generate accessibility recommendations based on data
-   * @param {Object} accessibilityData - Accessibility data
-   * @param {Object} pedestrianData - Pedestrian infrastructure data
-   * @param {Object} transportData - Transport data
-   * @returns {Array} Array of recommendations
+   * Get health metrics
    */
-  generateRouteRecommendations(accessibilityData, pedestrianData, transportData) {
-    const recommendations = [];
-
-    // Analyze accessibility score
-    const accessibilityScore = accessibilityData.summary.total > 0 
-      ? (accessibilityData.summary.accessible / accessibilityData.summary.total) * 100 
-      : 0;
-
-    if (accessibilityScore > 80) {
-      recommendations.push({
-        type: 'positive',
-        icon: '✅',
-        message: 'Excellent accessibility along this route with many wheelchair-accessible venues'
-      });
-    } else if (accessibilityScore > 50) {
-      recommendations.push({
-        type: 'warning',
-        icon: '⚠️',
-        message: 'Moderate accessibility - some venues may have limited access'
-      });
-    } else if (accessibilityData.summary.total > 0) {
-      recommendations.push({
-        type: 'alert',
-        icon: '❌',
-        message: 'Limited accessibility along this route - consider alternative paths'
-      });
-    }
-
-    // Check pedestrian infrastructure
-    if (pedestrianData.summary.types.tactile_paving?.length > 0) {
-      recommendations.push({
-        type: 'positive',
-        icon: '🦯',
-        message: 'Route includes tactile paving for visually impaired navigation'
-      });
-    }
-
-    if (pedestrianData.summary.types.curb?.length > 0) {
-      recommendations.push({
-        type: 'info',
-        icon: '🚶',
-        message: 'Multiple curb cuts available for wheelchair users'
-      });
-    }
-
-    // Check transport accessibility
-    if (transportData.summary.accessible > 0) {
-      recommendations.push({
-        type: 'positive',
-        icon: '🚌',
-        message: `${transportData.summary.accessible} accessible public transport stops nearby`
-      });
-    }
-
-    return recommendations;
+  getHealthMetrics() {
+      return {
+      ...this.healthMetrics,
+      circuitBreakerState: this.circuitBreaker.state,
+      circuitBreakerFailures: this.circuitBreaker.failures,
+      apiAvailable: this.apiAvailable
+    };
   }
 }
 
-// Create and export a singleton instance
+// Create singleton instance
 const overpassApiService = new OverpassApiService();
+
 export default overpassApiService;

@@ -1,385 +1,338 @@
-// API Health Monitor - Centralized monitoring and optimization for all Trek.IQ APIs
+/**
+ * API Health Monitor Service
+ * 
+ * Provides centralized monitoring and health reporting for all API services.
+ * Helps users understand when services are experiencing issues and provides
+ * fallback recommendations.
+ */
+
 class APIHealthMonitor {
   constructor() {
     this.services = new Map();
     this.healthStatus = new Map();
-    this.performanceMetrics = new Map();
-    this.errorLog = [];
-    this.isInitialized = false;
+    this.lastHealthCheck = 0;
+    this.healthCheckInterval = 30000; // 30 seconds
+    this.notificationCallbacks = [];
     
-    // Rate limiting and throttling
-    this.requestCounts = new Map();
-    this.lastRequestTime = new Map();
-    this.rateLimits = new Map();
-    
-    // Cache management
-    this.cacheStats = new Map();
-    this.cacheHits = new Map();
-    this.cacheMisses = new Map();
-    
-    // Service dependencies
-    this.serviceDependencies = {
-      'unifiedRouting': ['mapbox', 'openRoute', 'openElevation', 'wheelmap', 'overpass'],
-      'enhancedSearch': ['mapbox', 'nominatim', 'halifax'],
-      'transit': ['halifax', 'openRoute'],
-      'accessibility': ['wheelmap', 'halifax', 'overpass'],
-      'weather': ['openWeather'],
-      'ai': ['openAI', 'tensorflow']
-    };
+    // Start periodic health monitoring
+    this.startHealthMonitoring();
   }
 
-  // Register a service for monitoring
+  /**
+   * Register an API service for monitoring
+   * @param {string} serviceName - Name of the service
+   * @param {Object} serviceInstance - Service instance with health metrics
+   * @param {Object} config - Service configuration
+   */
   registerService(serviceName, serviceInstance, config = {}) {
     this.services.set(serviceName, {
       instance: serviceInstance,
       config: {
-        maxRequestsPerMinute: config.maxRequestsPerMinute || 60,
-        timeout: config.timeout || 10000,
-        retryAttempts: config.retryAttempts || 3,
-        cacheTimeout: config.cacheTimeout || 300000, // 5 minutes
+        maxFailureRate: 0.5, // 50% failure rate threshold
+        maxResponseTime: 10000, // 10 second response time threshold
+        circuitBreakerThreshold: 5, // Circuit breaker failure threshold
         ...config
       },
-      status: 'unknown',
-      lastCheck: null,
-      errorCount: 0,
-      successCount: 0
+      lastHealthCheck: 0,
+      consecutiveFailures: 0,
+      status: 'unknown'
     });
     
-    this.healthStatus.set(serviceName, 'unknown');
-    this.performanceMetrics.set(serviceName, {
-      avgResponseTime: 0,
-      totalRequests: 0,
-      errorRate: 0,
-      lastResponseTime: null
-    });
-    
-    console.log(`Registered service: ${serviceName}`);
+    console.log(`🔍 API Health Monitor: Registered service ${serviceName}`);
   }
 
-  // Initialize health monitoring
-  async initialize() {
-    if (this.isInitialized) return;
-    
-    try {
-      console.log('Initializing API Health Monitor...');
-      
-      // Start health check interval
-      this.startHealthChecks();
-      
-      // Start performance monitoring
-      this.startPerformanceMonitoring();
-      
-      this.isInitialized = true;
-      console.log('API Health Monitor initialized successfully');
-    } catch (error) {
-      console.error('Error initializing API Health Monitor:', error);
-    }
-  }
-
-  // Start periodic health checks
-  startHealthChecks() {
+  /**
+   * Start periodic health monitoring
+   */
+  startHealthMonitoring() {
     setInterval(() => {
-      this.performHealthChecks();
-    }, 30000); // Check every 30 seconds
+      this.performHealthCheck();
+    }, this.healthCheckInterval);
   }
 
-  // Perform health checks for all services
-  async performHealthChecks() {
-    const healthChecks = Array.from(this.services.keys()).map(async (serviceName) => {
+  /**
+   * Perform health check on all registered services
+   */
+  async performHealthCheck() {
+    const now = Date.now();
+    this.lastHealthCheck = now;
+    
+    for (const [serviceName, serviceData] of this.services) {
       try {
-        const service = this.services.get(serviceName);
-        const startTime = Date.now();
-        
-        // Perform service-specific health check
-        const isHealthy = await this.checkServiceHealth(serviceName);
-        
-        const responseTime = Date.now() - startTime;
-        
-        // Update service status
-        service.status = isHealthy ? 'healthy' : 'unhealthy';
-        service.lastCheck = new Date();
-        
-        if (isHealthy) {
-          service.successCount++;
-        } else {
-          service.errorCount++;
-        }
-        
-        // Update performance metrics
-        const metrics = this.performanceMetrics.get(serviceName);
-        metrics.totalRequests++;
-        metrics.lastResponseTime = responseTime;
-        metrics.avgResponseTime = (metrics.avgResponseTime * (metrics.totalRequests - 1) + responseTime) / metrics.totalRequests;
-        metrics.errorRate = service.errorCount / (service.successCount + service.errorCount);
-        
-        this.healthStatus.set(serviceName, service.status);
-        
-        console.log(`Health check for ${serviceName}: ${service.status} (${responseTime}ms)`);
-        
+        await this.checkServiceHealth(serviceName, serviceData);
       } catch (error) {
-        console.error(`Health check failed for ${serviceName}:`, error);
-        this.logError(serviceName, 'health_check', error);
+        console.error(`❌ Health check failed for ${serviceName}:`, error);
+        this.updateServiceStatus(serviceName, 'error', error.message);
       }
-    });
+    }
     
-    await Promise.allSettled(healthChecks);
+    this.notifyHealthStatusChange();
   }
 
-  // Check health of specific service
-  async checkServiceHealth(serviceName) {
-    const service = this.services.get(serviceName);
-    if (!service) return false;
+  /**
+   * Check health of a specific service
+   * @param {string} serviceName - Service name
+   * @param {Object} serviceData - Service data
+   */
+  async checkServiceHealth(serviceName, serviceData) {
+    const { instance, config } = serviceData;
     
+    // Get health metrics from service
+    let metrics;
     try {
-      switch (serviceName) {
-        case 'unifiedRouting':
-        case 'enhancedUnifiedRouting':
-          return await this.checkRoutingServiceHealth();
-        case 'enhancedSearch':
-          return await this.checkSearchServiceHealth();
-        case 'transit':
-          return await this.checkTransitServiceHealth();
-        case 'accessibility':
-          return await this.checkAccessibilityServiceHealth();
-        case 'weather':
-          return await this.checkWeatherServiceHealth();
-        case 'ai':
-        case 'enhancedAI':
-          return await this.checkAIServiceHealth();
-        default:
-          return await this.checkGenericServiceHealth(serviceName);
+      if (instance.getHealthMetrics) {
+        metrics = instance.getHealthMetrics();
+      } else {
+        // Fallback for services without health metrics
+        metrics = {
+          totalRequests: 0,
+          successfulRequests: 0,
+          failedRequests: 0,
+          rateLimitedRequests: 0,
+          averageResponseTime: 0,
+          apiAvailable: true
+        };
       }
     } catch (error) {
-      console.error(`Health check error for ${serviceName}:`, error);
-      return false;
+      this.updateServiceStatus(serviceName, 'error', 'Failed to get health metrics');
+      return;
     }
-  }
 
-  // Service-specific health checks
-  async checkRoutingServiceHealth() {
-    try {
-      const routingService = this.services.get('unifiedRouting') || this.services.get('enhancedUnifiedRouting');
-      if (!routingService || !routingService.instance) return false;
-      
-      const testRoute = await routingService.instance.calculateRoute({
-        origin: 'Halifax, NS',
-        destination: 'Dartmouth, NS',
-        mode: 'walking'
-      });
-      return testRoute && testRoute.features && testRoute.features.length > 0;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  async checkSearchServiceHealth() {
-    try {
-      const searchService = this.services.get('enhancedSearch');
-      if (!searchService || !searchService.instance) return false;
-      
-      const testSearch = await searchService.instance.search('Halifax');
-      return testSearch && Array.isArray(testSearch) && testSearch.length > 0;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  async checkTransitServiceHealth() {
-    try {
-      const transitService = this.services.get('transit');
-      if (!transitService || !transitService.instance) return false;
-      
-      const testTransit = await transitService.instance.getNearbyStops([-63.5742, 44.6488]);
-      return testTransit && Array.isArray(testTransit);
-    } catch (error) {
-      return false;
-    }
-  }
-
-  async checkAccessibilityServiceHealth() {
-    try {
-      const accessibilityService = this.services.get('accessibility') || this.services.get('wheelmap');
-      if (!accessibilityService || !accessibilityService.instance) return false;
-      
-      const testAccessibility = await accessibilityService.instance.getAccessibilityFeatures([-63.5742, 44.6488]);
-      return testAccessibility && Array.isArray(testAccessibility);
-    } catch (error) {
-      return false;
-    }
-  }
-
-  async checkWeatherServiceHealth() {
-    try {
-      const weatherService = this.services.get('weather');
-      if (!weatherService || !weatherService.instance) return false;
-      
-      const testWeather = await weatherService.instance.getCurrentWeather([-63.5742, 44.6488]);
-      return testWeather && testWeather.temperature !== undefined;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  async checkAIServiceHealth() {
-    try {
-      const aiService = this.services.get('ai') || this.services.get('enhancedAI');
-      if (!aiService || !aiService.instance) return false;
-      
-      const testAI = await aiService.instance.analyzeRouteAccessibility({
-        features: [{
-          properties: { mode: 'walking' },
-          geometry: { coordinates: [[-63.5742, 44.6488], [-63.5743, 44.6489]] }
-        }]
-      });
-      return testAI && testAI.analysis;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  async checkGenericServiceHealth(serviceName) {
-    const service = this.services.get(serviceName);
-    if (!service || !service.instance) return false;
+    // Calculate health indicators
+    const totalRequests = metrics.totalRequests || 0;
+    const failedRequests = metrics.failedRequests || 0;
+    const rateLimitedRequests = metrics.rateLimitedRequests || 0;
+    const averageResponseTime = metrics.averageResponseTime || 0;
+    const circuitBreakerState = metrics.circuitBreakerState || 'CLOSED';
     
-    // Check if service has an initialize method and it's been called
-    if (service.instance.isInitialized !== undefined) {
-      return service.instance.isInitialized;
+    // Determine service status
+    let status = 'healthy';
+    let issues = [];
+    
+    // Check circuit breaker
+    if (circuitBreakerState === 'OPEN') {
+      status = 'unavailable';
+      issues.push('Circuit breaker is open');
+    } else if (circuitBreakerState === 'HALF_OPEN') {
+      status = 'degraded';
+      issues.push('Circuit breaker is half-open');
     }
     
-    // Check if service has a health check method
-    if (typeof service.instance.healthCheck === 'function') {
-      return await service.instance.healthCheck();
-    }
-    
-    // Check if service has a testConnection method
-    if (typeof service.instance.testConnection === 'function') {
-      return await service.instance.testConnection();
-    }
-    
-    return true; // Assume healthy if no specific checks available
-  }
-
-  // Start performance monitoring
-  startPerformanceMonitoring() {
-    setInterval(() => {
-      this.updatePerformanceMetrics();
-    }, 60000); // Update every minute
-  }
-
-  // Update performance metrics
-  updatePerformanceMetrics() {
-    this.services.forEach((service, serviceName) => {
-      const metrics = this.performanceMetrics.get(serviceName);
-      if (metrics && metrics.totalRequests > 0) {
-        metrics.errorRate = service.errorCount / (service.successCount + service.errorCount);
+    // Check failure rate
+    if (totalRequests > 0) {
+      const failureRate = failedRequests / totalRequests;
+      if (failureRate > config.maxFailureRate) {
+        status = status === 'healthy' ? 'degraded' : status;
+        issues.push(`High failure rate: ${(failureRate * 100).toFixed(1)}%`);
       }
+    }
+    
+    // Check response time
+    if (averageResponseTime > config.maxResponseTime) {
+      status = status === 'healthy' ? 'degraded' : status;
+      issues.push(`Slow response time: ${averageResponseTime.toFixed(0)}ms`);
+    }
+    
+    // Check rate limiting
+    if (rateLimitedRequests > 0) {
+      status = status === 'healthy' ? 'degraded' : status;
+      issues.push(`${rateLimitedRequests} rate limit errors`);
+    }
+    
+    // Check API availability
+    if (metrics.apiAvailable === false) {
+      status = 'unavailable';
+      issues.push('API marked as unavailable');
+    }
+    
+    this.updateServiceStatus(serviceName, status, issues.join(', '));
+  }
+
+  /**
+   * Update service status
+   * @param {string} serviceName - Service name
+   * @param {string} status - Service status
+   * @param {string} message - Status message
+   */
+  updateServiceStatus(serviceName, status, message) {
+    const serviceData = this.services.get(serviceName);
+    if (!serviceData) return;
+    
+    const previousStatus = serviceData.status;
+    serviceData.status = status;
+    serviceData.lastHealthCheck = Date.now();
+    serviceData.message = message;
+    
+    // Track consecutive failures
+    if (status === 'error' || status === 'unavailable') {
+      serviceData.consecutiveFailures++;
+    } else {
+      serviceData.consecutiveFailures = 0;
+    }
+    
+    // Log status changes
+    if (previousStatus !== status) {
+      console.log(`🔄 API Health: ${serviceName} status changed from ${previousStatus} to ${status}`);
+      if (message) {
+        console.log(`   Reason: ${message}`);
+      }
+    }
+    
+    this.healthStatus.set(serviceName, {
+      status,
+      message,
+      lastCheck: serviceData.lastHealthCheck,
+      consecutiveFailures: serviceData.consecutiveFailures
     });
   }
 
-  // Log errors for monitoring
-  logError(serviceName, operation, error) {
-    const errorEntry = {
-      timestamp: new Date(),
-      service: serviceName,
-      operation: operation,
-      error: error.message || error,
-      stack: error.stack
-    };
-    
-    this.errorLog.push(errorEntry);
-    
-    // Keep only last 100 errors
-    if (this.errorLog.length > 100) {
-      this.errorLog.shift();
-    }
-    
-    console.error(`API Error [${serviceName}]:`, errorEntry);
-  }
-
-  // Get overall health status
+  /**
+   * Get overall system health status
+   * @returns {Object} Overall health status
+   */
   getOverallHealth() {
     const services = Array.from(this.healthStatus.values());
-    const healthyServices = services.filter(status => status === 'healthy').length;
     const totalServices = services.length;
     
-    return {
-      overall: totalServices > 0 ? (healthyServices / totalServices) * 100 : 0,
-      healthy: healthyServices,
-      total: totalServices,
-      services: Object.fromEntries(this.healthStatus),
-      performance: Object.fromEntries(this.performanceMetrics),
-      recentErrors: this.errorLog.slice(-10)
-    };
-  }
-
-  // Get service-specific metrics
-  getServiceMetrics(serviceName) {
-    const service = this.services.get(serviceName);
-    const metrics = this.performanceMetrics.get(serviceName);
-    const status = this.healthStatus.get(serviceName);
-    
-    if (!service || !metrics) return null;
-    
-    return {
-      name: serviceName,
-      status: status,
-      config: service.config,
-      metrics: metrics,
-      lastCheck: service.lastCheck,
-      errorCount: service.errorCount,
-      successCount: service.successCount
-    };
-  }
-
-  // Check if service is ready for requests
-  isServiceReady(serviceName) {
-    const service = this.services.get(serviceName);
-    if (!service) return false;
-    
-    // For services that don't require initialization, consider them ready
-    if (service.instance && service.instance.isInitialized === undefined) {
-      return service.status === 'healthy';
+    if (totalServices === 0) {
+      return {
+        status: 'unknown',
+        message: 'No services registered',
+        services: []
+      };
     }
     
-    return service.status === 'healthy' && service.instance && service.instance.isInitialized;
+    const healthyServices = services.filter(s => s.status === 'healthy').length;
+    const degradedServices = services.filter(s => s.status === 'degraded').length;
+    const unavailableServices = services.filter(s => s.status === 'unavailable' || s.status === 'error').length;
+    
+    let overallStatus = 'healthy';
+    let message = 'All services are healthy';
+    
+    if (unavailableServices > 0) {
+      overallStatus = 'unavailable';
+      message = `${unavailableServices} service(s) unavailable`;
+    } else if (degradedServices > 0) {
+      overallStatus = 'degraded';
+      message = `${degradedServices} service(s) experiencing issues`;
+    }
+    
+    return {
+      status: overallStatus,
+      message,
+      services: {
+        total: totalServices,
+        healthy: healthyServices,
+        degraded: degradedServices,
+        unavailable: unavailableServices
+      },
+      lastCheck: this.lastHealthCheck
+    };
   }
 
-  // Get dependency status
-  getDependencyStatus(serviceName) {
-    const dependencies = this.serviceDependencies[serviceName] || [];
-    const status = {};
+  /**
+   * Get health status for a specific service
+   * @param {string} serviceName - Service name
+   * @returns {Object} Service health status
+   */
+  getServiceHealth(serviceName) {
+    return this.healthStatus.get(serviceName) || {
+      status: 'unknown',
+      message: 'Service not found',
+      lastCheck: 0,
+      consecutiveFailures: 0
+    };
+  }
+
+  /**
+   * Get recommendations for service issues
+   * @param {string} serviceName - Service name
+   * @returns {Array} Array of recommendations
+   */
+  getRecommendations(serviceName) {
+    const health = this.getServiceHealth(serviceName);
+    const recommendations = [];
     
-    dependencies.forEach(dep => {
-      status[dep] = this.isServiceReady(dep);
+    switch (health.status) {
+      case 'unavailable':
+        recommendations.push('Service is currently unavailable. Please try again later.');
+        recommendations.push('Consider using alternative data sources if available.');
+        break;
+        
+      case 'degraded':
+        recommendations.push('Service is experiencing issues but may still work.');
+        recommendations.push('Response times may be slower than usual.');
+        if (health.message.includes('rate limit')) {
+          recommendations.push('Rate limit exceeded. Please wait before making more requests.');
+        }
+        break;
+        
+      case 'error':
+        recommendations.push('Service encountered an error. Please try again.');
+        recommendations.push('If the problem persists, contact support.');
+        break;
+        
+      default:
+        recommendations.push('Service status is unknown. Please try again.');
+    }
+    
+    return recommendations;
+  }
+
+  /**
+   * Subscribe to health status changes
+   * @param {Function} callback - Callback function
+   */
+  subscribeToHealthChanges(callback) {
+    this.notificationCallbacks.push(callback);
+  }
+
+  /**
+   * Unsubscribe from health status changes
+   * @param {Function} callback - Callback function
+   */
+  unsubscribeFromHealthChanges(callback) {
+    const index = this.notificationCallbacks.indexOf(callback);
+    if (index > -1) {
+      this.notificationCallbacks.splice(index, 1);
+    }
+  }
+
+  /**
+   * Notify subscribers of health status changes
+   */
+  notifyHealthStatusChange() {
+    const overallHealth = this.getOverallHealth();
+    this.notificationCallbacks.forEach(callback => {
+      try {
+        callback(overallHealth);
+      } catch (error) {
+        console.error('Error in health status notification callback:', error);
+      }
     });
-    
-    return status;
   }
 
-  // Clear error log
-  clearErrorLog() {
-    this.errorLog = [];
-  }
-
-  // Reset service metrics
-  resetServiceMetrics(serviceName) {
-    const service = this.services.get(serviceName);
-    if (service) {
-      service.errorCount = 0;
-      service.successCount = 0;
-      service.lastCheck = null;
+  /**
+   * Get health status summary for display
+   * @returns {Object} Health summary
+   */
+  getHealthSummary() {
+    const overall = this.getOverallHealth();
+    const serviceDetails = {};
+    
+    for (const [serviceName] of this.services) {
+      serviceDetails[serviceName] = this.getServiceHealth(serviceName);
     }
     
-    const metrics = this.performanceMetrics.get(serviceName);
-    if (metrics) {
-      metrics.avgResponseTime = 0;
-      metrics.totalRequests = 0;
-      metrics.errorRate = 0;
-      metrics.lastResponseTime = null;
-    }
+    return {
+      overall,
+      services: serviceDetails,
+      timestamp: Date.now()
+    };
   }
 }
 
 // Create singleton instance
 const apiHealthMonitor = new APIHealthMonitor();
+
 export default apiHealthMonitor;

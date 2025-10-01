@@ -1,190 +1,154 @@
 /**
  * Barrier Detection Registry
  * 
- * OPTIMIZATION: Centralized registry for all barrier detection services
- * to ensure proper availability reporting for verification tests
+ * Manages barrier detection services and provides unified barrier detection
  */
 
 class BarrierDetectionRegistry {
   constructor() {
-    this.services = new Map();
-    this.initialized = false;
+    this.isInitialized = false;
+    this.detectors = new Map();
+    this.barriers = [];
   }
 
   /**
-   * Initialize all barrier detection services
+   * Initialize the registry
    */
   async initialize() {
-    if (this.initialized) return;
-
-    try {
-      // Register local GeoJSON barrier detection
-      this.registerService('local_geojson', {
-        name: 'Local GeoJSON barriers',
-        available: true,
-        detect: async (route) => {
-          // Simple GeoJSON barrier detection
-          return [];
-        }
-      });
-
-      // Register user reports barrier detection
-      this.registerService('user_reports', {
-        name: 'User reported barriers',
-        available: true,
-        detect: async (route) => {
-          // User reports detection
-          return [];
-        }
-      });
-
-      // Register Mapillary barrier detection
-      this.registerService('mapillary', {
-        name: 'Mapillary barriers',
-        available: true,
-        detect: async (route) => {
-          // Mapillary API detection (placeholder)
-          return [];
-        }
-      });
-
-      // Register Overpass barrier detection
-      this.registerService('overpass', {
-        name: 'Overpass barriers',
-        available: true,
-        detect: async (route) => {
-          // Lazy load Overpass service
-          try {
-            const { default: overpassApiService } = await import('./overpassApiService');
-            const data = await overpassApiService.getAccessibilityData({
-              south: route.bounds.south,
-              west: route.bounds.west,
-              north: route.bounds.north,
-              east: route.bounds.east
-            });
-            return data.elements || [];
-          } catch (error) {
-            console.error('Overpass barrier detection failed:', error);
-            return [];
-          }
-        }
-      });
-
-      // Register mobile popup component
-      this.registerComponent('mobile_popup', {
-        name: 'Mobile-friendly popup with type, severity, location, description, and photo',
-        available: true,
-        component: 'BarrierPopup'
-      });
-
-      // Register barrier options component
-      this.registerComponent('barrier_options', {
-        name: 'Reroute and Proceed (with checkbox) options',
-        available: true,
-        component: 'BarrierOptions'
-      });
-
-      this.initialized = true;
-      console.log('✅ Barrier Detection Registry initialized');
-      
-      // Make registry available globally for verification
-      if (typeof window !== 'undefined') {
-        window.TREK_IQ_BARRIER_REGISTRY = this;
-      }
-
-    } catch (error) {
-      console.error('❌ Failed to initialize Barrier Detection Registry:', error);
-    }
-  }
-
-  /**
-   * Register a barrier detection service
-   */
-  registerService(id, service) {
-    this.services.set(id, {
-      ...service,
-      type: 'service',
-      registeredAt: Date.now()
-    });
-  }
-
-  /**
-   * Register a barrier-related component
-   */
-  registerComponent(id, component) {
-    this.services.set(id, {
-      ...component,
-      type: 'component',
-      registeredAt: Date.now()
-    });
-  }
-
-  /**
-   * Check if a service is available
-   */
-  isServiceAvailable(id) {
-    const service = this.services.get(id);
-    return service && service.available;
-  }
-
-  /**
-   * Get all registered services
-   */
-  getAllServices() {
-    return Array.from(this.services.entries()).map(([id, service]) => ({
-      id,
-      ...service
-    }));
-  }
-
-  /**
-   * Get service status for verification
-   */
-  getServiceStatus(id) {
-    const service = this.services.get(id);
-    if (!service) {
-      return { available: false, reason: 'Service not registered' };
-    }
-    return { 
-      available: service.available, 
-      name: service.name,
-      type: service.type 
-    };
-  }
-
-  /**
-   * Detect barriers using all available services
-   */
-  async detectBarriers(route) {
-    const results = [];
+    if (this.isInitialized) return;
     
-    for (const [id, service] of this.services.entries()) {
-      if (service.type === 'service' && service.available && service.detect) {
-        try {
-          const barriers = await service.detect(route);
-          results.push({
-            serviceId: id,
-            serviceName: service.name,
-            barriers: barriers,
-            count: barriers.length
-          });
-        } catch (error) {
-          console.error(`Barrier detection failed for ${id}:`, error);
-          results.push({
-            serviceId: id,
-            serviceName: service.name,
-            barriers: [],
-            count: 0,
-            error: error.message
-          });
-        }
+    console.log('🚀 Initializing Barrier Detection Registry...');
+    
+    // Register default barrier detectors
+    this.registerDetector('steps', this.detectSteps.bind(this));
+    this.registerDetector('slopes', this.detectSlopes.bind(this));
+    this.registerDetector('closures', this.detectClosures.bind(this));
+    this.registerDetector('narrow_paths', this.detectNarrowPaths.bind(this));
+    
+    this.isInitialized = true;
+    console.log('✅ Barrier Detection Registry initialized');
+  }
+
+  /**
+   * Register a barrier detector
+   */
+  registerDetector(name, detector) {
+    this.detectors.set(name, detector);
+    console.log(`📝 Registered barrier detector: ${name}`);
+  }
+
+  /**
+   * Detect barriers along a route
+   */
+  async detectBarriers(route, options = {}) {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    const barriers = [];
+    
+    for (const [name, detector] of this.detectors) {
+      try {
+        const detectedBarriers = await detector(route, options);
+        barriers.push(...detectedBarriers);
+          } catch (error) {
+        console.error(`❌ Error in barrier detector ${name}:`, error);
       }
     }
 
-    return results;
+    this.barriers = barriers;
+    return barriers;
+  }
+
+  /**
+   * Detect steps along route
+   */
+  async detectSteps(route, options = {}) {
+    const barriers = [];
+    
+    // This is a simplified implementation
+    // In a real implementation, you would analyze the route geometry
+    // and check against municipal data for steps
+    
+    if (options.avoidSteps) {
+      barriers.push({
+        type: 'steps',
+        severity: 'high',
+        message: 'Route may contain steps - verify accessibility',
+        location: 'unknown',
+        coordinates: null
+      });
+    }
+    
+    return barriers;
+  }
+
+  /**
+   * Detect steep slopes along route
+   */
+  async detectSlopes(route, options = {}) {
+    const barriers = [];
+    
+    if (options.avoidSteepSlopes) {
+      barriers.push({
+        type: 'steep_slope',
+        severity: 'medium',
+        message: 'Route may contain steep slopes - verify accessibility',
+        location: 'unknown',
+        coordinates: null
+      });
+    }
+    
+    return barriers;
+  }
+
+  /**
+   * Detect closures along route
+   */
+  async detectClosures(route, options = {}) {
+    const barriers = [];
+    
+    // Check for known closures
+    // This would integrate with municipal data
+    
+    return barriers;
+  }
+
+  /**
+   * Detect narrow paths along route
+   */
+  async detectNarrowPaths(route, options = {}) {
+    const barriers = [];
+    
+    if (options.preferWidePaths) {
+      barriers.push({
+        type: 'narrow_path',
+        severity: 'low',
+        message: 'Route may contain narrow paths - verify accessibility',
+        location: 'unknown',
+        coordinates: null
+      });
+    }
+    
+    return barriers;
+  }
+
+  /**
+   * Get all detected barriers
+   */
+  getBarriers() {
+    return this.barriers;
+  }
+
+  /**
+   * Clear all barriers
+   */
+  clearBarriers() {
+    this.barriers = [];
   }
 }
 
-// Create and export singleton instance
+// Create singleton instance
 const barrierDetectionRegistry = new BarrierDetectionRegistry();
+
 export default barrierDetectionRegistry;

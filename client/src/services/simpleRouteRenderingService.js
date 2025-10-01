@@ -1,8 +1,7 @@
 /**
  * Simple Route Rendering Service
  * 
- * Provides basic route rendering functionality for the restored routing service.
- * Handles map visualization of routes and directions.
+ * Provides basic route rendering functionality for Leaflet maps
  */
 
 /* global L */
@@ -11,17 +10,15 @@ class SimpleRouteRenderingService {
   constructor() {
     this.map = null;
     this.routeLayer = null;
-    this.directionsLayer = null;
     this.isInitialized = false;
   }
 
   /**
-   * Initialize the rendering service with a map instance
+   * Initialize the service with a map instance
    */
   initialize(mapInstance) {
     if (!mapInstance) {
-      console.warn('No map instance provided to route rendering service');
-      return;
+      throw new Error('Map instance is required');
     }
 
     this.map = mapInstance;
@@ -97,53 +94,32 @@ class SimpleRouteRenderingService {
     }
 
     try {
-      // Clear existing directions
-      this.clearDirections();
-
       if (!directions || directions.length === 0) {
         console.warn('No directions to render');
         return;
       }
 
-      // Create directions markers (check if Leaflet is available)
-      if (typeof L === 'undefined') {
-        console.warn('Leaflet not available for direction rendering');
-        return;
-      }
+      // Clear existing directions
+      this.clearDirections();
 
-      const directionMarkers = [];
-
+      // Create direction markers
       directions.forEach((direction, index) => {
-        if (direction.coordinates) {
+        if (direction.coordinates && typeof L !== 'undefined') {
           const marker = L.marker(direction.coordinates, {
             icon: L.divIcon({
               className: 'direction-marker',
-              html: `<div class="direction-number">${direction.step}</div>`,
-              iconSize: [30, 30],
-              iconAnchor: [15, 15]
+              html: `<div class="direction-number">${index + 1}</div>`,
+              iconSize: [20, 20],
+              iconAnchor: [10, 10]
             })
           });
 
-          // Add popup with instruction
-          marker.bindPopup(`
-            <div class="direction-popup">
-              <strong>Step ${direction.step}</strong><br>
-              ${direction.instruction}
-              ${direction.distance ? `<br><small>Distance: ${(direction.distance / 1000).toFixed(2)} km</small>` : ''}
-            </div>
-          `);
-
-          directionMarkers.push(marker);
+          marker.addTo(this.map);
+          marker.bindPopup(direction.instruction || `Step ${index + 1}`);
         }
       });
 
-      // Add markers to map
-      if (typeof L !== 'undefined') {
-        this.directionsLayer = L.layerGroup(directionMarkers);
-        this.directionsLayer.addTo(this.map);
-      }
-
-      console.log(`✅ Rendered ${directionMarkers.length} direction markers`);
+      console.log('✅ Directions rendered successfully');
 
     } catch (error) {
       console.error('❌ Failed to render directions:', error);
@@ -154,42 +130,36 @@ class SimpleRouteRenderingService {
    * Clear the current route
    */
   clearRoute() {
-    if (this.routeLayer) {
+    if (this.routeLayer && this.map) {
       this.map.removeLayer(this.routeLayer);
       this.routeLayer = null;
     }
   }
 
   /**
-   * Clear the current directions
+   * Clear all directions
    */
   clearDirections() {
-    if (this.directionsLayer) {
-      this.map.removeLayer(this.directionsLayer);
-      this.directionsLayer = null;
+    if (this.map) {
+      this.map.eachLayer(layer => {
+        if (layer.options && layer.options.icon && layer.options.icon.options && 
+            layer.options.icon.options.className === 'direction-marker') {
+          this.map.removeLayer(layer);
+        }
+      });
     }
   }
 
   /**
-   * Clear all route-related layers
+   * Clear all rendered content
    */
   clearAll() {
     this.clearRoute();
     this.clearDirections();
   }
-
-  /**
-   * Get rendering status
-   */
-  getStatus() {
-    return {
-      initialized: this.isInitialized,
-      hasRoute: !!this.routeLayer,
-      hasDirections: !!this.directionsLayer
-    };
-  }
 }
 
-// Export singleton instance
+// Create singleton instance
 const simpleRouteRenderingService = new SimpleRouteRenderingService();
+
 export default simpleRouteRenderingService;

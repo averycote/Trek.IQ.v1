@@ -1,3 +1,4 @@
+
 import {
   useState,
   useCallback,
@@ -29,6 +30,12 @@ import apiIntegrationManager from "../services/apiIntegrationManager";
 import productionRoutingService from "../services/productionRouting/ProductionRoutingService.js";
 import DataManager from "../services/productionRouting/DataManager.js";
 import simpleRouteRenderingService from "../services/simpleRouteRenderingService";
+import fixedRouteService from "../services/fixedRouteService.js";
+import unifiedRouteRenderer from "../services/unifiedRouteRenderer.js";
+import routingDiagnosticService from "../services/routingDiagnosticService.js";
+import routeDebugger from "../services/routeDebugger.js";
+import simpleRouteFix from "../services/simpleRouteFix.js";
+import enhancedSearchService from "../services/enhancedSearchService.js";
 import barrierDetectionRegistry from "../services/barrierDetectionRegistry";
 import elevationService from "../services/elevationService";
 import barrierReportingService from "../services/barrierReportingService";
@@ -257,60 +264,90 @@ const AppShell = () => {
 
     // Initialize API integration manager and comprehensive routing orchestrator
     const initializeSystem = async () => {
+      // Set a timeout for system initialization
+      const initTimeout = setTimeout(() => {
+        if (isSystemLoading) {
+          console.warn("System initialization timeout - continuing with basic functionality");
+          setIsSystemLoading(false);
+          setSystemLoadingMessage("System initialization timeout - some features may be limited");
+          setIsSystemReady(true);
+        }
+      }, 15000); // 15 second timeout
+
       try {
         console.log("Initializing Trek.IQ system...", {
           isMobile,
           userAgent: navigator.userAgent,
         });
 
-        // OPTIMIZATION: Removed unused initTimeout variable
+        setSystemLoadingMessage("Loading core services...");
 
-        // Initialize DataManager first
-        const dataManager = new DataManager();
-        await dataManager.initialize();
-        
-        // Initialize ProductionRoutingService with DataManager
-        await productionRoutingService.initialize({ dataManager });
-
+        // Initialize essential services only with individual error handling
         const initPromises = [
-          apiIntegrationManager.initialize(),
-          barrierDetectionRegistry.initialize(),
-          elevationService.initialize(),
-          geolocationService.initialize(),
+          apiIntegrationManager.initialize().catch(error => {
+            console.warn("API Integration Manager failed:", error);
+            return { error: error.message };
+          }),
+          barrierDetectionRegistry.initialize().catch(error => {
+            console.warn("Barrier Detection Registry failed:", error);
+            return { error: error.message };
+          }),
+          elevationService.initialize().catch(error => {
+            console.warn("Elevation Service failed:", error);
+            return { error: error.message };
+          }),
+          geolocationService.initialize().catch(error => {
+            console.warn("Geolocation Service failed:", error);
+            return { error: error.message };
+          }),
+          fixedRouteService.initialize().catch(error => {
+            console.warn("Fixed Route Service failed:", error);
+            return { error: error.message };
+          }),
         ];
+
+        setSystemLoadingMessage("Initializing system components...");
 
         // Initialize all services
         const results = await Promise.allSettled(initPromises);
 
+        console.log("Service initialization results:", results.map((result, index) => ({
+          service: ['apiIntegrationManager', 'barrierDetectionRegistry', 'elevationService', 'geolocationService', 'fixedRouteService'][index],
+          status: result.status,
+          error: result.status === 'rejected' ? result.reason?.message : null
+        })));
+
+        setSystemLoadingMessage("Configuring API services...");
+
         // Check if API Integration Manager initialized successfully
-        if (results[0].status === "fulfilled") {
+        if (results[0].status === "fulfilled" && !results[0].value?.error) {
           console.log("✅ API Integration Manager initialized");
         } else {
-          console.warn("⚠️ API Integration Manager failed:", results[0].reason);
+          console.warn("⚠️ API Integration Manager failed:", results[0].reason || results[0].value?.error);
         }
 
         // Check if Comprehensive Routing Orchestrator initialized successfully
-        if (results[1].status === "fulfilled") {
+        if (results[1].status === "fulfilled" && !results[1].value?.error) {
           console.log("✅ Comprehensive Routing Orchestrator initialized");
         } else {
           console.warn(
             "⚠️ Comprehensive Routing Orchestrator failed:",
-            results[1].reason
+            results[1].reason || results[1].value?.error
           );
         }
 
         // Check if Barrier Detection Registry initialized successfully
-        if (results[2].status === "fulfilled") {
+        if (results[2].status === "fulfilled" && !results[2].value?.error) {
           console.log("✅ Barrier Detection Registry initialized");
         } else {
           console.warn(
             "⚠️ Barrier Detection Registry failed:",
-            results[2].reason
+            results[2].reason || results[2].value?.error
           );
         }
 
         // Check if Elevation Service initialized successfully
-        if (results[3].status === "fulfilled") {
+        if (results[3].status === "fulfilled" && !results[3].value?.error) {
           console.log("✅ Elevation Service initialized");
           
           // OPTIMIZATION: Test elevation API in development
@@ -324,21 +361,35 @@ const AppShell = () => {
         } else {
           console.warn(
             "⚠️ Elevation Service failed:",
-            results[3].reason
+            results[3].reason || results[3].value?.error
           );
         }
 
+        setSystemLoadingMessage("Setting up location services...");
+
         // Check if Geolocation Service initialized successfully
-        if (results[4].status === "fulfilled") {
+        if (results[4].status === "fulfilled" && !results[4].value?.error) {
           console.log("✅ Geolocation Service initialized");
           setIsGeolocationEnabled(true);
           // Location detection is now manual via button click
         } else {
           console.warn(
             "⚠️ Geolocation Service failed:",
-            results[4].reason
+            results[4].reason || results[4].value?.error
           );
           setIsGeolocationEnabled(false);
+        }
+
+        setSystemLoadingMessage("Setting up system connections...");
+
+        // Check if critical services failed
+        const criticalServicesFailed = results.slice(0, 2).some(result => 
+          result.status === "rejected" || result.value?.error
+        );
+
+        if (criticalServicesFailed) {
+          console.warn("⚠️ Critical services failed, but continuing with basic functionality");
+          // Don't show error toast for non-critical service failures
         }
 
         // Set up status listener
@@ -357,10 +408,19 @@ const AppShell = () => {
 
         apiIntegrationManager.addStatusListener(statusListener);
 
+        setSystemLoadingMessage("Finalizing system setup...");
+
         // Check initial status
         setIsSystemReady(apiIntegrationManager.isSystemReady());
         setSystemStatus(apiIntegrationManager.getSystemStatus());
 
+        // Clear the timeout since initialization completed successfully
+        clearTimeout(initTimeout);
+
+        // Add a small delay to show the loading state
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        setIsSystemLoading(false);
         console.log("System initialization completed successfully");
 
         // Return cleanup function
@@ -369,17 +429,21 @@ const AppShell = () => {
         };
       } catch (error) {
         console.error("Failed to initialize system:", error);
+        console.error("Error details:", {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
 
-        // More specific error message for mobile
-        if (isMobile) {
-          toast.error(
-            "Mobile initialization failed. Please check your connection and try refreshing the page."
-          );
-        } else {
-          toast.error(
-            "System initialization failed. Some features may be unavailable."
-          );
-        }
+        // Clear the timeout since initialization failed
+        clearTimeout(initTimeout);
+
+        setIsSystemLoading(false);
+        setSystemLoadingMessage("System initialization failed");
+
+        // Only show error toast for truly critical failures
+        // Most service failures are now handled gracefully
+        console.warn("System initialization encountered errors, but continuing with available services");
 
         // Still try to set system as ready for basic functionality
         setIsSystemReady(true);
@@ -424,6 +488,8 @@ const AppShell = () => {
 
   // Service readiness
   const [isSystemReady, setIsSystemReady] = useState(false);
+  const [isSystemLoading, setIsSystemLoading] = useState(true);
+  const [systemLoadingMessage, setSystemLoadingMessage] = useState("Initializing Trek.IQ system...");
   // eslint-disable-next-line no-unused-vars
   const [systemStatus, setSystemStatus] = useState(null);
   // eslint-disable-next-line no-unused-vars
@@ -532,7 +598,32 @@ const AppShell = () => {
           routeRequest
         );
 
-        const result = await productionRoutingService.calculateRoute(
+        // Try fixed route service first
+        let result;
+        try {
+          result = await fixedRouteService.calculateRoute(
+            routeRequest.origin,
+            routeRequest.destination,
+            {
+              avoidSteps: routeRequest.userPrefs?.avoidSteps,
+              preferAccessible: routeRequest.userPrefs?.preferAccessible,
+              wheelchairAccessible: routeRequest.userPrefs?.wheelchairAccessible,
+              visualImpairment: routeRequest.userPrefs?.visualImpairment,
+              hearingImpairment: routeRequest.userPrefs?.hearingImpairment,
+              profile: 'walking'
+            }
+          );
+          
+          // Wrap result in expected format
+          result = {
+            success: true,
+            route: result
+          };
+        } catch (error) {
+          console.warn('Fixed route service failed, trying production service:', error);
+          
+          // Fallback to production service
+          result = await productionRoutingService.calculateRoute(
           routeRequest.origin,
           routeRequest.destination,
           {
@@ -542,25 +633,69 @@ const AppShell = () => {
             profile: 'walking'
           }
         );
+        }
 
         console.log("Comprehensive route generation result:", result);
 
         if (result.success && result.route) {
+          // Debug route data
+          routeDebugger.debugRouteData(result.route, 'from route calculation');
+          
           // Store comprehensive route data
           setComprehensiveRoute(result.route);
 
-          // Initialize rendering service if map is available
+          // Initialize unified rendering service if map is available
           if (mapInstance) {
             try {
-              simpleRouteRenderingService.initialize(mapInstance);
-              await simpleRouteRenderingService.renderRoute(result.route);
-              if (result.directions) {
-                await simpleRouteRenderingService.renderDirections(result.directions);
+              // Debug route rendering attempt
+              routeDebugger.debugRouteRendering(result.route, mapInstance, unifiedRouteRenderer);
+              
+              // Run diagnostics first
+              const diagnostics = await routingDiagnosticService.runDiagnostics(
+                result.route, 
+                mapInstance, 
+                unifiedRouteRenderer
+              );
+              
+              console.log('🔍 Routing diagnostics:', diagnostics.getSummary());
+              
+              // Apply fixes if needed
+              if (diagnostics.errors.length > 0) {
+                await diagnostics.applyFixes();
               }
+              
+              // Initialize and render with unified renderer
+              unifiedRouteRenderer.initialize(mapInstance);
+              await unifiedRouteRenderer.renderRoute(result.route);
+              
+              routeDebugger.log('Route rendering completed successfully');
+              
             } catch (error) {
-              console.warn('⚠️ Route rendering failed (Leaflet may not be loaded yet):', error.message);
-              // Route calculation succeeded, just rendering failed
+              console.warn('⚠️ Route rendering failed:', error.message);
+              routeDebugger.log('Route rendering failed', { error: error.message });
+              
+              // Try fallback rendering with simple service
+              try {
+                simpleRouteRenderingService.initialize(mapInstance);
+                await simpleRouteRenderingService.renderRoute(result.route);
+                routeDebugger.log('Fallback route rendering succeeded');
+              } catch (fallbackError) {
+                console.error('❌ Fallback route rendering also failed:', fallbackError);
+                routeDebugger.log('Fallback route rendering failed', { error: fallbackError.message });
+                
+                // Try simple route fix as last resort
+                try {
+                  simpleRouteFix.initialize(mapInstance);
+                  await simpleRouteFix.renderRoute(result.route);
+                  routeDebugger.log('Simple route fix succeeded');
+                } catch (simpleFixError) {
+                  console.error('❌ Simple route fix also failed:', simpleFixError);
+                  routeDebugger.log('Simple route fix failed', { error: simpleFixError.message });
+                }
+              }
             }
+          } else {
+            routeDebugger.log('No map instance available for route rendering');
           }
 
           // Always show route panel directly - barriers are handled within the panel
@@ -574,6 +709,7 @@ const AppShell = () => {
         } else {
           toast.dismiss(loadingToast);
           toast.error(result.error || "Failed to generate route");
+          routeDebugger.log('Route calculation failed', { error: result.error });
         }
       } catch (error) {
         console.error("Route generation failed:", error);
@@ -715,36 +851,82 @@ const AppShell = () => {
       window.productionRoutingService = productionRoutingService;
       window.simpleRouteRenderingService = simpleRouteRenderingService;
       window.barrierReportingService = barrierReportingService;
+      window.fixedRouteService = fixedRouteService;
+      window.unifiedRouteRenderer = unifiedRouteRenderer;
+      window.routingDiagnosticService = routingDiagnosticService;
+      window.routeDebugger = routeDebugger;
+      window.simpleRouteFix = simpleRouteFix;
+      window.enhancedSearchService = enhancedSearchService;
 
-      // Expose individual services
-      const barrierService = apiIntegrationManager.getService("barrier");
-      const searchService = apiIntegrationManager.getService("search");
-      const routingService = apiIntegrationManager.getService("routing");
-      const elevationService = apiIntegrationManager.getService("elevation");
-      const openRouteService = apiIntegrationManager.getService("openRoute");
-      const transitService = apiIntegrationManager.getService("transit");
-      const transitAPIService = apiIntegrationManager.getService("transitAPI");
+      // Expose essential services
+      window.elevationService = elevationService;
+      window.accessibilityService = fixedRouteService;
+      window.scoringService = fixedRouteService;
+      window.rankingService = fixedRouteService;
+      window.slopeService = elevationService;
+      window.fallbackService = apiIntegrationManager;
 
-      if (barrierService) window.barrierService = barrierService;
-      if (searchService) window.enhancedSearchService = searchService;
-      if (routingService) window.routingService = routingService;
-      if (elevationService) window.elevationService = elevationService;
-      if (openRouteService) window.openRouteService = openRouteService;
-      if (transitService) window.transitService = transitService;
-      if (transitAPIService) window.transitAPIService = transitAPIService;
+      // Add test route function for debugging
+      window.testRoute = async () => {
+        try {
+          console.log('🧪 Testing route rendering...');
+          const testRoute = routeDebugger.createTestRoute();
+          routeDebugger.debugRouteData(testRoute, 'test route');
+          
+          if (mapInstance) {
+            // Test with unified renderer
+            try {
+              unifiedRouteRenderer.initialize(mapInstance);
+              await unifiedRouteRenderer.renderRoute(testRoute);
+              console.log('✅ Test route rendered with unified renderer');
+            } catch (error) {
+              console.error('❌ Unified renderer failed:', error);
+              
+              // Test with simple renderer
+              try {
+                simpleRouteRenderingService.initialize(mapInstance);
+                await simpleRouteRenderingService.renderRoute(testRoute);
+                console.log('✅ Test route rendered with simple renderer');
+              } catch (fallbackError) {
+                console.error('❌ Simple renderer also failed:', fallbackError);
+                
+                // Test with simple route fix
+                try {
+                  simpleRouteFix.initialize(mapInstance);
+                  await simpleRouteFix.renderRoute(testRoute);
+                  console.log('✅ Test route rendered with simple route fix');
+                } catch (simpleFixError) {
+                  console.error('❌ Simple route fix also failed:', simpleFixError);
+                }
+              }
+            }
+          } else {
+            console.error('❌ No map instance available for testing');
+          }
+        } catch (error) {
+          console.error('❌ Test route failed:', error);
+        }
+      };
 
-      // Expose additional services that tests expect
-      window.geocodingService = searchService; // Search service handles geocoding
-      window.mapboxService = searchService; // Search service uses Mapbox
-      window.nominatimService = searchService; // Search service uses Nominatim as fallback
-      window.layersService = apiIntegrationManager; // API manager handles layers
-      window.poiService = apiIntegrationManager; // API manager handles POIs
-      window.accessibilityService = productionRoutingService; // Production routing service handles accessibility
-      window.scoringService = productionRoutingService; // Production routing service handles scoring
-      window.rankingService = productionRoutingService; // Production routing service handles ranking
-      window.slopeService = elevationService; // Elevation service handles slopes
-      window.openElevationService = elevationService; // Same as elevation service
-      window.fallbackService = apiIntegrationManager; // API manager handles fallbacks
+      // Add test search function for debugging
+      window.testSearch = async (query = 'Halifax') => {
+        try {
+          console.log('🔍 Testing search functionality...');
+          await enhancedSearchService.initialize();
+          
+          const results = await enhancedSearchService.search(query, {
+            limit: 5,
+            includeCivicAddresses: true,
+            includePOIs: true
+          });
+          
+          console.log('✅ Search results:', results);
+          return results;
+        } catch (error) {
+          console.error('❌ Test search failed:', error);
+          return [];
+        }
+      };
 
       setIsSystemReady(true);
       console.log("Trek.IQ system initialized successfully");
@@ -809,6 +991,24 @@ const AppShell = () => {
   return (
     <div className="app-shell">
       <Toaster position="top-center" />
+
+      {/* System Loading Overlay */}
+      {isSystemLoading && (
+        <div className={`fixed inset-0 ${currentTheme === 'dark' ? 'bg-gray-900 bg-opacity-95' : 'bg-white bg-opacity-95'} z-50 flex items-center justify-center`}>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h2 className={`text-xl font-semibold ${currentTheme === 'dark' ? 'text-white' : 'text-gray-800'} mb-2`}>
+              {isMobile ? "Loading Trek.IQ..." : "Initializing Trek.IQ System..."}
+            </h2>
+            <p className={`${currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'} mb-4`}>{systemLoadingMessage}</p>
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Top Bar */}
       <TopBar

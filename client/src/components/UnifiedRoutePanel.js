@@ -76,7 +76,11 @@ const UnifiedRoutePanel = ({
         setWheelmapData(routeAnalysis);
 
         // Get destination coordinates for nearby places
-        const routeCoords = route.features[0].geometry.coordinates;
+        const routeCoords = route?.features?.[0]?.geometry?.coordinates;
+        if (!routeCoords || routeCoords.length === 0) {
+          console.warn('No route coordinates available');
+          return;
+        }
         const destinationCoords = routeCoords[routeCoords.length - 1];
         
         // Find nearby accessible places at destination
@@ -598,13 +602,13 @@ const UnifiedRoutePanel = ({
                 <div className="p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-center">
                   <div className="text-lg mb-1">📏</div>
                   <div className="text-sm font-medium text-gray-800 dark:text-gray-200">Distance</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">{(route.features[0].properties.distance / 1000).toFixed(1)} km</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">{(route?.features?.[0]?.properties?.distance / 1000 || 0).toFixed(1)} km</div>
                       </div>
                     
                 <div className="p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-center">
                   <div className="text-lg mb-1">⏱️</div>
                   <div className="text-sm font-medium text-gray-800 dark:text-gray-200">Duration</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">{Math.round(route.features[0].properties.duration / 60)} min</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400">{Math.round((route?.features?.[0]?.properties?.duration || 0) / 60)} min</div>
                   </div>
                 </div>
                     

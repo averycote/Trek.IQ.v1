@@ -276,13 +276,13 @@ const NavigationIntegration = ({
                    <div className="stat">
                      <span className="stat-icon">⏱️</span>
                      <span className="stat-value">
-                       {Math.round(route.features[0].properties.duration / 60)} min
+                       {Math.round((route?.features?.[0]?.properties?.duration || 0) / 60)} min
                      </span>
                    </div>
                    <div className="stat">
                      <span className="stat-icon">📏</span>
                      <span className="stat-value">
-                       {(route.features[0].properties.distance / 1000).toFixed(1)} km
+                       {((route?.features?.[0]?.properties?.distance || 0) / 1000).toFixed(1)} km
                      </span>
                    </div>
                  </div>
@@ -332,7 +332,7 @@ const NavigationIntegration = ({
                        <span className="condition-icon">⏱️</span>
                        <div className="condition-info">
                          <span className="condition-label">Duration</span>
-                         <span className="condition-value">{Math.round(route.features[0].properties.duration / 60)} min</span>
+                         <span className="condition-value">{Math.round((route?.features?.[0]?.properties?.duration || 0) / 60)} min</span>
                        </div>
                      </div>
                    </div>
