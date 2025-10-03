@@ -60,6 +60,9 @@ const BasicMapComponent = ({
 
   // Halifax center coordinates
   const HALIFAX_CENTER = useMemo(() => [-63.5756, 44.6475], []);
+  
+  // Map position lock to prevent unwanted repositioning
+  const [mapPositionLocked, setMapPositionLocked] = useState(false);
 
   // Helper function to safely call map methods
   const safeMapCall = (callback, fallback = null) => {
@@ -156,6 +159,32 @@ const BasicMapComponent = ({
 
           // Add fullscreen control
           map.current.addControl(new mapboxgl.FullscreenControl(), "top-right");
+          
+          // Add map move event listener to prevent moving outside Halifax bounds
+          map.current.on('move', () => {
+            if (mapPositionLocked) return;
+            
+            const center = map.current.getCenter();
+            const halifaxBounds = {
+              west: -63.8,
+              east: -63.4,
+              south: 44.5,
+              north: 44.8
+            };
+            
+            // Check if map center is outside Halifax bounds
+            if (center.lng < halifaxBounds.west || center.lng > halifaxBounds.east ||
+                center.lat < halifaxBounds.south || center.lat > halifaxBounds.north) {
+              console.warn('🚫 Map moved outside Halifax bounds, repositioning to Halifax center');
+              setMapPositionLocked(true);
+              map.current.flyTo({
+                center: HALIFAX_CENTER,
+                zoom: 15,
+                duration: 1000
+              });
+              setTimeout(() => setMapPositionLocked(false), 1500);
+            }
+          });
           
           // Check if style is already loaded
           if (map.current.isStyleLoaded()) {

@@ -787,11 +787,36 @@ const WheelmapLayer = ({
     // If no markers are visible, zoom to show them
     if (visibleMarkers === 0 && newMarkers.length > 0) {
       console.log('🔄 No markers visible, fitting map to show markers');
+      // Validate markers are within Halifax bounds before fitting
+      const halifaxBounds = {
+        west: -63.8,
+        east: -63.4,
+        south: 44.5,
+        north: 44.8
+      };
+      
       const bounds = new mapboxgl.LngLatBounds();
+      let hasValidMarkers = false;
+      
       newMarkers.forEach(marker => {
-        bounds.extend(marker.getLngLat());
+        const lngLat = marker.getLngLat();
+        const [lng, lat] = [lngLat.lng, lngLat.lat];
+        
+        // Only add markers that are within Halifax bounds
+        if (lng >= halifaxBounds.west && lng <= halifaxBounds.east &&
+            lat >= halifaxBounds.south && lat <= halifaxBounds.north) {
+          bounds.extend(lngLat);
+          hasValidMarkers = true;
+        }
       });
-      map.fitBounds(bounds, { padding: 50, maxZoom: 15 });
+      
+      if (hasValidMarkers) {
+        map.fitBounds(bounds, { padding: 50, maxZoom: 15 });
+        console.log('✅ WheelmapLayer: Map fitted to valid marker bounds within Halifax');
+      } else {
+        console.warn('⚠️ WheelmapLayer: No valid markers within Halifax bounds, keeping map centered');
+        // Don't reposition map if no valid markers
+      }
     }
   };
 

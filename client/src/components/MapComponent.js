@@ -26,6 +26,7 @@ const MapComponent = ({
   const [layers, setLayers] = useState({});
   const [loadingLayers, setLoadingLayers] = useState(new Set());
   const [mapInitialized, setMapInitialized] = useState(false);
+  const [mapPositionLocked, setMapPositionLocked] = useState(false);
 
   // Halifax center coordinates
   const HALIFAX_CENTER = [-63.5756, 44.6475];
@@ -80,6 +81,32 @@ const MapComponent = ({
     map.current.on('load', () => {
       setMapInitialized(true);
       console.log('Mapbox map loaded successfully');
+      
+      // Add map move event listener to prevent moving outside Halifax bounds
+      map.current.on('move', () => {
+        if (mapPositionLocked) return;
+        
+        const center = map.current.getCenter();
+        const halifaxBounds = {
+          west: -63.8,
+          east: -63.4,
+          south: 44.5,
+          north: 44.8
+        };
+        
+        // Check if map center is outside Halifax bounds
+        if (center.lng < halifaxBounds.west || center.lng > halifaxBounds.east ||
+            center.lat < halifaxBounds.south || center.lat > halifaxBounds.north) {
+          console.warn('🚫 MapComponent: Map moved outside Halifax bounds, repositioning to Halifax center');
+          setMapPositionLocked(true);
+          map.current.flyTo({
+            center: HALIFAX_CENTER,
+            zoom: 15,
+            duration: 1000
+          });
+          setTimeout(() => setMapPositionLocked(false), 1500);
+        }
+      });
     });
 
     // Handle map style change for dark mode
