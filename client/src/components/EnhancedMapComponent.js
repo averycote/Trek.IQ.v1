@@ -678,21 +678,45 @@ const EnhancedMapComponent = ({
           if (coordinates && coordinates.length > 0) {
             const bounds = new mapboxgl.LngLatBounds();
             
-            coordinates.forEach(coord => {
-              bounds.extend(coord);
+            // Validate coordinates are within Halifax bounds before fitting
+            const halifaxBounds = {
+              west: -63.8,
+              east: -63.4,
+              south: 44.5,
+              north: 44.8
+            };
+            
+            const validCoordinates = coordinates.filter(coord => {
+              const [lng, lat] = coord;
+              return lng >= halifaxBounds.west && lng <= halifaxBounds.east &&
+                     lat >= halifaxBounds.south && lat <= halifaxBounds.north;
             });
             
-            console.log('EnhancedMapComponent: Route bounds:', bounds);
-            console.log('EnhancedMapComponent: Current map center:', map.current.getCenter());
-            console.log('EnhancedMapComponent: Current map zoom:', map.current.getZoom());
-            
-            map.current.fitBounds(bounds, {
-              padding: 50,
-              duration: 1000,
-              maxZoom: 16 // Prevent excessive zooming
-            });
-            
-            console.log('EnhancedMapComponent: Map fitted to route bounds');
+            if (validCoordinates.length > 0) {
+              validCoordinates.forEach(coord => {
+                bounds.extend(coord);
+              });
+              
+              console.log('EnhancedMapComponent: Route bounds:', bounds);
+              console.log('EnhancedMapComponent: Current map center:', map.current.getCenter());
+              console.log('EnhancedMapComponent: Current map zoom:', map.current.getZoom());
+              
+              map.current.fitBounds(bounds, {
+                padding: 50,
+                duration: 1000,
+                maxZoom: 16 // Prevent excessive zooming
+              });
+              
+              console.log('✅ EnhancedMapComponent: Map fitted to valid route bounds within Halifax');
+            } else {
+              console.warn('⚠️ EnhancedMapComponent: Route coordinates are outside Halifax bounds, keeping map centered on Halifax');
+              // Keep map centered on Halifax instead of fitting to invalid coordinates
+              map.current.flyTo({
+                center: HALIFAX_CENTER,
+                zoom: 15,
+                duration: 1000
+              });
+            }
           }
         }
       } catch (error) {

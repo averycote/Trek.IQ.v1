@@ -525,15 +525,41 @@ const OptimizedMapComponent = ({
           const coordinates = routeData.features[0].geometry.coordinates;
           
           if (coordinates && coordinates.length > 0) {
-            const bounds = coordinates.reduce((bounds, coord) => {
-              return bounds.extend(coord);
-            }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+            // Validate coordinates are within Halifax bounds before fitting
+            const halifaxBounds = {
+              west: -63.8,
+              east: -63.4,
+              south: 44.5,
+              north: 44.8
+            };
             
-            map.current.fitBounds(bounds, {
-              padding: 50,
-              duration: 1000,
-              maxZoom: 16 // Prevent excessive zooming
+            const validCoordinates = coordinates.filter(coord => {
+              const [lng, lat] = coord;
+              return lng >= halifaxBounds.west && lng <= halifaxBounds.east &&
+                     lat >= halifaxBounds.south && lat <= halifaxBounds.north;
             });
+            
+            if (validCoordinates.length > 0) {
+              const bounds = validCoordinates.reduce((bounds, coord) => {
+                return bounds.extend(coord);
+              }, new mapboxgl.LngLatBounds(validCoordinates[0], validCoordinates[0]));
+              
+              map.current.fitBounds(bounds, {
+                padding: 50,
+                duration: 1000,
+                maxZoom: 16 // Prevent excessive zooming
+              });
+              
+              console.log('✅ OptimizedMapComponent: Map fitted to valid route bounds within Halifax');
+            } else {
+              console.warn('⚠️ OptimizedMapComponent: Route coordinates are outside Halifax bounds, keeping map centered on Halifax');
+              // Keep map centered on Halifax instead of fitting to invalid coordinates
+              map.current.flyTo({
+                center: HALIFAX_CENTER,
+                zoom: 15,
+                duration: 1000
+              });
+            }
           }
         }
       } catch (error) {

@@ -467,15 +467,43 @@ const MapComponent = ({
 
     // Fit map to route bounds
     if (route.features && route.features.length > 0) {
+      // Validate coordinates are within Halifax bounds before fitting
+      const halifaxBounds = {
+        west: -63.8,
+        east: -63.4,
+        south: 44.5,
+        north: 44.8
+      };
+      
       const bounds = new mapboxgl.LngLatBounds();
+      let hasValidCoordinates = false;
+      
       route.features.forEach(feature => {
         if (feature.geometry && feature.geometry.coordinates) {
           feature.geometry.coordinates.forEach(coord => {
-            bounds.extend(coord);
+            const [lng, lat] = coord;
+            // Only add coordinates that are within Halifax bounds
+            if (lng >= halifaxBounds.west && lng <= halifaxBounds.east &&
+                lat >= halifaxBounds.south && lat <= halifaxBounds.north) {
+              bounds.extend(coord);
+              hasValidCoordinates = true;
+            }
           });
         }
       });
-      map.current.fitBounds(bounds, { padding: 50 });
+      
+      if (hasValidCoordinates) {
+        map.current.fitBounds(bounds, { padding: 50 });
+        console.log('✅ MapComponent: Map fitted to valid route bounds within Halifax');
+      } else {
+        console.warn('⚠️ MapComponent: Route coordinates are outside Halifax bounds, keeping map centered on Halifax');
+        // Keep map centered on Halifax instead of fitting to invalid coordinates
+        map.current.flyTo({
+          center: HALIFAX_CENTER,
+          zoom: 15,
+          duration: 1000
+        });
+      }
     }
   }, [route, mapInitialized]);
 
