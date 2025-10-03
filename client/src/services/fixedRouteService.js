@@ -106,7 +106,7 @@ class FixedRouteService {
   async geocodeAddress(address) {
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${this.mapboxToken}&limit=1`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${this.mapboxToken}&country=CA&proximity=-63.5752,44.6488&bbox=-63.8,44.5,-63.4,44.8&limit=1`
       );
 
       if (!response.ok) {
@@ -119,7 +119,24 @@ class FixedRouteService {
         throw new Error('Address not found');
       }
 
-      return data.features[0].center; // [lng, lat]
+      const coordinates = data.features[0].center; // [lng, lat]
+      
+      // Validate coordinates are within Halifax bounds
+      const halifaxBounds = {
+        west: -63.8,
+        east: -63.4,
+        south: 44.5,
+        north: 44.8
+      };
+      
+      const [lng, lat] = coordinates;
+      if (lng < halifaxBounds.west || lng > halifaxBounds.east ||
+          lat < halifaxBounds.south || lat > halifaxBounds.north) {
+        console.warn('⚠️ FixedRouteService: Geocoded coordinates are outside Halifax bounds:', coordinates);
+        throw new Error('Address is outside Halifax area');
+      }
+      
+      return coordinates;
     } catch (error) {
       console.error('Geocoding error:', error);
       throw new Error(`Failed to geocode address: ${address}`);

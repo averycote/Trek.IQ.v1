@@ -41,9 +41,9 @@ class EnhancedSearchService {
 
       console.log('🔍 Searching for:', query);
 
-      // Use Mapbox Geocoding API for real search results
+      // Use Mapbox Geocoding API for real search results - restricted to Halifax area
       const encodedQuery = encodeURIComponent(query);
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedQuery}.json?access_token=${this.mapboxToken}&country=CA&proximity=-63.5752,44.6488&limit=8&types=address,poi,place,locality,neighborhood`;
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedQuery}.json?access_token=${this.mapboxToken}&country=CA&proximity=-63.5752,44.6488&bbox=-63.8,44.5,-63.4,44.8&limit=8&types=address,poi,place,locality,neighborhood`;
 
       const response = await fetch(url);
       
@@ -58,16 +58,29 @@ class EnhancedSearchService {
         return [];
       }
 
-      // Transform Mapbox results to our format
-      const results = data.features.map((feature, index) => ({
-        id: feature.id || `result_${index}`,
-        name: feature.text || feature.place_name,
-        address: feature.place_name,
-        coordinates: feature.center, // [lng, lat]
-        type: this._getFeatureType(feature),
-        relevance: feature.relevance || 1,
-        context: feature.context || []
-      }));
+      // Transform Mapbox results to our format and filter to Halifax area only
+      const halifaxBounds = {
+        west: -63.8,
+        east: -63.4,
+        south: 44.5,
+        north: 44.8
+      };
+      
+      const results = data.features
+        .filter(feature => {
+          const [lng, lat] = feature.center;
+          return lng >= halifaxBounds.west && lng <= halifaxBounds.east &&
+                 lat >= halifaxBounds.south && lat <= halifaxBounds.north;
+        })
+        .map((feature, index) => ({
+          id: feature.id || `result_${index}`,
+          name: feature.text || feature.place_name,
+          address: feature.place_name,
+          coordinates: feature.center, // [lng, lat]
+          type: this._getFeatureType(feature),
+          relevance: feature.relevance || 1,
+          context: feature.context || []
+        }));
 
       console.log('✅ Search results:', results.length, 'found');
 
@@ -168,9 +181,9 @@ class EnhancedSearchService {
 
       console.log('🗺️ Geocoding address:', address);
 
-      // Use Mapbox Geocoding API
+      // Use Mapbox Geocoding API - restricted to Halifax area
       const encodedAddress = encodeURIComponent(address);
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${this.mapboxToken}&country=CA&proximity=-63.5752,44.6488&limit=1`;
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${this.mapboxToken}&country=CA&proximity=-63.5752,44.6488&bbox=-63.8,44.5,-63.4,44.8&limit=1`;
 
       const response = await fetch(url);
       
@@ -185,7 +198,23 @@ class EnhancedSearchService {
       }
 
       const coordinates = data.features[0].center; // [lng, lat]
-      console.log('✅ Geocoded coordinates:', coordinates);
+      
+      // Validate coordinates are within Halifax bounds
+      const halifaxBounds = {
+        west: -63.8,
+        east: -63.4,
+        south: 44.5,
+        north: 44.8
+      };
+      
+      const [lng, lat] = coordinates;
+      if (lng < halifaxBounds.west || lng > halifaxBounds.east ||
+          lat < halifaxBounds.south || lat > halifaxBounds.north) {
+        console.warn('⚠️ Geocoded coordinates are outside Halifax bounds:', coordinates);
+        throw new Error('Address is outside Halifax area');
+      }
+      
+      console.log('✅ Geocoded coordinates within Halifax:', coordinates);
 
       this.cache.set(cacheKey, {
         coordinates: coordinates,

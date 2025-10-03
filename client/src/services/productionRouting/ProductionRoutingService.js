@@ -478,10 +478,10 @@ class ProductionRoutingService {
         }
       }
       
-      // Fallback to Mapbox geocoding
+      // Fallback to Mapbox geocoding - restricted to Halifax area
       const mapboxToken = 'pk.eyJ1IjoiYXZlcnljb3RlIiwiYSI6ImNtZWxpdmpxMzBpOWQyanE0Z2p2YWRicjIifQ.fQzZ_KDIxILvcV471Z3EjQ';
       const encodedAddress = encodeURIComponent(address);
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxToken}&country=CA&proximity=-63.5752,44.6488`;
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=${mapboxToken}&country=CA&proximity=-63.5752,44.6488&bbox=-63.8,44.5,-63.4,44.8`;
       
       const response = await fetch(url);
       if (!response.ok) {
@@ -491,7 +491,24 @@ class ProductionRoutingService {
       const data = await response.json();
       if (data.features && data.features.length > 0) {
         const feature = data.features[0];
-        return feature.center; // [lng, lat]
+        const coordinates = feature.center; // [lng, lat]
+        
+        // Validate coordinates are within Halifax bounds
+        const halifaxBounds = {
+          west: -63.8,
+          east: -63.4,
+          south: 44.5,
+          north: 44.8
+        };
+        
+        const [lng, lat] = coordinates;
+        if (lng < halifaxBounds.west || lng > halifaxBounds.east ||
+            lat < halifaxBounds.south || lat > halifaxBounds.north) {
+          console.warn('⚠️ ProductionRoutingService: Geocoded coordinates are outside Halifax bounds:', coordinates);
+          throw new Error('Address is outside Halifax area');
+        }
+        
+        return coordinates;
       }
       
       throw new Error('No geocoding results found');
