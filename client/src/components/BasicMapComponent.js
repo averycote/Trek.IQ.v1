@@ -122,6 +122,11 @@ const BasicMapComponent = ({
           zoom: 12,
           maxZoom: 18,
           minZoom: 10,
+          // Restrict map bounds to Halifax area to prevent unwanted repositioning
+          maxBounds: [
+            [-63.8, 44.5], // Southwest
+            [-63.4, 44.8]  // Northeast
+          ],
           // Add defensive options to prevent undefined state errors
           antialias: true,
           preserveDrawingBuffer: true,
@@ -139,12 +144,12 @@ const BasicMapComponent = ({
           // Add navigation controls after map loads
           map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-          // Add geolocate control
+          // Add geolocate control - disabled auto-tracking to prevent unwanted map repositioning
           const geolocateControl = new mapboxgl.GeolocateControl({
             positionOptions: {
               enableHighAccuracy: true,
             },
-            trackUserLocation: true,
+            trackUserLocation: false, // Changed to false to prevent automatic map repositioning
             showUserHeading: true,
           });
           map.current.addControl(geolocateControl, "top-right");

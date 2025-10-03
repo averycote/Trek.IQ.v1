@@ -44,7 +44,12 @@ const MapComponent = ({
             : 'mapbox://styles/mapbox/streets-v12',
           center: HALIFAX_CENTER,
           zoom: 15,
-      attributionControl: false
+          // Restrict map bounds to Halifax area to prevent unwanted repositioning
+          maxBounds: [
+            [-63.8, 44.5], // Southwest
+            [-63.4, 44.8]  // Northeast
+          ],
+          attributionControl: false
     });
 
     // Add navigation controls
@@ -53,12 +58,12 @@ const MapComponent = ({
     // Add fullscreen control
     map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
 
-    // Add geolocate control
+    // Add geolocate control - disabled auto-tracking to prevent unwanted map repositioning
     const geolocateControl = new mapboxgl.GeolocateControl({
       positionOptions: {
         enableHighAccuracy: true
       },
-      trackUserLocation: true,
+      trackUserLocation: false, // Changed to false to prevent automatic map repositioning
       showUserHeading: true
     });
     map.current.addControl(geolocateControl, 'top-right');
