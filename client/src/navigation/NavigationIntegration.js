@@ -551,29 +551,48 @@ const NavigationIntegration = ({
         console.log('NavigationIntegration: Route coordinates for zoom:', coordinates);
 
         if (coordinates && coordinates.length > 0) {
-          const bounds = coordinates.reduce((bounds, coord) => {
-            return bounds.extend(coord);
-          }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+          // Halifax bounds for validation
+          const halifaxBounds = {
+            west: -63.8,
+            east: -63.4,
+            south: 44.5,
+            north: 44.8
+          };
 
-          console.log('NavigationIntegration: Calculated bounds for zoom:', bounds);
-
-          // Use different padding for mobile vs desktop
-          const padding = isMobileDevice ? {
-            top: 100,
-            bottom: 300,
-            left: 50,
-            right: 50
-          } : 50;
-
-          console.log('NavigationIntegration: Using padding for zoom:', padding);
-
-          mapInstance.fitBounds(bounds, {
-            padding: padding,
-            duration: 1000,
-            maxZoom: 16
+          // Validate that all coordinates are within Halifax bounds
+          const validCoordinates = coordinates.filter(coord => {
+            const [lng, lat] = coord;
+            return lng >= halifaxBounds.west && lng <= halifaxBounds.east &&
+                   lat >= halifaxBounds.south && lat <= halifaxBounds.north;
           });
 
-          console.log('NavigationIntegration: Successfully initiated auto-zoom');
+          if (validCoordinates.length >= 2) {
+            const bounds = validCoordinates.reduce((bounds, coord) => {
+              return bounds.extend(coord);
+            }, new mapboxgl.LngLatBounds(validCoordinates[0], validCoordinates[0]));
+
+            console.log('NavigationIntegration: Calculated bounds for zoom:', bounds);
+
+            // Use different padding for mobile vs desktop
+            const padding = isMobileDevice ? {
+              top: 100,
+              bottom: 300,
+              left: 50,
+              right: 50
+            } : 50;
+
+            console.log('NavigationIntegration: Using padding for zoom:', padding);
+
+            mapInstance.fitBounds(bounds, {
+              padding: padding,
+              duration: 1000,
+              maxZoom: 16
+            });
+
+            console.log('NavigationIntegration: Successfully initiated auto-zoom');
+          } else {
+            console.warn('NavigationIntegration: Route coordinates are outside Halifax bounds, skipping auto-zoom');
+          }
         } else {
           console.error('NavigationIntegration: No valid coordinates found for auto-zoom');
         }

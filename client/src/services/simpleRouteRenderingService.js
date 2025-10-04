@@ -72,12 +72,24 @@ class SimpleRouteRenderingService {
       // Add to map
       this.routeLayer.addTo(this.map);
 
-      // Fit map to route bounds
-      this.map.fitBounds(this.routeLayer.getBounds(), {
-        padding: [20, 20]
-      });
+      // Fit map to route bounds with Halifax bounds validation
+      const routeBounds = this.routeLayer.getBounds();
+      const halifaxBounds = L.latLngBounds(
+        L.latLng(44.5, -63.8), // Southwest
+        L.latLng(44.8, -63.4)  // Northeast
+      );
 
-      console.log('✅ Route rendered successfully');
+      // Check if route bounds are within Halifax bounds
+      if (halifaxBounds.contains(routeBounds.getSouthWest()) && 
+          halifaxBounds.contains(routeBounds.getNorthEast())) {
+        this.map.fitBounds(routeBounds, {
+          padding: [20, 20]
+        });
+        console.log('✅ Route rendered and map fitted to route bounds');
+      } else {
+        console.warn('🚫 Route bounds are outside Halifax area, skipping map fitting');
+        console.log('✅ Route rendered without map fitting');
+      }
 
     } catch (error) {
       console.error('❌ Failed to render route:', error);

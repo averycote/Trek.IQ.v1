@@ -173,26 +173,47 @@ class SimpleRouteFix {
   }
 
   /**
-   * Fit map to route bounds
+   * Fit map to route bounds with Halifax bounds validation
    */
   fitMapToRoute(route) {
     try {
       const firstFeature = route.features[0];
       const coordinates = firstFeature.geometry.coordinates;
 
+      // Halifax bounds for validation
+      const halifaxBounds = {
+        west: -63.8,
+        east: -63.4,
+        south: 44.5,
+        north: 44.8
+      };
+
+      // Validate that all coordinates are within Halifax bounds
+      const validCoordinates = coordinates.filter(coord => {
+        const [lng, lat] = coord;
+        return lng >= halifaxBounds.west && lng <= halifaxBounds.east &&
+               lat >= halifaxBounds.south && lat <= halifaxBounds.north;
+      });
+
+      // If no valid coordinates or too few valid coordinates, don't fit bounds
+      if (validCoordinates.length < 2) {
+        console.warn('🚫 Route coordinates are outside Halifax bounds, skipping map fitting');
+        return;
+      }
+
       if (this.isMapboxMap()) {
-        // Mapbox bounds fitting
-        const bounds = coordinates.reduce((bounds, coord) => {
+        // Mapbox bounds fitting with valid coordinates only
+        const bounds = validCoordinates.reduce((bounds, coord) => {
           return bounds.extend(coord);
-        }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+        }, new mapboxgl.LngLatBounds(validCoordinates[0], validCoordinates[0]));
 
         this.map.fitBounds(bounds, {
           padding: 50,
           duration: 1000
         });
       } else if (this.isLeafletMap()) {
-        // Leaflet bounds fitting
-        const latLngs = coordinates.map(coord => L.latLng(coord[1], coord[0]));
+        // Leaflet bounds fitting with valid coordinates only
+        const latLngs = validCoordinates.map(coord => L.latLng(coord[1], coord[0]));
         const bounds = L.latLngBounds(latLngs);
         
         this.map.fitBounds(bounds, {
