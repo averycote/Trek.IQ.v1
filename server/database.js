@@ -26,7 +26,8 @@ class InMemoryDatabase {
       transit_shelters: [],
       ai_predictions: [],
       notifications: [],
-      route_history: []
+      route_history: [],
+      users: []
     };
   }
 
@@ -296,6 +297,18 @@ function initializeDatabase() {
           route_data TEXT,
           barriers_encountered TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        
+        // Users table for authentication
+        `CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          email TEXT UNIQUE NOT NULL,
+          name TEXT NOT NULL,
+          password_hash TEXT NOT NULL,
+          accessibility_preferences TEXT,
+          metadata TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`
       ];
       
@@ -664,6 +677,185 @@ class Database {
         WHERE expires_at < datetime('now')
       `);
       stmt.run();
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  // User management functions
+  createUser(userData) {
+    try {
+      if (this.isInMemory) {
+        // In-memory fallback
+        const newUser = {
+          id: userData.id || `user_${Date.now()}`,
+          email: userData.email,
+          name: userData.name,
+          password_hash: userData.passwordHash,
+          accessibility_preferences: JSON.stringify(userData.accessibility || {}),
+          metadata: JSON.stringify(userData.metadata || {}),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        // Check if user already exists
+        const existingUser = this.db.data.users?.find(u => u.email === userData.email);
+        if (existingUser) {
+          throw new Error('User already exists with this email');
+        }
+        
+        if (!this.db.data.users) {
+          this.db.data.users = [];
+        }
+        
+        this.db.data.users.push(newUser);
+        return newUser.id;
+      } else {
+        const stmt = this.db.prepare(`
+          INSERT INTO users (id, email, name, password_hash, accessibility_preferences, metadata)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
+        
+        const userId = userData.id || `user_${Date.now()}`;
+        const result = stmt.run([
+          userId,
+          userData.email,
+          userData.name,
+          userData.passwordHash,
+          JSON.stringify(userData.accessibility || {}),
+          JSON.stringify(userData.metadata || {})
+        ]);
+        
+        return result.lastInsertRowid;
+      }
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  getUserByEmail(email) {
+    try {
+      if (this.isInMemory) {
+        const user = this.db.data.users?.find(u => u.email === email);
+        if (user) {
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            password_hash: user.password_hash,
+            accessibility_preferences: JSON.parse(user.accessibility_preferences || '{}'),
+            metadata: JSON.parse(user.metadata || '{}'),
+            created_at: user.created_at,
+            updated_at: user.updated_at
+          };
+        }
+        return null;
+      } else {
+        const stmt = this.db.prepare(`
+          SELECT * FROM users WHERE email = ?
+        `);
+        const user = stmt.get(email);
+        
+        if (user) {
+          return {
+            ...user,
+            accessibility_preferences: JSON.parse(user.accessibility_preferences || '{}'),
+            metadata: JSON.parse(user.metadata || '{}')
+          };
+        }
+        return null;
+      }
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  getUserById(id) {
+    try {
+      if (this.isInMemory) {
+        const user = this.db.data.users?.find(u => u.id === id);
+        if (user) {
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            password_hash: user.password_hash,
+            accessibility_preferences: JSON.parse(user.accessibility_preferences || '{}'),
+            metadata: JSON.parse(user.metadata || '{}'),
+            created_at: user.created_at,
+            updated_at: user.updated_at
+          };
+        }
+        return null;
+      } else {
+        const stmt = this.db.prepare(`
+          SELECT * FROM users WHERE id = ?
+        `);
+        const user = stmt.get(id);
+        
+        if (user) {
+          return {
+            ...user,
+            accessibility_preferences: JSON.parse(user.accessibility_preferences || '{}'),
+            metadata: JSON.parse(user.metadata || '{}')
+          };
+        }
+        return null;
+      }
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  updateUser(id, updates) {
+    try {
+      if (this.isInMemory) {
+        const userIndex = this.db.data.users?.findIndex(u => u.id === id);
+        if (userIndex !== -1 && userIndex !== undefined) {
+          const user = this.db.data.users[userIndex];
+          const updatedUser = {
+            ...user,
+            ...updates,
+            updated_at: new Date().toISOString()
+          };
+          
+          if (updates.accessibility_preferences) {
+            updatedUser.accessibility_preferences = JSON.stringify(updates.accessibility_preferences);
+          }
+          if (updates.metadata) {
+            updatedUser.metadata = JSON.stringify(updates.metadata);
+          }
+          
+          this.db.data.users[userIndex] = updatedUser;
+          return 1;
+        }
+        return 0;
+      } else {
+        const setClause = Object.keys(updates).map(key => {
+          if (key === 'accessibility_preferences' || key === 'metadata') {
+            return `${key} = ?`;
+          }
+          return `${key} = ?`;
+        }).join(', ');
+        
+        const values = Object.entries(updates).map(([key, value]) => {
+          if (key === 'accessibility_preferences' || key === 'metadata') {
+            return JSON.stringify(value);
+          }
+          return value;
+        });
+        
+        values.push(id);
+        
+        const stmt = this.db.prepare(`
+          UPDATE users 
+          SET ${setClause}, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `);
+        
+        const result = stmt.run(values);
+        return result.changes;
+      }
     } catch (err) {
       throw err;
     }
