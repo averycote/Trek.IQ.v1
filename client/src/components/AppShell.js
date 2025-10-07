@@ -31,6 +31,7 @@ import productionRoutingService from "../services/productionRouting/ProductionRo
 import DataManager from "../services/productionRouting/DataManager.js";
 import simpleRouteRenderingService from "../services/simpleRouteRenderingService";
 import fixedRouteService from "../services/fixedRouteService.js";
+import trueAccessibilityRoutingService from "../services/trueAccessibilityRoutingService.js";
 import unifiedRouteRenderer from "../services/unifiedRouteRenderer.js";
 import routingDiagnosticService from "../services/routingDiagnosticService.js";
 import routeDebugger from "../services/routeDebugger.js";
@@ -125,6 +126,9 @@ const AppShell = () => {
   // Theme and preferences
   const [currentTheme, setCurrentTheme] = useState("light");
   const [voiceGuidanceEnabled, setVoiceGuidanceEnabled] = useState(false);
+  
+  // Beta disclaimer
+  const [showBetaDisclaimer, setShowBetaDisclaimer] = useState(true);
 
   // Mobile detection - FIXED: More accurate mobile detection
   const isMobile = useMemo(() => {
@@ -272,7 +276,7 @@ const AppShell = () => {
           setSystemLoadingMessage("System initialization timeout - some features may be limited");
           setIsSystemReady(true);
         }
-      }, 15000); // 15 second timeout
+      }, 30000); // 30 second timeout for data loading
 
       try {
         console.log("Initializing Trek.IQ system...", {
@@ -306,10 +310,17 @@ const AppShell = () => {
           }),
         ];
 
-        setSystemLoadingMessage("Initializing system components...");
+        setSystemLoadingMessage("Initializing routing services...");
 
         // Initialize all services
         const results = await Promise.allSettled(initPromises);
+
+        // PRE-INITIALIZE TRUE ACCESSIBILITY ROUTING (loads Halifax data in background)
+        setSystemLoadingMessage("Loading Halifax accessibility data...");
+        trueAccessibilityRoutingService.initialize().catch(error => {
+          console.warn("TRUE Accessibility Routing pre-init failed:", error);
+          // Non-critical - will fallback to other services
+        });
 
         console.log("Service initialization results:", results.map((result, index) => ({
           service: ['apiIntegrationManager', 'barrierDetectionRegistry', 'elevationService', 'geolocationService', 'fixedRouteService'][index],
@@ -582,7 +593,7 @@ const AppShell = () => {
           return;
         }
 
-        const loadingToast = toast.loading("Generating comprehensive route...");
+        const loadingToast = toast.loading("🔍 Finding accessible route...");
 
         // Use comprehensive routing orchestrator
         const routeRequest = {
@@ -598,19 +609,25 @@ const AppShell = () => {
           routeRequest
         );
 
-        // Try fixed route service first
+        // Try TRUE accessibility routing first
         let result;
         try {
-          result = await fixedRouteService.calculateRoute(
+          console.log('🎯 Using TRUE Accessibility Routing Service');
+          
+          // Update toast with progress
+          toast.loading("📊 Analyzing accessibility data...", { id: loadingToast });
+          
+          result = await trueAccessibilityRoutingService.calculateRoute(
             routeRequest.origin,
             routeRequest.destination,
             {
               avoidSteps: routeRequest.userPrefs?.avoidSteps,
-              preferAccessible: routeRequest.userPrefs?.preferAccessible,
+              preferWellLit: routeRequest.userPrefs?.preferWellLit,
+              avoidSteepSlopes: routeRequest.userPrefs?.avoidSteepSlopes,
+              preferWidePaths: routeRequest.userPrefs?.preferWidePaths,
               wheelchairAccessible: routeRequest.userPrefs?.wheelchairAccessible,
               visualImpairment: routeRequest.userPrefs?.visualImpairment,
-              hearingImpairment: routeRequest.userPrefs?.hearingImpairment,
-              profile: 'walking'
+              hearingImpairment: routeRequest.userPrefs?.hearingImpairment
             }
           );
           
@@ -620,19 +637,43 @@ const AppShell = () => {
             route: result
           };
         } catch (error) {
-          console.warn('Fixed route service failed, trying production service:', error);
+          console.warn('TRUE accessibility routing failed, trying fixed route service:', error);
           
-          // Fallback to production service
-          result = await productionRoutingService.calculateRoute(
-          routeRequest.origin,
-          routeRequest.destination,
-          {
-            avoidSteps: routeRequest.userPrefs?.avoidSteps,
-            preferAccessible: routeRequest.userPrefs?.preferAccessible,
-            accessibility: routeRequest.userPrefs?.preferAccessible,
-            profile: 'walking'
+          // Fallback to fixed route service
+          try {
+            result = await fixedRouteService.calculateRoute(
+              routeRequest.origin,
+              routeRequest.destination,
+              {
+                avoidSteps: routeRequest.userPrefs?.avoidSteps,
+                preferAccessible: routeRequest.userPrefs?.preferAccessible,
+                wheelchairAccessible: routeRequest.userPrefs?.wheelchairAccessible,
+                visualImpairment: routeRequest.userPrefs?.visualImpairment,
+                hearingImpairment: routeRequest.userPrefs?.hearingImpairment,
+                profile: 'walking'
+              }
+            );
+            
+            // Wrap result in expected format
+            result = {
+              success: true,
+              route: result
+            };
+          } catch (fallbackError) {
+            console.warn('Fixed route service also failed, trying production service:', fallbackError);
+            
+            // Final fallback to production service
+            result = await productionRoutingService.calculateRoute(
+              routeRequest.origin,
+              routeRequest.destination,
+              {
+                avoidSteps: routeRequest.userPrefs?.avoidSteps,
+                preferAccessible: routeRequest.userPrefs?.preferAccessible,
+                accessibility: routeRequest.userPrefs?.preferAccessible,
+                profile: 'walking'
+              }
+            );
           }
-        );
         }
 
         console.log("Comprehensive route generation result:", result);
@@ -708,12 +749,42 @@ const AppShell = () => {
           toast.success("Route generated successfully!");
         } else {
           toast.dismiss(loadingToast);
-          toast.error(result.error || "Failed to generate route");
+          
+          // User-friendly error messages
+          const getErrorMessage = (error) => {
+            if (error && error.includes('network')) {
+              return "Network connection issue. Please check your internet and try again.";
+            }
+            if (error && error.includes('timeout')) {
+              return "Request timed out. The route may be too complex. Try a shorter route.";
+            }
+            if (error && error.includes('no route')) {
+              return "No accessible route found. Try adjusting your accessibility preferences or choose different locations.";
+            }
+            return "Unable to calculate route. Please try again or contact support if the issue persists.";
+          };
+          
+          toast.error(getErrorMessage(result.error));
           routeDebugger.log('Route calculation failed', { error: result.error });
         }
       } catch (error) {
         console.error("Route generation failed:", error);
-        toast.error("Route generation failed. Please try again.");
+        
+        // User-friendly error messages for exceptions
+        const getErrorMessage = (error) => {
+          if (error.message && error.message.includes('network')) {
+            return "Network connection issue. Please check your internet and try again.";
+          }
+          if (error.message && error.message.includes('timeout')) {
+            return "Request timed out. The route may be too complex. Try a shorter route.";
+          }
+          if (error.message && error.message.includes('no route')) {
+            return "No accessible route found. Try adjusting your accessibility preferences or choose different locations.";
+          }
+          return "Unable to calculate route. Please try again or contact support if the issue persists.";
+        };
+        
+        toast.error(getErrorMessage(error));
       }
     },
     [isSystemReady, isMobile]
