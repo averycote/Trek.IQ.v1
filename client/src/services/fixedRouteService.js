@@ -63,13 +63,13 @@ class FixedRouteService {
       // Calculate route using Mapbox
       const routeData = await this.calculateMapboxRoute(originCoords, destCoords, options);
 
-      // Ensure proper data structure
-      const normalizedRoute = this.normalizeRouteData(routeData, originCoords, destCoords, options);
+      // Ensure proper data structure - FIXED: Await async method
+      const normalizedRoute = await this.normalizeRouteData(routeData, originCoords, destCoords, options);
 
       // Cache result
       this.cacheRoute(cacheKey, normalizedRoute);
 
-      console.log('✅ Route calculated successfully');
+      console.log('✅ Route calculated successfully with accessibility data');
       return normalizedRoute;
 
     } catch (error) {
@@ -170,11 +170,14 @@ class FixedRouteService {
   }
 
   /**
-   * Normalize route data to consistent structure
+   * Normalize route data to consistent structure - FIXED: Async to support real data
    */
-  normalizeRouteData(mapboxData, origin, destination, options) {
+  async normalizeRouteData(mapboxData, origin, destination, options) {
     const route = mapboxData.routes[0];
     const leg = route.legs[0];
+
+    // Calculate accessibility score with real data
+    const accessibilityResult = await this.calculateAccessibilityScore(route, options);
 
     // Create proper GeoJSON structure
     const routeData = {
@@ -189,10 +192,15 @@ class FixedRouteService {
           distance: Math.round(route.distance), // meters
           duration: Math.round(route.duration), // seconds
           mode: options.profile || 'walking',
-          accessibility: this.calculateAccessibilityScore(route, options),
+          accessibility: {
+            score: accessibilityResult.score,
+            confidence: accessibilityResult.confidence,
+            barriers: accessibilityResult.barriers,
+            verified: accessibilityResult.confidence > 70
+          },
           warnings: this.generateWarnings(route, options),
           recommendations: this.generateRecommendations(route, options),
-          source: 'mapbox',
+          source: 'mapbox_with_halifax_data',
           timestamp: new Date().toISOString()
         }
       }],
@@ -200,7 +208,8 @@ class FixedRouteService {
         origin: origin,
         destination: destination,
         options: options,
-        calculated_at: new Date().toISOString()
+        calculated_at: new Date().toISOString(),
+        dataConfidence: accessibilityResult.confidence
       }
     };
 
@@ -227,44 +236,140 @@ class FixedRouteService {
   }
 
   /**
-   * Calculate accessibility score
+   * Calculate accessibility score - ENHANCED: Use real data when available
    */
-  calculateAccessibilityScore(route, options) {
+  async calculateAccessibilityScore(route, options) {
     let score = 100; // Start with perfect score
+    let confidence = 50; // Lower confidence for fallback service
+    const barriers = [];
 
-    // Reduce score for steps if user wants to avoid them
+    try {
+      // Try to get real steps data from Halifax
+      const stepsResponse = await fetch('/api/accessibility-data/steps');
+      if (stepsResponse.ok) {
+        const stepsResult = await stepsResponse.json();
+        const stepsData = stepsResult.data || stepsResult;
+        
+        // Check if route goes near any steps
+        const routeCoords = route.geometry?.coordinates || [];
+        let stepsNearRoute = 0;
+        
+        if (stepsData?.features) {
+          for (const step of stepsData.features) {
+            const stepCoords = step.geometry.coordinates;
+            for (const routeCoord of routeCoords) {
+              const distance = this.calculateSimpleDistance(routeCoord, stepCoords);
+              if (distance < 30) { // Within 30 meters
+                stepsNearRoute++;
+                if (options.avoidSteps || options.wheelchairAccessible) {
+                  barriers.push({
+                    type: 'steps',
+                    verified: true,
+                    description: `Steps detected near route`
+                  });
+                  score -= 20;
+                }
+                break;
+              }
+            }
+          }
+          confidence = 80; // Higher confidence with real data
+        }
+      }
+    } catch (error) {
+      console.warn('Could not load steps data for scoring:', error);
+      // Fall back to estimates
     if (options.avoidSteps) {
-      // This is a simplified calculation - in reality you'd analyze the route
-      score -= 10; // Assume some steps might be present
+        score -= 10; // Estimate
+        confidence = 30;
+      }
     }
 
-    // Reduce score for steep slopes
+    // Reduce score for steep slopes (still estimated, could be enhanced with elevation API)
     if (options.avoidSteepSlopes) {
-      score -= 5; // Assume some slopes might be present
+      score -= 5; // Estimate
     }
 
-    return Math.max(0, Math.min(100, score));
+    // Store barriers for later use
+    this._lastCalculatedBarriers = barriers;
+    this._lastConfidence = confidence;
+
+    return {
+      score: Math.max(0, Math.min(100, score)),
+      confidence: confidence,
+      barriers: barriers
+    };
   }
 
   /**
-   * Generate accessibility warnings
+   * Generate accessibility warnings - ENHANCED: Real data warnings
    */
   generateWarnings(route, options) {
     const warnings = [];
 
+    // Add verified barriers as warnings
+    if (this._lastCalculatedBarriers && this._lastCalculatedBarriers.length > 0) {
+      for (const barrier of this._lastCalculatedBarriers) {
+        warnings.push({
+          type: barrier.type,
+          description: barrier.description,
+          verified: barrier.verified
+        });
+      }
+    } else {
+      // Fallback to generic warnings when no real data
     if (options.avoidSteps) {
-      warnings.push('Route may contain steps - verify accessibility');
+        warnings.push({
+          type: 'steps',
+          description: 'Route may contain steps - verify accessibility',
+          verified: false
+        });
     }
 
     if (options.avoidSteepSlopes) {
-      warnings.push('Route may contain steep slopes - verify accessibility');
+        warnings.push({
+          type: 'slope',
+          description: 'Route may contain steep slopes - verify accessibility',
+          verified: false
+        });
+      }
     }
 
     if (route.distance > 1000) {
-      warnings.push('Long route - consider breaks for accessibility needs');
+      warnings.push({
+        type: 'distance',
+        description: 'Long route - consider breaks for accessibility needs',
+        verified: true
+      });
+    }
+
+    // Add confidence indicator
+    if (this._lastConfidence && this._lastConfidence < 70) {
+      warnings.push({
+        type: 'data_quality',
+        description: `Route accessibility based on estimates (${this._lastConfidence}% confidence)`,
+        verified: false
+      });
     }
 
     return warnings;
+  }
+
+  /**
+   * Calculate simple distance between two coordinates (faster than turf)
+   */
+  calculateSimpleDistance(coord1, coord2) {
+    const [lng1, lat1] = coord1;
+    const [lng2, lat2] = coord2;
+    
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
   }
 
   /**
