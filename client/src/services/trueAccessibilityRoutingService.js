@@ -9,14 +9,13 @@
  */
 
 import * as turf from '@turf/turf';
-import realTimeBarrierService from './realTimeBarrierService.js';
 
 class TrueAccessibilityRoutingService {
   constructor() {
     this.isInitialized = false;
     this.halifaxData = null;
     this.routingGraph = null;
-    this.barrierService = realTimeBarrierService;
+    this.barrierService = null; // Real-time barrier service (optional)
     this.accessibilityWeights = {
       // Base weights for different path types
       sidewalk: 1.0,
@@ -36,9 +35,6 @@ class TrueAccessibilityRoutingService {
     console.log('🚀 Initializing TRUE Accessibility Routing Service...');
     
     try {
-      // Initialize barrier service
-      await this.barrierService.initialize();
-      
       // Load Halifax municipal data
       await this.loadHalifaxData();
       
@@ -325,12 +321,6 @@ class TrueAccessibilityRoutingService {
     
     // Winter maintenance
     if (!winterMaintained) weight *= 1.4; // Less maintained paths cost more
-    
-    // Add real-time barrier adjustments
-    if (coordinates && this.barrierService.isInitialized) {
-      const barrierAdjustment = this.barrierService.getRoutingWeightAdjustment(coordinates);
-      weight += barrierAdjustment;
-    }
     
     return weight;
   }
