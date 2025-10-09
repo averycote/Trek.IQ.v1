@@ -3,12 +3,18 @@
   "name": "Trek.IQ - Accessible Routing for Halifax",
   "icons": [
     {
-      "src": "transit-api-badge@3x.png",
+      "src": "trek-iq-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "transit-api-badge@3x.png",
+      "src": "logo512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
