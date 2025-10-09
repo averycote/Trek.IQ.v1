@@ -614,8 +614,14 @@ const AppShell = () => {
         try {
           console.log('🎯 Using TRUE Accessibility Routing Service');
           
-          // Update toast with progress
-          toast.loading("📊 Analyzing accessibility data...", { id: loadingToast });
+          // OPTIMIZATION: Show helpful progress messages
+          toast.loading("📊 Loading accessibility data...", { id: loadingToast });
+          
+          // Give the UI a moment to update
+          await new Promise(resolve => setTimeout(resolve, 50));
+          
+          // Update progress
+          toast.loading("🗺️ Calculating accessible route...", { id: loadingToast });
           
           result = await trueAccessibilityRoutingService.calculateRoute(
             routeRequest.origin,
@@ -630,6 +636,9 @@ const AppShell = () => {
               hearingImpairment: routeRequest.userPrefs?.hearingImpairment
             }
           );
+          
+          // Update progress
+          toast.loading("✨ Rendering route on map...", { id: loadingToast });
           
           // Wrap result in expected format
           result = {
@@ -688,28 +697,37 @@ const AppShell = () => {
           // Initialize unified rendering service if map is available
           if (mapInstance) {
             try {
-              // Debug route rendering attempt
-              routeDebugger.debugRouteRendering(result.route, mapInstance, unifiedRouteRenderer);
+              // OPTIMIZATION: Skip heavy diagnostics in production, run route rendering immediately
+              const isProduction = process.env.NODE_ENV === 'production';
               
-              // Run diagnostics first
-              const diagnostics = await routingDiagnosticService.runDiagnostics(
-                result.route, 
-                mapInstance, 
-                unifiedRouteRenderer
-              );
-              
-              console.log('🔍 Routing diagnostics:', diagnostics.getSummary());
-              
-              // Apply fixes if needed
-              if (diagnostics.errors.length > 0) {
-                await diagnostics.applyFixes();
+              if (!isProduction) {
+                // Debug route rendering attempt (dev only)
+                routeDebugger.debugRouteRendering(result.route, mapInstance, unifiedRouteRenderer);
               }
               
-              // Initialize and render with unified renderer
+              // Initialize and render with unified renderer (fast path)
               unifiedRouteRenderer.initialize(mapInstance);
               await unifiedRouteRenderer.renderRoute(result.route);
               
-              routeDebugger.log('Route rendering completed successfully');
+              if (!isProduction) {
+                routeDebugger.log('Route rendering completed successfully');
+              }
+              
+              // OPTIMIZATION: Run diagnostics asynchronously in background (don't block user)
+              if (!isProduction) {
+                routingDiagnosticService.runDiagnostics(
+                  result.route, 
+                  mapInstance, 
+                  unifiedRouteRenderer
+                ).then(diagnostics => {
+                  console.log('🔍 Routing diagnostics (async):', diagnostics.getSummary());
+                  if (diagnostics.errors.length > 0) {
+                    console.warn('⚠️ Route diagnostics found errors:', diagnostics.errors);
+                  }
+                }).catch(err => {
+                  console.warn('Diagnostics failed:', err);
+                });
+              }
               
             } catch (error) {
               console.warn('⚠️ Route rendering failed:', error.message);

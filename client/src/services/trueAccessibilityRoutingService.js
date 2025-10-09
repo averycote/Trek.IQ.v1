@@ -13,6 +13,8 @@ import * as turf from '@turf/turf';
 class TrueAccessibilityRoutingService {
   constructor() {
     this.isInitialized = false;
+    this.isInitializing = false;
+    this.initializationPromise = null;
     this.halifaxData = null;
     this.routingGraph = null;
     this.barrierService = null; // Real-time barrier service (optional)
@@ -30,34 +32,68 @@ class TrueAccessibilityRoutingService {
   }
 
   async initialize() {
+    // OPTIMIZATION: Return existing promise if already initializing to prevent duplicate loads
     if (this.isInitialized) return;
+    if (this.isInitializing && this.initializationPromise) {
+      console.log('⏳ Waiting for existing initialization to complete...');
+      return this.initializationPromise;
+    }
     
+    this.isInitializing = true;
     console.log('🚀 Initializing TRUE Accessibility Routing Service...');
     
-    try {
-      // Load Halifax municipal data
-      await this.loadHalifaxData();
-      
-      // Build accessibility-aware routing graph
-      await this.buildAccessibilityGraph();
-      
-      this.isInitialized = true;
-      console.log('✅ TRUE Accessibility Routing Service initialized');
-    } catch (error) {
-      console.error('❌ Failed to initialize accessibility routing:', error);
-      throw error;
-    }
+    // Create initialization promise
+    this.initializationPromise = (async () => {
+      try {
+        // Load Halifax municipal data
+        await this.loadHalifaxData();
+        
+        // Build accessibility-aware routing graph
+        await this.buildAccessibilityGraph();
+        
+        this.isInitialized = true;
+        this.isInitializing = false;
+        console.log('✅ TRUE Accessibility Routing Service initialized');
+      } catch (error) {
+        this.isInitializing = false;
+        this.initializationPromise = null;
+        console.error('❌ Failed to initialize accessibility routing:', error);
+        throw error;
+      }
+    })();
+    
+    return this.initializationPromise;
   }
 
   /**
-   * Load Halifax municipal accessibility data
+   * Load Halifax municipal accessibility data - OPTIMIZED: Parallel loading
    */
   async loadHalifaxData() {
-    console.log('📊 Loading Halifax municipal data...');
+    console.log('📊 Loading Halifax municipal data (parallel)...');
+    const startTime = performance.now();
     
     try {
-      // Load Active Travelways (sidewalks, paths) - FIXED: Use correct endpoint
-      const travelwaysResponse = await fetch('/api/accessibility-data/travelways');
+      // OPTIMIZATION: Load all datasets in parallel for faster initialization
+      const [travelwaysResponse, stepsResponse, closuresResponse, lightsResponse] = await Promise.all([
+        fetch('/api/accessibility-data/travelways').catch(err => {
+          console.warn('Travelways fetch failed:', err);
+          return { ok: false };
+        }),
+        fetch('/api/accessibility-data/steps').catch(err => {
+          console.warn('Steps fetch failed:', err);
+          return { ok: false };
+        }),
+        fetch('/api/accessibility-data/closures').catch(err => {
+          console.warn('Closures fetch failed:', err);
+          return { ok: false };
+        }),
+        fetch('/api/accessibility-data/street-lights').catch(err => {
+          console.warn('Street lights fetch failed:', err);
+          return { ok: false };
+        })
+      ]);
+      
+      // Fallback to core data if travelways failed
       if (!travelwaysResponse.ok) {
         console.warn('Failed to load travelways data from API, using core data');
         const fallbackResponse = await fetch('/api/optimized/trek-iq-core.json');
@@ -65,32 +101,19 @@ class TrueAccessibilityRoutingService {
         this.halifaxData = { travelways: travelwaysData, steps: null, closures: null };
         return;
       }
-      const travelwaysResult = await travelwaysResponse.json();
+      
+      // OPTIMIZATION: Parse all JSON responses in parallel
+      const [travelwaysResult, stepsResult, closuresResult, lightsResult] = await Promise.all([
+        travelwaysResponse.json(),
+        stepsResponse.ok ? stepsResponse.json() : Promise.resolve(null),
+        closuresResponse.ok ? closuresResponse.json() : Promise.resolve(null),
+        lightsResponse.ok ? lightsResponse.json() : Promise.resolve(null)
+      ]);
+      
       const travelwaysData = travelwaysResult.data || travelwaysResult;
-      
-      // Load Steps data - FIXED: Use correct endpoint
-      const stepsResponse = await fetch('/api/accessibility-data/steps');
-      if (!stepsResponse.ok) {
-        throw new Error('Failed to load steps data');
-      }
-      const stepsResult = await stepsResponse.json();
-      const stepsData = stepsResult.data || stepsResult;
-      
-      // Load Closures data - FIXED: Use correct endpoint
-      const closuresResponse = await fetch('/api/accessibility-data/closures');
-      if (!closuresResponse.ok) {
-        throw new Error('Failed to load closures data');
-      }
-      const closuresResult = await closuresResponse.json();
-      const closuresData = closuresResult.data || closuresResult;
-      
-      // Load Street Lights for lighting analysis
-      const lightsResponse = await fetch('/api/accessibility-data/street-lights');
-      let lightsData = null;
-      if (lightsResponse.ok) {
-        const lightsResult = await lightsResponse.json();
-        lightsData = lightsResult.data || lightsResult;
-      }
+      const stepsData = stepsResult?.data || stepsResult;
+      const closuresData = closuresResult?.data || closuresResult;
+      const lightsData = lightsResult?.data || lightsResult;
       
       // Build spatial indexes for fast lookups
       this.buildSpatialIndexes(stepsData, closuresData, lightsData);
@@ -102,7 +125,8 @@ class TrueAccessibilityRoutingService {
         streetLights: lightsData
       };
       
-      console.log('✅ Halifax data loaded successfully:', {
+      const loadTime = performance.now() - startTime;
+      console.log(`✅ Halifax data loaded successfully in ${Math.round(loadTime)}ms:`, {
         travelways: travelwaysData?.features?.length || 0,
         steps: stepsData?.features?.length || 0,
         closures: closuresData?.features?.length || 0,
