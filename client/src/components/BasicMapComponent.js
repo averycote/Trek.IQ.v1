@@ -1185,7 +1185,7 @@ const BasicMapComponent = ({
       {/* Wheelmap Layer - Shows accessibility markers based on active layers */}
       {mapInitialized && styleLoaded && mapFullyReady && map.current && (
         <WheelmapLayer
-          isVisible={true}
+          isVisible={activeLayers.some(layer => layer.startsWith('wheelmap_'))}
           map={map.current}
           bounds={map.current.getBounds()}
           onLayerToggle={onLayerToggle}

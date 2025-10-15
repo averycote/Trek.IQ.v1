@@ -749,6 +749,13 @@ const AppShell = () => {
               const routeMode = result.route?.features?.[0]?.properties?.mode || routeRequest.mode;
               const isDrivingMode = routeMode === 'driving' || routeMode === 'driving-traffic';
               
+              console.log('🔍 Route mode detection:', {
+                routeMode,
+                isDrivingMode,
+                requestMode: routeRequest.mode,
+                routeProperties: result.route?.features?.[0]?.properties
+              });
+              
               if (isDrivingMode) {
                 console.log('🚗 Driving mode detected - adding parking markers and hiding wheelmap layers');
                 
@@ -763,15 +770,27 @@ const AppShell = () => {
                 drivingLayers.delete('wheelmap_shopping');
                 drivingLayers.delete('wheelmap_other');
                 setActiveLayers(drivingLayers);
+                console.log('✅ Wheelmap layers removed from active layers');
                 
                 // Add parking markers
                 const parkingSpots = result.route?.features?.[0]?.properties?.accessibleParking || [];
+                console.log('🅿️ Parking spots data:', {
+                  count: parkingSpots.length,
+                  hasMapInstance: !!mapInstance,
+                  spots: parkingSpots
+                });
+                
                 if (parkingSpots.length > 0 && mapInstance) {
                   parkingMarkersService.setMap(mapInstance);
                   parkingMarkersService.addParkingMarkers(parkingSpots, routeMode);
-                  console.log(`🅿️ Added ${parkingSpots.length} parking markers to map`);
+                  console.log(`✅ Added ${parkingSpots.length} parking markers to map`);
+                } else if (parkingSpots.length === 0) {
+                  console.warn('⚠️ No parking spots found in route data');
+                } else if (!mapInstance) {
+                  console.warn('⚠️ Map instance not available for parking markers');
                 }
               } else {
+                console.log('🚶 Walking mode - clearing parking markers and restoring wheelmap layers');
                 // Not driving mode - clear parking markers if any
                 parkingMarkersService.clearMarkers();
                 
@@ -779,6 +798,7 @@ const AppShell = () => {
                 if (layersBeforeDriving) {
                   setActiveLayers(layersBeforeDriving);
                   setLayersBeforeDriving(null);
+                  console.log('✅ Wheelmap layers restored');
                 }
               }
               
