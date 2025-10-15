@@ -46,6 +46,7 @@ import barrierDetectionRegistry from "../services/barrierDetectionRegistry";
 import elevationService from "../services/elevationService";
 import barrierReportingService from "../services/barrierReportingService";
 import geolocationService from "../services/geolocationService";
+import parkingMarkersService from "../services/parkingMarkersService";
 import "./BarrierDialog.css";
 import "../styles/accessibility.css";
 
@@ -122,6 +123,9 @@ const AppShell = () => {
       "wheelmap_food"
     ])
   );
+  
+  // Store original layers to restore after driving mode
+  const [layersBeforeDriving, setLayersBeforeDriving] = useState(null);
 
   // Accessibility settings
   const [accessibilitySettings] = useState({
@@ -668,12 +672,13 @@ const AppShell = () => {
               routeRequest.origin,
               routeRequest.destination,
               {
+                profile: routeRequest.mode === 'driving' ? 'driving' : 'walking', // Map mode to Mapbox profile
+                mode: routeRequest.mode, // Pass mode for route properties
                 avoidSteps: routeRequest.userPrefs?.avoidSteps,
                 preferAccessible: routeRequest.userPrefs?.preferAccessible,
                 wheelchairAccessible: routeRequest.userPrefs?.wheelchairAccessible,
                 visualImpairment: routeRequest.userPrefs?.visualImpairment,
-                hearingImpairment: routeRequest.userPrefs?.hearingImpairment,
-                profile: 'walking'
+                hearingImpairment: routeRequest.userPrefs?.hearingImpairment
               }
             );
             
@@ -690,10 +695,11 @@ const AppShell = () => {
               routeRequest.origin,
               routeRequest.destination,
               {
+                profile: routeRequest.mode === 'driving' ? 'driving' : 'walking', // Map mode to Mapbox profile
+                mode: routeRequest.mode, // Pass mode for route properties
                 avoidSteps: routeRequest.userPrefs?.avoidSteps,
                 preferAccessible: routeRequest.userPrefs?.preferAccessible,
-                accessibility: routeRequest.userPrefs?.preferAccessible,
-                profile: 'walking'
+                accessibility: routeRequest.userPrefs?.preferAccessible
               }
             );
           }
@@ -737,6 +743,43 @@ const AppShell = () => {
               
               if (!isProduction) {
                 routeDebugger.log('Route rendering completed successfully');
+              }
+
+              // DRIVING MODE ENHANCEMENTS: Add parking markers and hide wheelmap layers
+              const routeMode = result.route?.features?.[0]?.properties?.mode || routeRequest.mode;
+              const isDrivingMode = routeMode === 'driving' || routeMode === 'driving-traffic';
+              
+              if (isDrivingMode) {
+                console.log('🚗 Driving mode detected - adding parking markers and hiding wheelmap layers');
+                
+                // Hide wheelmap layers during driving
+                if (!layersBeforeDriving) {
+                  setLayersBeforeDriving(new Set(activeLayers));
+                }
+                
+                const drivingLayers = new Set(activeLayers);
+                // Remove wheelmap layers
+                drivingLayers.delete('wheelmap_food');
+                drivingLayers.delete('wheelmap_shopping');
+                drivingLayers.delete('wheelmap_other');
+                setActiveLayers(drivingLayers);
+                
+                // Add parking markers
+                const parkingSpots = result.route?.features?.[0]?.properties?.accessibleParking || [];
+                if (parkingSpots.length > 0 && mapInstance) {
+                  parkingMarkersService.setMap(mapInstance);
+                  parkingMarkersService.addParkingMarkers(parkingSpots, routeMode);
+                  console.log(`🅿️ Added ${parkingSpots.length} parking markers to map`);
+                }
+              } else {
+                // Not driving mode - clear parking markers if any
+                parkingMarkersService.clearMarkers();
+                
+                // Restore wheelmap layers if they were hidden
+                if (layersBeforeDriving) {
+                  setActiveLayers(layersBeforeDriving);
+                  setLayersBeforeDriving(null);
+                }
               }
               
               // OPTIMIZATION: Run diagnostics asynchronously in background (don't block user)
@@ -853,6 +896,15 @@ const AppShell = () => {
     setIsRouteExpanded(false);
     setIsNavigating(false);
     setIsSearchPanelOpen(false);
+    
+    // Clear parking markers
+    parkingMarkersService.clearMarkers();
+    
+    // Restore wheelmap layers if they were hidden
+    if (layersBeforeDriving) {
+      setActiveLayers(layersBeforeDriving);
+      setLayersBeforeDriving(null);
+    }
     setIsRoutePanelOpen(false);
     setIsDirectionsPanelOpen(false);
     

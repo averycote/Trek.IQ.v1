@@ -83,6 +83,12 @@ const generateDirectionsFromRoute = async (route) => {
     return [];
   }
 
+  // Determine the mode and appropriate action verb
+  const mode = properties.mode || 'walking';
+  const isDriving = mode === 'driving' || mode === 'driving-traffic';
+  const actionVerb = isDriving ? 'Drive' : 'Walk';
+  const continueVerb = isDriving ? 'Continue driving' : 'Continue';
+
   const directions = [];
   let stepNumber = 1;
 
@@ -195,19 +201,19 @@ const generateDirectionsFromRoute = async (route) => {
     // Generate instruction based on turn angle with enhanced descriptions
     let instruction = "";
     if (Math.abs(turnAngle) < 10) {
-      instruction = streetName ? `Continue straight on ${streetName}` : "Continue straight";
+      instruction = streetName ? `${continueVerb} on ${streetName}` : continueVerb;
     } else if (turnAngle > 10 && turnAngle < 45) {
-      instruction = streetName ? `Bear right onto ${streetName}` : "Bear right";
+      instruction = streetName ? `${actionVerb} slightly right onto ${streetName}` : `${actionVerb} slightly right`;
     } else if (turnAngle >= 45 && turnAngle < 135) {
       instruction = streetName ? `Turn right onto ${streetName}` : "Turn right";
     } else if (turnAngle >= 135) {
-      instruction = streetName ? `Sharp right onto ${streetName}` : "Sharp right";
+      instruction = streetName ? `Sharp right turn onto ${streetName}` : "Sharp right turn";
     } else if (turnAngle < -10 && turnAngle > -45) {
-      instruction = streetName ? `Bear left onto ${streetName}` : "Bear left";
+      instruction = streetName ? `${actionVerb} slightly left onto ${streetName}` : `${actionVerb} slightly left`;
     } else if (turnAngle <= -45 && turnAngle > -135) {
       instruction = streetName ? `Turn left onto ${streetName}` : "Turn left";
     } else if (turnAngle <= -135) {
-      instruction = streetName ? `Sharp left onto ${streetName}` : "Sharp left";
+      instruction = streetName ? `Sharp left turn onto ${streetName}` : "Sharp left turn";
     }
 
     // Add distance information to make instructions more helpful
@@ -279,9 +285,18 @@ const DirectionsPanel = ({
   const [isLoadingDirections, setIsLoadingDirections] = useState(false);
   const [isNavigationActive, setIsNavigationActive] = useState(false);
 
-  const accessibleParking = route?.accessibleParking || [];
+  // Extract route properties and parking data correctly
   const routeProperties = route?.features?.[0]?.properties || route || {};
+  const accessibleParking = routeProperties.accessibleParking || route?.accessibleParking || [];
   const isDrivingMode = routeProperties.mode === 'driving' || routeProperties.mode === 'driving-traffic';
+
+  console.log('DirectionsPanel - Route data:', {
+    hasRoute: !!route,
+    routeProperties,
+    accessibleParking,
+    isDrivingMode,
+    parkingCount: accessibleParking.length
+  });
 
   // Real-time navigation tracking for driving mode
   const {
