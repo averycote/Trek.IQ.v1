@@ -5,6 +5,8 @@
  * and consistent data structure output
  */
 
+import accessibleParkingService from './accessibleParkingService';
+
 class FixedRouteService {
   constructor() {
     this.isInitialized = false;
@@ -25,6 +27,14 @@ class FixedRouteService {
     // Verify Mapbox token
     if (!this.mapboxToken) {
       throw new Error('Mapbox token not configured');
+    }
+    
+    // Initialize accessible parking service
+    try {
+      await accessibleParkingService.initialize();
+      console.log('✅ Accessible parking service initialized');
+    } catch (error) {
+      console.warn('⚠️ Accessible parking service initialization failed:', error);
     }
     
     this.isInitialized = true;
@@ -67,11 +77,14 @@ class FixedRouteService {
       // Ensure proper data structure - FIXED: Await async method
       const normalizedRoute = await this.normalizeRouteData(routeData, originCoords, destCoords, options);
 
+      // Enrich with accessible parking for driving routes
+      const enrichedRoute = await this.enrichWithAccessibleParking(normalizedRoute, options);
+
       // Cache result
-      this.cacheRoute(cacheKey, normalizedRoute);
+      this.cacheRoute(cacheKey, enrichedRoute);
 
       console.log('✅ Route calculated successfully with accessibility data');
-      return normalizedRoute;
+      return enrichedRoute;
 
     } catch (error) {
       console.error('❌ Route calculation failed:', error);
@@ -463,6 +476,27 @@ class FixedRouteService {
     const destStr = Array.isArray(destination) ? destination.join(',') : JSON.stringify(destination);
     const optionsStr = JSON.stringify(options);
     return `${originStr}|${destStr}|${optionsStr}`;
+  }
+
+  /**
+   * Enrich route with accessible parking for driving routes
+   */
+  async enrichWithAccessibleParking(route, options) {
+    try {
+      // Only enrich driving routes
+      const mode = options.profile || 'walking';
+      if (mode !== 'driving' && mode !== 'driving-traffic') {
+        return route;
+      }
+
+      console.log('🅿️ Enriching driving route with accessible parking...');
+      const enrichedRoute = await accessibleParkingService.enrichRoute(route, 'driving');
+      
+      return enrichedRoute;
+    } catch (error) {
+      console.error('❌ Error enriching route with parking:', error);
+      return route; // Return original route if enrichment fails
+    }
   }
 
   /**
