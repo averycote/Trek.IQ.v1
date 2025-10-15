@@ -32,8 +32,9 @@ const ModeSelector = React.memo(({ mode, onModeChange }) => {
           <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
         </svg>
       ),
-      description: 'Public transit with accessibility features',
-      accessibility: ['wheelchair_accessible', 'priority_seating', 'audio_announcements']
+      description: 'Public transit with accessibility features (Coming Soon)',
+      accessibility: ['wheelchair_accessible', 'priority_seating', 'audio_announcements'],
+      comingSoon: true
     }
   ];
 
@@ -42,16 +43,20 @@ const ModeSelector = React.memo(({ mode, onModeChange }) => {
       {modes.map((modeOption) => (
         <button
           key={modeOption.id}
-          onClick={() => onModeChange(modeOption.id)}
-          className={`mode-button ${mode === modeOption.id ? 'active' : ''}`}
+          onClick={() => !modeOption.comingSoon && onModeChange(modeOption.id)}
+          className={`mode-button ${mode === modeOption.id ? 'active' : ''} ${modeOption.comingSoon ? 'coming-soon' : ''}`}
           aria-pressed={mode === modeOption.id}
           aria-describedby={`mode-${modeOption.id}-desc`}
+          disabled={modeOption.comingSoon}
         >
           <div className="mode-icon">
             {modeOption.icon}
           </div>
           <div className="mode-content">
-            <span className="mode-label">{modeOption.label}</span>
+            <span className="mode-label">
+              {modeOption.label}
+              {modeOption.comingSoon && <span className="coming-soon-badge">Coming Soon</span>}
+            </span>
             <span id={`mode-${modeOption.id}-desc`} className="mode-description">
               {modeOption.description}
             </span>

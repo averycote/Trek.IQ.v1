@@ -131,22 +131,30 @@ const SearchPanel = ({ onOriginChange, onDestinationChange, onRouteRequest, onSh
         <div className="grid grid-cols-3 gap-3">
           {[
             { value: 'walking', label: 'Walking', icon: '🚶', color: 'from-green-500 to-green-600' },
-            { value: 'transit', label: 'Transit', icon: '🚌', color: 'from-blue-500 to-blue-600' },
+            { value: 'transit', label: 'Transit', icon: '🚌', color: 'from-blue-500 to-blue-600', comingSoon: true },
             { value: 'driving', label: 'Driving', icon: '🚗', color: 'from-purple-500 to-purple-600' }
           ].map(mode => (
             <button
               key={mode.value}
-              onClick={() => onModeChange(mode.value)}
-              className={`p-3 rounded-xl border-2 transition-all duration-200 ${
-                routeMode === mode.value
-                  ? `bg-gradient-to-br ${mode.color} text-white border-transparent shadow-medium transform scale-105`
-                  : isDarkMode
-                    ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500 hover:shadow-soft'
-                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow-soft'
+              onClick={() => !mode.comingSoon && onModeChange(mode.value)}
+              disabled={mode.comingSoon}
+              className={`p-3 rounded-xl border-2 transition-all duration-200 relative ${
+                mode.comingSoon
+                  ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed opacity-60'
+                  : routeMode === mode.value
+                    ? `bg-gradient-to-br ${mode.color} text-white border-transparent shadow-medium transform scale-105`
+                    : isDarkMode
+                      ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600 hover:border-gray-500 hover:shadow-soft'
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow-soft'
               }`}
             >
               <div className="text-2xl mb-1">{mode.icon}</div>
-              <div className="text-xs font-medium">{mode.label}</div>
+              <div className="text-xs font-medium">
+                {mode.label}
+                {mode.comingSoon && (
+                  <div className="text-xs text-gray-500 mt-1 font-normal">Coming Soon</div>
+                )}
+              </div>
             </button>
           ))}
         </div>

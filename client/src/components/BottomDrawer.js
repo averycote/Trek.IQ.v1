@@ -335,17 +335,21 @@ const BottomDrawer = ({
                   <span className="mode-icon" aria-hidden="true">🚗</span>
                   <span className="mode-label">Driving</span>
                 </label>
-                <label className="mode-option">
+                <label className="mode-option coming-soon">
                   <input
                     type="radio"
                     name="routeMode"
                     value="transit"
                     checked={routeMode === 'transit'}
-                    onChange={() => onRouteModeChange('transit')}
-                    aria-label="Transit mode"
+                    onChange={() => {}} // Disabled
+                    aria-label="Transit mode (coming soon)"
+                    disabled
                   />
                   <span className="mode-icon" aria-hidden="true">🚌</span>
-                  <span className="mode-label">Transit</span>
+                  <span className="mode-label">
+                    Transit
+                    <span className="coming-soon-badge">Coming Soon</span>
+                  </span>
                 </label>
               </div>
 

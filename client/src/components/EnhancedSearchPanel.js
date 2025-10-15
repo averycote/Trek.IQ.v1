@@ -64,7 +64,7 @@ const ModeSelector = React.memo(({ mode, onModeChange, isMobile }) => {
   const modes = [
     { id: "walking", label: "Walk", icon: "🚶" },
     { id: "driving", label: "Drive", icon: "🚗" },
-    { id: "transit", label: "Transit", icon: "🚌" },
+    { id: "transit", label: "Transit", icon: "🚌", comingSoon: true },
   ];
 
   return (
@@ -72,15 +72,19 @@ const ModeSelector = React.memo(({ mode, onModeChange, isMobile }) => {
       {modes.map((modeOption) => (
         <button
           key={modeOption.id}
-          onClick={() => onModeChange(modeOption.id)}
+          onClick={() => !modeOption.comingSoon && onModeChange(modeOption.id)}
           className={`mode-button ${mode === modeOption.id ? "active" : ""} ${
             isMobile ? "mobile" : ""
-          }`}
-          aria-label={`Select ${modeOption.label} mode`}
+          } ${modeOption.comingSoon ? "coming-soon" : ""}`}
+          aria-label={`Select ${modeOption.label} mode${modeOption.comingSoon ? " (coming soon)" : ""}`}
           type="button"
+          disabled={modeOption.comingSoon}
         >
           <span className="mode-icon">{modeOption.icon}</span>
-          <span className="mode-label-text">{modeOption.label}</span>
+          <span className="mode-label-text">
+            {modeOption.label}
+            {modeOption.comingSoon && <span className="coming-soon-badge">Coming Soon</span>}
+          </span>
         </button>
       ))}
     </div>

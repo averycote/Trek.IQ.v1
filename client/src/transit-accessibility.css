@@ -42,6 +42,40 @@
   transition: opacity var(--transition-fast);
 }
 
+/* Coming Soon Styles */
+.mode-button.coming-soon {
+  opacity: 0.6;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.mode-button.coming-soon:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.coming-soon-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mode-button.coming-soon .mode-icon {
+  opacity: 0.7;
+}
+
+.mode-button.coming-soon .mode-label {
+  color: #6b7280;
+}
+
 /* ===== ENHANCED TRANSIT INFO STYLES ===== */
 
 /* Schedules Grid */
