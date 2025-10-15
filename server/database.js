@@ -692,7 +692,7 @@ class Database {
           email: userData.email,
           name: userData.name,
           password_hash: userData.passwordHash,
-          accessibility_preferences: JSON.stringify(userData.accessibility || {}),
+          accessibility_preferences: JSON.stringify(userData.accessibility_preferences || userData.accessibility || {}),
           metadata: JSON.stringify(userData.metadata || {}),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -722,7 +722,7 @@ class Database {
           userData.email,
           userData.name,
           userData.passwordHash,
-          JSON.stringify(userData.accessibility || {}),
+          JSON.stringify(userData.accessibility_preferences || userData.accessibility || {}),
           JSON.stringify(userData.metadata || {})
         ]);
         

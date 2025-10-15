@@ -27,17 +27,20 @@ router.get('/', authenticate, async (req, res) => {
 router.put('/', authenticate, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, accessibility, metadata } = req.body;
+    const { name, accessibility, accessibility_preferences, metadata } = req.body;
+
+    // Handle both 'accessibility' and 'accessibility_preferences' for backward compatibility
+    const accessibilityData = accessibility || accessibility_preferences;
 
     // Validate accessibility preferences structure
-    if (accessibility && typeof accessibility !== 'object') {
+    if (accessibilityData && typeof accessibilityData !== 'object') {
       return res.status(400).json({ message: 'Accessibility preferences must be an object' });
     }
 
     // Prepare update data
     const updateData = {};
     if (name !== undefined) updateData.name = name;
-    if (accessibility !== undefined) updateData.accessibility = accessibility;
+    if (accessibilityData !== undefined) updateData.accessibility_preferences = accessibilityData;
     if (metadata !== undefined) updateData.metadata = metadata;
 
     // Update user in database

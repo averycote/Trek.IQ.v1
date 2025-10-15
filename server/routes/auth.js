@@ -38,7 +38,7 @@ router.post('/register', async (req, res) => {
       email,
       name,
       passwordHash,
-      accessibility: {
+      accessibility_preferences: {
         wheelchair: false,
         avoidSteps: false,
         avoidSteepSlopes: false,
