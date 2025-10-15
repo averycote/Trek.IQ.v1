@@ -708,6 +708,20 @@ const AppShell = () => {
         console.log("Comprehensive route generation result:", result);
 
         if (result.success && result.route) {
+          // ENRICH DRIVING ROUTES WITH PARKING DATA (before anything else)
+          const routeMode = result.route?.features?.[0]?.properties?.mode || routeRequest.mode;
+          const isDrivingRoute = routeMode === 'driving' || routeMode === 'driving-traffic';
+          
+          if (isDrivingRoute) {
+            try {
+              const accessibleParkingService = (await import('../services/accessibleParkingService')).default;
+              await accessibleParkingService.initialize();
+              result.route = await accessibleParkingService.enrichRoute(result.route, routeMode);
+            } catch (parkingError) {
+              console.warn('⚠️ Failed to enrich route with parking data:', parkingError);
+            }
+          }
+          
           // Debug route data
           routeDebugger.debugRouteData(result.route, 'from route calculation');
           
@@ -746,18 +760,7 @@ const AppShell = () => {
               }
 
               // DRIVING MODE ENHANCEMENTS: Add parking markers and hide wheelmap layers
-              const routeMode = result.route?.features?.[0]?.properties?.mode || routeRequest.mode;
-              const isDrivingMode = routeMode === 'driving' || routeMode === 'driving-traffic';
-              
-              console.log('🔍 Route mode detection:', {
-                routeMode,
-                isDrivingMode,
-                requestMode: routeRequest.mode,
-                routeProperties: result.route?.features?.[0]?.properties
-              });
-              
-              if (isDrivingMode) {
-                console.log('🚗 Driving mode detected - adding parking markers and hiding wheelmap layers');
+              if (isDrivingRoute) {
                 
                 // Hide wheelmap layers during driving
                 if (!layersBeforeDriving) {
