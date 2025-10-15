@@ -23,6 +23,11 @@ import TransitInfo from "./TransitInfo";
 import SystemStatusPanel from "./SystemStatusPanel";
 import UnifiedRoutePanel from "./UnifiedRoutePanel";
 import DirectionsPanel from "./DirectionsPanel";
+import RouteGenerationLoading from "./RouteGenerationLoading";
+
+// Accessibility hooks
+import useScreenReaderAnnouncement from "../hooks/useScreenReaderAnnouncement";
+import useKeyboardNavigation from "../hooks/useKeyboardNavigation";
 
 // OPTIMIZATION: Removed MobileRoutingVerification import
 
@@ -42,6 +47,7 @@ import elevationService from "../services/elevationService";
 import barrierReportingService from "../services/barrierReportingService";
 import geolocationService from "../services/geolocationService";
 import "./BarrierDialog.css";
+import "../styles/accessibility.css";
 
 const AccountPage = lazy(() => import("./pages/AccountPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
@@ -54,6 +60,9 @@ const AdminDashboardPage = lazy(() => import("./pages/AdminDashboardPage"));
 const AppShell = () => {
   // FIXED: Get navigate function from React Router
   const navigate = useNavigate();
+
+  // Accessibility hooks
+  const { announce } = useScreenReaderAnnouncement();
 
   // Layout state - All panels closed by default for mobile
   const [isLayersPanelOpen, setIsLayersPanelOpen] = useState(false);
@@ -91,6 +100,8 @@ const AppShell = () => {
 
   // Enhanced routing state
   const [comprehensiveRoute, setComprehensiveRoute] = useState(null);
+  const [isGeneratingRoute, setIsGeneratingRoute] = useState(false);
+  const [clearSearchLoading, setClearSearchLoading] = useState(false);
   
   // Barrier reporting state
   const [barriers, setBarriers] = useState([]);
@@ -593,6 +604,9 @@ const AppShell = () => {
           return;
         }
 
+        // Set route generation loading state
+        setIsGeneratingRoute(true);
+        
         const loadingToast = toast.loading("🔍 Finding accessible route...");
 
         // Use comprehensive routing orchestrator
@@ -694,6 +708,18 @@ const AppShell = () => {
           // Store comprehensive route data
           setComprehensiveRoute(result.route);
 
+          // Announce to screen readers
+          const distance = result.route?.distance 
+            ? `${(result.route.distance / 1000).toFixed(1)} kilometers` 
+            : "";
+          const duration = result.route?.duration 
+            ? `${Math.round(result.route.duration / 60)} minutes` 
+            : "";
+          announce(
+            `Route found. ${distance} ${duration}`,
+            "assertive"
+          );
+
           // Initialize unified rendering service if map is available
           if (mapInstance) {
             try {
@@ -757,7 +783,9 @@ const AppShell = () => {
             routeDebugger.log('No map instance available for route rendering');
           }
 
-          // Always show route panel directly - barriers are handled within the panel
+          // Clear loading state and show route panel only after successful generation
+          setIsGeneratingRoute(false);
+          setClearSearchLoading(true);
           setIsRoutePanelOpen(true);
 
           // Also update the legacy route state for compatibility
@@ -766,6 +794,9 @@ const AppShell = () => {
           toast.dismiss(loadingToast);
           toast.success("Route generated successfully!");
         } else {
+          // Clear loading state on error
+          setIsGeneratingRoute(false);
+          setClearSearchLoading(true);
           toast.dismiss(loadingToast);
           
           // User-friendly error messages
@@ -787,6 +818,10 @@ const AppShell = () => {
         }
       } catch (error) {
         console.error("Route generation failed:", error);
+        
+        // Clear loading state on exception
+        setIsGeneratingRoute(false);
+        setClearSearchLoading(true);
         
         // User-friendly error messages for exceptions
         const getErrorMessage = (error) => {
@@ -813,12 +848,16 @@ const AppShell = () => {
   const handleRouteClear = useCallback(() => {
     setRoute(null);
     setComprehensiveRoute(null);
+    setIsGeneratingRoute(false);
     setIsRouteExpanded(false);
     setIsNavigating(false);
     setIsSearchPanelOpen(false);
     setIsRoutePanelOpen(false);
     setIsDirectionsPanelOpen(false);
-  }, []);
+    
+    // Announce to screen readers
+    announce("Route cleared", "polite");
+  }, [announce]);
 
   // OPTIMIZATION: Removed mobile routing verification toggle
 
@@ -846,11 +885,17 @@ const AppShell = () => {
       // Show success message
       toast.success("Navigation started! Follow the directions below.");
 
+      // Announce to screen readers
+      announce(
+        "Navigation started. Turn-by-turn directions are now available.",
+        "assertive"
+      );
+
       console.log("Navigation state updated successfully");
       console.log("isNavigating:", true);
       console.log("isNavigationMode:", true);
     },
-    [route, mapInstance]
+    [route, mapInstance, announce]
   );
 
   // Handle navigation end
@@ -867,13 +912,22 @@ const AppShell = () => {
     // Show the route summary again when navigation ends (if it existed)
     // setIsRouteSummaryVisible(true);
 
+    // Announce to screen readers
+    announce("Navigation ended", "polite");
+
     console.log("Navigation end completed");
-  }, []);
+  }, [announce]);
 
   // Handle search panel toggle
   const handleSearchPanelToggle = useCallback(() => {
-    setIsSearchPanelOpen(!isSearchPanelOpen);
-  }, [isSearchPanelOpen]);
+    const newState = !isSearchPanelOpen;
+    setIsSearchPanelOpen(newState);
+    // Announce to screen readers
+    announce(
+      newState ? "Search panel opened" : "Search panel closed",
+      "polite"
+    );
+  }, [isSearchPanelOpen, announce]);
 
   // Handle origin change
   const handleOriginChange = useCallback((newOrigin) => {
@@ -892,19 +946,37 @@ const AppShell = () => {
 
   // Handle transit info toggle
   const handleTransitInfoToggle = useCallback(() => {
-    setIsTransitInfoOpen(!isTransitInfoOpen);
-  }, [isTransitInfoOpen]);
+    const newState = !isTransitInfoOpen;
+    setIsTransitInfoOpen(newState);
+    // Announce to screen readers
+    announce(
+      newState ? "Transit information panel opened" : "Transit information panel closed",
+      "polite"
+    );
+  }, [isTransitInfoOpen, announce]);
 
   // Handle side menu toggle
   const handleSideMenuToggle = useCallback(() => {
-    setIsSideMenuOpen(!isSideMenuOpen);
-  }, [isSideMenuOpen]);
+    const newState = !isSideMenuOpen;
+    setIsSideMenuOpen(newState);
+    // Announce to screen readers
+    announce(
+      newState ? "Navigation menu opened" : "Navigation menu closed",
+      "polite"
+    );
+  }, [isSideMenuOpen, announce]);
 
   // Handle layers panel toggle
   const handleLayersPanelToggle = useCallback(() => {
     console.log("handleLayersPanelToggle called");
-    setIsLayersPanelOpen(!isLayersPanelOpen);
-  }, [isLayersPanelOpen]);
+    const newState = !isLayersPanelOpen;
+    setIsLayersPanelOpen(newState);
+    // Announce to screen readers
+    announce(
+      newState ? "Map layers panel opened" : "Map layers panel closed",
+      "polite"
+    );
+  }, [isLayersPanelOpen, announce]);
 
   // FIXED: Page state handlers for mobile
   const handlePageOpen = useCallback(() => {
@@ -1077,20 +1149,103 @@ const AppShell = () => {
     return isRoutePanelOpen || isDirectionsPanelOpen ? "fab-left" : "";
   }, [isMobile, isRoutePanelOpen, isDirectionsPanelOpen]);
 
+  // Handle Escape key to close any open panels
+  const handleEscapeKey = useCallback(() => {
+    if (isReportModalOpen) {
+      setIsReportModalOpen(false);
+      announce("Barrier report dialog closed", "polite");
+    } else if (isSideMenuOpen) {
+      setIsSideMenuOpen(false);
+      announce("Navigation menu closed", "polite");
+    } else if (isLayersPanelOpen) {
+      setIsLayersPanelOpen(false);
+      announce("Map layers panel closed", "polite");
+    } else if (isSearchPanelOpen) {
+      setIsSearchPanelOpen(false);
+      announce("Search panel closed", "polite");
+    } else if (isTransitInfoOpen) {
+      setIsTransitInfoOpen(false);
+      announce("Transit information closed", "polite");
+    } else if (isSystemStatusOpen) {
+      setIsSystemStatusOpen(false);
+      announce("System status closed", "polite");
+    }
+  }, [
+    isReportModalOpen,
+    isSideMenuOpen,
+    isLayersPanelOpen,
+    isSearchPanelOpen,
+    isTransitInfoOpen,
+    isSystemStatusOpen,
+    announce
+  ]);
+
+  // Keyboard navigation support
+  useKeyboardNavigation({
+    onOpenSearch: () => {
+      if (!isSearchPanelOpen) {
+        handleSearchPanelToggle();
+      }
+    },
+    onOpenMenu: () => {
+      if (!isSideMenuOpen) {
+        handleSideMenuToggle();
+      }
+    },
+    onOpenLayers: () => {
+      if (!isLayersPanelOpen) {
+        handleLayersPanelToggle();
+      }
+    },
+    onEscape: handleEscapeKey,
+    enabled: !isPageOpen, // Disable global shortcuts when a page is open
+  });
+
   return (
-    <div className="app-shell">
-      <Toaster position="top-center" />
+    <div className="app-shell" role="application" aria-label="Trek.IQ Accessible Navigation App">
+      {/* Skip Navigation Links */}
+      <div className="skip-nav-container">
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
+        <a href="#search-panel" className="skip-link">
+          Skip to search
+        </a>
+        <a href="#map-canvas" className="skip-link">
+          Skip to map
+        </a>
+      </div>
+
+      <Toaster position="top-center" aria-live="polite" aria-atomic="true" />
 
       {/* System Loading Overlay */}
       {isSystemLoading && (
-        <div className={`fixed inset-0 ${currentTheme === 'dark' ? 'bg-gray-900 bg-opacity-95' : 'bg-white bg-opacity-95'} z-50 flex items-center justify-center`}>
+        <div 
+          className={`fixed inset-0 ${currentTheme === 'dark' ? 'bg-gray-900 bg-opacity-95' : 'bg-white bg-opacity-95'} z-50 flex items-center justify-center`}
+          role="status"
+          aria-live="assertive"
+          aria-busy="true"
+          aria-label="Loading Trek.IQ system"
+        >
           <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h2 className={`text-xl font-semibold ${currentTheme === 'dark' ? 'text-white' : 'text-gray-800'} mb-2`}>
+            <div 
+              className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"
+              aria-hidden="true"
+            ></div>
+            <h2 
+              className={`text-xl font-semibold ${currentTheme === 'dark' ? 'text-white' : 'text-gray-800'} mb-2`}
+              id="loading-title"
+            >
               {isMobile ? "Loading Trek.IQ..." : "Initializing Trek.IQ System..."}
             </h2>
-            <p className={`${currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'} mb-4`}>{systemLoadingMessage}</p>
-            <div className="flex items-center justify-center space-x-2">
+            <p 
+              className={`${currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'} mb-4`}
+              id="loading-message"
+              aria-live="polite"
+            >
+              {systemLoadingMessage}
+            </p>
+            <div className="flex items-center justify-center space-x-2" aria-hidden="true">
               <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
               <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
               <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
@@ -1099,35 +1254,43 @@ const AppShell = () => {
         </div>
       )}
 
-      {/* Top Bar */}
-      <TopBar
-        onToggleMenu={handleSideMenuToggle}
-        onSearchToggle={handleSearchPanelToggle}
-        isSearchPanelOpen={isSearchPanelOpen}
-        currentTheme={currentTheme}
-        onThemeChange={setCurrentTheme}
-        onSystemStatusToggle={handleSystemStatusOpen}
-        isMobile={isMobile}
-      />
+      {/* Top Bar - Navigation Header */}
+      <header role="banner">
+        <TopBar
+          onToggleMenu={handleSideMenuToggle}
+          onSearchToggle={handleSearchPanelToggle}
+          isSearchPanelOpen={isSearchPanelOpen}
+          currentTheme={currentTheme}
+          onThemeChange={setCurrentTheme}
+          onSystemStatusToggle={handleSystemStatusOpen}
+          isMobile={isMobile}
+        />
+      </header>
 
       {/* Main Content Area */}
-      <div className="main-content">
+      <main id="main-content" role="main" className="main-content" aria-label="Map and navigation interface">
         {/* Map Canvas */}
-        <MapCanvas
-          route={route}
-          origin={origin}
-          destination={destination}
-          activeLayers={activeLayers}
-          accessibilitySettings={accessibilitySettings}
-          onMapLoad={handleMapLoad}
-          onLayerToggle={handleLayerToggle}
-          mapPadding={mapPadding}
-          isReportingMode={false}
-          routeMode={routeMode}
-          isMobile={isMobile}
-          userLocation={userLocation}
-          barriers={barriers}
-        />
+        <div 
+          id="map-canvas" 
+          role="region" 
+          aria-label="Interactive map showing routes and accessibility information"
+        >
+          <MapCanvas
+            route={route}
+            origin={origin}
+            destination={destination}
+            activeLayers={activeLayers}
+            accessibilitySettings={accessibilitySettings}
+            onMapLoad={handleMapLoad}
+            onLayerToggle={handleLayerToggle}
+            mapPadding={mapPadding}
+            isReportingMode={false}
+            routeMode={routeMode}
+            isMobile={isMobile}
+            userLocation={userLocation}
+            barriers={barriers}
+          />
+        </div>
 
         {/* Debug Route Data */}
         {console.log("AppShell: MapCanvas route data:", {
@@ -1140,19 +1303,27 @@ const AppShell = () => {
 
         {/* Search Panel - Same component for mobile and desktop, just styled differently */}
         {isSearchPanelOpen && !isPageOpen && (
-          <EnhancedSearchPanel
-            origin={origin}
-            destination={destination}
-            onOriginChange={handleOriginChange}
-            onDestinationChange={handleDestinationChange}
-            onRouteRequest={handleRouteRequest}
-            accessibilitySettings={accessibilitySettings}
-            routeMode={routeMode}
-            onModeChange={handleRouteModeChange}
-            isMobile={isMobile}
-            onSearchToggle={handleSearchPanelToggle}
-            onLocationDetect={handleManualLocationDetection}
-          />
+          <aside 
+            id="search-panel"
+            role="search" 
+            aria-label="Route search and planning"
+          >
+            <EnhancedSearchPanel
+              origin={origin}
+              destination={destination}
+              onOriginChange={handleOriginChange}
+              onDestinationChange={handleDestinationChange}
+              onRouteRequest={handleRouteRequest}
+              accessibilitySettings={accessibilitySettings}
+              routeMode={routeMode}
+              onModeChange={handleRouteModeChange}
+              isMobile={isMobile}
+              onSearchToggle={handleSearchPanelToggle}
+              onLocationDetect={handleManualLocationDetection}
+              clearSearchLoading={clearSearchLoading}
+              onClearSearchLoadingReset={() => setClearSearchLoading(false)}
+            />
+          </aside>
         )}
 
         {/* Navigation Integration - Same components for mobile and desktop */}
@@ -1173,34 +1344,53 @@ const AppShell = () => {
           />
         )}
 
-        {/* Route Panels - Only show when explicitly opened */}
-        {route && !isNavigating && isRoutePanelOpen && (
-          <UnifiedRoutePanel
-            route={comprehensiveRoute || route}
-            routeMode={routeMode}
-            isOpen={true}
-            onClose={handleRoutePanelClose}
+        {/* Route Generation Loading */}
+        {isGeneratingRoute && (
+          <RouteGenerationLoading 
+            isVisible={true}
             isDarkMode={currentTheme === "dark"}
-            onReroute={handleRouteRequest}
-            onStartNavigation={handleNavigationStart}
-            origin={origin}
-            destination={destination}
           />
         )}
 
+        {/* Route Panels - Only show when explicitly opened */}
+        {route && !isNavigating && isRoutePanelOpen && (
+          <aside 
+            role="complementary" 
+            aria-label="Route details and options"
+          >
+            <UnifiedRoutePanel
+              route={comprehensiveRoute || route}
+              routeMode={routeMode}
+              isOpen={true}
+              onClose={handleRoutePanelClose}
+              isDarkMode={currentTheme === "dark"}
+              onReroute={handleRouteRequest}
+              onStartNavigation={handleNavigationStart}
+              origin={origin}
+              destination={destination}
+            />
+          </aside>
+        )}
+
         {route && isNavigating && isDirectionsPanelOpen && (
-          <DirectionsPanel
-            route={comprehensiveRoute || route}
-            isOpen={true}
-            onClose={handleNavigationEnd}
-            isDarkMode={currentTheme === "dark"}
-            settings={{
-              voiceNavigation: voiceGuidanceEnabled,
-              hapticFeedback: true,
-            }}
-            isMobile={isMobile}
-            onReportBarrier={() => setIsReportModalOpen(true)}
-          />
+          <aside 
+            role="complementary" 
+            aria-label="Turn-by-turn navigation directions"
+            aria-live="polite"
+          >
+            <DirectionsPanel
+              route={comprehensiveRoute || route}
+              isOpen={true}
+              onClose={handleNavigationEnd}
+              isDarkMode={currentTheme === "dark"}
+              settings={{
+                voiceNavigation: voiceGuidanceEnabled,
+                hapticFeedback: true,
+              }}
+              isMobile={isMobile}
+              onReportBarrier={() => setIsReportModalOpen(true)}
+            />
+          </aside>
         )}
 
         {/* {route && isNavigating && isDirectionsPanelOpen && isMobile && (
@@ -1225,52 +1415,87 @@ const AppShell = () => {
         )}
 
         {/* Side Menu */}
-        <SideMenu
-          isOpen={isSideMenuOpen}
-          onClose={() => setIsSideMenuOpen(false)}
-          currentTheme={currentTheme}
-          onThemeChange={setCurrentTheme}
-          voiceGuidanceEnabled={voiceGuidanceEnabled}
-          onVoiceGuidanceToggle={setVoiceGuidanceEnabled}
-          onNavigate={handleNavigate}
-        />
+        <nav 
+          role="navigation" 
+          aria-label="Main navigation menu"
+          aria-hidden={!isSideMenuOpen}
+        >
+          <SideMenu
+            isOpen={isSideMenuOpen}
+            onClose={() => setIsSideMenuOpen(false)}
+            currentTheme={currentTheme}
+            onThemeChange={setCurrentTheme}
+            voiceGuidanceEnabled={voiceGuidanceEnabled}
+            onVoiceGuidanceToggle={setVoiceGuidanceEnabled}
+            onNavigate={handleNavigate}
+          />
+        </nav>
 
         {/* Simplified Layers Panel */}
-        <SimplifiedLayersPanel
-          isOpen={isLayersPanelOpen}
-          isDarkMode={currentTheme === "dark"}
-          onClose={() => setIsLayersPanelOpen(false)}
-          activeLayers={activeLayers}
-          onLayerToggle={handleLayerToggle}
-        />
+        <aside 
+          role="complementary" 
+          aria-label="Map layers control panel"
+          aria-hidden={!isLayersPanelOpen}
+        >
+          <SimplifiedLayersPanel
+            isOpen={isLayersPanelOpen}
+            isDarkMode={currentTheme === "dark"}
+            onClose={() => setIsLayersPanelOpen(false)}
+            activeLayers={activeLayers}
+            onLayerToggle={handleLayerToggle}
+          />
+        </aside>
 
         {/* Report Barrier Modal */}
-        <ReportBarrierModal
-          isOpen={isReportModalOpen}
-          onClose={() => setIsReportModalOpen(false)}
-          onReport={handleReportSubmit}
-          userLocation={userLocation}
-          isDarkMode={currentTheme === "dark"}
-        />
+        <div 
+          role="dialog" 
+          aria-modal={isReportModalOpen}
+          aria-labelledby="barrier-report-title"
+          aria-hidden={!isReportModalOpen}
+        >
+          <ReportBarrierModal
+            isOpen={isReportModalOpen}
+            onClose={() => setIsReportModalOpen(false)}
+            onReport={handleReportSubmit}
+            userLocation={userLocation}
+            isDarkMode={currentTheme === "dark"}
+          />
+        </div>
 
         {/* Transit Info - Only show when explicitly opened */}
         {isTransitInfoOpen && (
-          <TransitInfo
-            isOpen={isTransitInfoOpen}
-            onClose={() => setIsTransitInfoOpen(false)}
-          />
+          <aside 
+            role="complementary" 
+            aria-label="Transit information"
+            aria-hidden={!isTransitInfoOpen}
+          >
+            <TransitInfo
+              isOpen={isTransitInfoOpen}
+              onClose={() => setIsTransitInfoOpen(false)}
+            />
+          </aside>
         )}
 
         {/* Liability Barrier Alert - Removed old component */}
 
         {/* Loading Spinner */}
-        {isMapLoading && <LoadingSpinner />}
+        {isMapLoading && (
+          <div role="status" aria-live="polite" aria-label="Loading map">
+            <LoadingSpinner />
+          </div>
+        )}
 
         {/* System Status Panel */}
-        <SystemStatusPanel
-          isOpen={isSystemStatusOpen}
-          onClose={() => setIsSystemStatusOpen(false)}
-        />
+        <aside 
+          role="complementary" 
+          aria-label="System status information"
+          aria-hidden={!isSystemStatusOpen}
+        >
+          <SystemStatusPanel
+            isOpen={isSystemStatusOpen}
+            onClose={() => setIsSystemStatusOpen(false)}
+          />
+        </aside>
 
 
         {/* Route Panels - Same for both mobile and desktop, just styled differently */}
@@ -1292,10 +1517,16 @@ const AppShell = () => {
         {/* No overlapping barrier panels - barriers handled in UnifiedRoutePanel */}
 
         {/* OPTIMIZATION: Removed Mobile Routing Verification component */}
-      </div>
+      </main>
 
       {/* Added lazy loading for the routes */}
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense 
+        fallback={
+          <div role="status" aria-live="polite" aria-busy="true">
+            <span className="sr-only">Loading page content...</span>
+          </div>
+        }
+      >
         <Routes>
           {/* Root route - renders the main app interface */}
           <Route path="/" element={<div style={{ display: 'none' }} />} />

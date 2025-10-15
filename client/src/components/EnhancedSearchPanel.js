@@ -102,6 +102,8 @@ const EnhancedSearchPanel = React.memo(
     isMobile = false,
     onSearchToggle,
     onLocationDetect,
+    clearSearchLoading,
+    onClearSearchLoadingReset,
   }) => {
     const [showOriginResults, setShowOriginResults] = useState(false);
     const [showDestinationResults, setShowDestinationResults] = useState(false);
@@ -262,7 +264,7 @@ const EnhancedSearchPanel = React.memo(
         };
         console.log("Calling onRouteRequest with:", routeData);
         onRouteRequest(routeData);
-        setIsLoading(false);
+        // Don't set loading to false here - let the parent component handle the loading state
         onSearchToggle();
       } else {
         console.log("Route request validation failed:", {
@@ -304,6 +306,16 @@ const EnhancedSearchPanel = React.memo(
         setIsDetectingLocation(false);
       }
     }, [onLocationDetect]);
+
+    // Clear loading state when route generation completes
+    useEffect(() => {
+      if (clearSearchLoading) {
+        setIsLoading(false);
+        if (onClearSearchLoadingReset) {
+          onClearSearchLoadingReset();
+        }
+      }
+    }, [clearSearchLoading, onClearSearchLoadingReset]);
 
     // Focus management
     const handleInputFocus = useCallback(
