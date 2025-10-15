@@ -40,14 +40,14 @@ class ProductionRoutingService {
       // Distance verification
       distanceTolerance: 0.005, // 0.5% tolerance
       
-      // Performance settings
+      // Performance settings - OPTIMIZED for faster generation
       maxRouteLength: 50000, // 50km max route
-      maxComputationTime: 30000, // 30 seconds max
+      maxComputationTime: 15000, // 15 seconds max (reduced from 30s)
       
-      // Caching
+      // Caching - OPTIMIZED for better performance
       cacheEnabled: true,
-      cacheSize: 1000,
-      cacheTTL: 300000 // 5 minutes
+      cacheSize: 2000, // Increased cache size
+      cacheTTL: 600000 // 10 minutes (increased cache time)
     };
     
     // Dataset storage

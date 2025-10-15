@@ -783,7 +783,8 @@ const AppShell = () => {
             routeDebugger.log('No map instance available for route rendering');
           }
 
-          // Clear loading state and show route panel only after successful generation
+          // Clear loading state and show route panel only after route rendering is complete
+          // This ensures the route line appears before the route summary
           setIsGeneratingRoute(false);
           setClearSearchLoading(true);
           setIsRoutePanelOpen(true);

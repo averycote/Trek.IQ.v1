@@ -10,7 +10,8 @@ class FixedRouteService {
     this.isInitialized = false;
     this.mapboxToken = 'pk.eyJ1IjoiYXZlcnljb3RlIiwiYSI6ImNtZWxpdmpxMzBpOWQyanE0Z2p2YWRicjIifQ.fQzZ_KDIxILvcV471Z3EjQ';
     this.cache = new Map();
-    this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
+    this.cacheTimeout = 10 * 60 * 1000; // 10 minutes (increased for better performance)
+    this.maxCacheSize = 1000; // Limit cache size
   }
 
   /**
@@ -479,9 +480,15 @@ class FixedRouteService {
   }
 
   /**
-   * Cache route
+   * Cache route with size management
    */
   cacheRoute(key, data) {
+    // Clean up old cache entries if cache is getting too large
+    if (this.cache.size >= this.maxCacheSize) {
+      const oldestKey = this.cache.keys().next().value;
+      this.cache.delete(oldestKey);
+    }
+    
     this.cache.set(key, {
       data: data,
       timestamp: Date.now()
