@@ -166,13 +166,20 @@ app.use(cors(corsOptions));
 // Trust proxy for Railway deployment
 app.set('trust proxy', 1);
 
-// Rate limiting for API protection
+// Rate limiting for API protection (relaxed for development)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 100 : 10000, // Much higher limit for development
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req, res) => {
+    // Skip rate limiting for data files in development
+    if (process.env.NODE_ENV !== 'production' && req.url.includes('/api/data/')) {
+      return true;
+    }
+    return false;
+  }
 });
 app.use('/api/', limiter);
 
@@ -665,32 +672,7 @@ app.get('/api/data/:filename', async (req, res) => {
 
 
 
-// Simple data serving route for real Halifax GeoJSON files
-app.get('/api/data/:filename', async (req, res) => {
-  try {
-    const { filename } = req.params;
-    const dataPath = path.join(__dirname, 'data', filename);
-    
-    // Check if file exists
-    try {
-      await fs.access(dataPath);
-    } catch (error) {
-      return res.status(404).json({ error: 'Data file not found' });
-    }
-    
-    // Set appropriate headers
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
-    
-    // Stream the file
-    const fileStream = fs.createReadStream(dataPath);
-    fileStream.pipe(res);
-    
-  } catch (error) {
-    console.error('Error serving data file:', error);
-    res.status(500).json({ error: 'Failed to serve data file' });
-  }
-});
+// Note: Duplicate route removed - /api/data/:filename is already defined above
 
 // Authentication routes
 app.use('/api/auth', authRoutes);
@@ -803,17 +785,29 @@ app.get('/api/data/dynamic/:filename', async (req, res) => {
   }
 });
 
-// Optimized static file serving
-app.use(express.static(path.join(__dirname, '../client/build'), {
-  maxAge: '1d',
-  etag: true,
-  lastModified: true
-}));
+// Optimized static file serving (only in production)
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/build'), {
+    maxAge: '1d',
+    etag: true,
+    lastModified: true
+  }));
 
-// Catch-all handler for SPA
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-});
+  // Catch-all handler for SPA (only in production)
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+  });
+} else {
+  // In development, just return a message for non-API routes
+  app.get('*', (req, res) => {
+    if (!req.url.startsWith('/api/')) {
+      res.status(404).json({ 
+        message: 'Development mode: React app runs on port 3000',
+        clientUrl: 'http://localhost:3000'
+      });
+    }
+  });
+}
 
 // Enhanced error handling middleware
 app.use((err, req, res, next) => {

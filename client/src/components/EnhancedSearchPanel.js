@@ -63,10 +63,8 @@ const SearchResultItem = React.memo(
 const ModeSelector = React.memo(({ mode, onModeChange, isMobile }) => {
   const modes = [
     { id: "walking", label: "Walk", icon: "🚶" },
-    { id: "wheelchair", label: "Wheelchair", icon: "♿" },
     { id: "driving", label: "Drive", icon: "🚗" },
     { id: "transit", label: "Transit", icon: "🚌" },
-    { id: "cycling", label: "Bike", icon: "🚴" },
   ];
 
   return (

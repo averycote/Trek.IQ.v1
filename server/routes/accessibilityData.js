@@ -1,257 +1,259 @@
 /**
  * Accessibility Data API Routes
  * 
- * Provides API endpoints for accessing locally cached accessibility data
- * from the 150k Wheelmap dataset.
+ * Serves Halifax municipal accessibility data for the TRUE accessibility routing service
  */
 
 const express = require('express');
-const LocalAccessibilityService = require('../services/localAccessibilityService');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs').promises;
 
-// Initialize the local accessibility service
-const accessibilityService = new LocalAccessibilityService();
-let serviceInitialized = false;
-
-// Initialize service on first request
-const ensureServiceInitialized = async (req, res, next) => {
-  if (!serviceInitialized) {
-    try {
-      await accessibilityService.initialize();
-      serviceInitialized = true;
-    } catch (error) {
-      console.warn('⚠️ Local accessibility service unavailable:', error.message);
-    }
-  }
-  next();
-};
+// Cache for loaded data
+const dataCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
- * GET /api/accessibility/places
- * Get places within a bounding box with optional filters
+ * Load and cache Halifax municipal data
  */
-router.get('/places', ensureServiceInitialized, (req, res) => {
-  // Set timeout for this specific route
-  const timeout = setTimeout(() => {
-    if (!res.headersSent) {
-      res.status(504).json({ 
-        error: 'Request timeout', 
-        message: 'Accessibility data request took too long to process' 
-      });
-    }
-  }, 15000); // 15 second timeout for data queries
-
+async function loadHalifaxData(datasetName) {
+  const cacheKey = datasetName;
+  const cached = dataCache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  
   try {
-    const { bbox, wheelchair, category, limit } = req.query;
+    let filePath;
     
-    if (!bbox) {
-      return res.status(400).json({
-        error: 'Missing required parameter: bbox',
-        example: '/api/accessibility/places?bbox=-63.6,-44.6,-63.5,44.7'
-      });
+    switch (datasetName) {
+      case 'travelways':
+        filePath = path.join(__dirname, '../data/Active_Travelways.geojson');
+        break;
+      case 'steps':
+        filePath = path.join(__dirname, '../data/dynamic/Steps_577353981712784942.geojson');
+        break;
+      case 'closures':
+        filePath = path.join(__dirname, '../data/dynamic/Sidewalk Closures.geojson');
+        break;
+      case 'accessible-parking':
+        filePath = path.join(__dirname, '../data/Accessible_Parking.geojson');
+        break;
+      case 'transit-stops':
+        filePath = path.join(__dirname, '../data/Bus_Stops_2_9086297843420881686.geojson');
+        break;
+      case 'street-lights':
+        filePath = path.join(__dirname, '../data/Street_Lights_-8646609400635809433.geojson');
+        break;
+      case 'public-washrooms':
+        filePath = path.join(__dirname, '../data/HRM_Public_Washrooms_8937353538278970153.geojson');
+        break;
+      default:
+        throw new Error(`Unknown dataset: ${datasetName}`);
     }
     
-    // Parse bounding box
-    const bboxArray = bbox.split(',').map(Number);
-    if (bboxArray.length !== 4) {
-      return res.status(400).json({
-        error: 'Invalid bbox format. Expected: minLon,minLat,maxLon,maxLat'
-      });
-    }
+    const data = await fs.readFile(filePath, 'utf8');
+    const parsedData = JSON.parse(data);
     
-    const options = {};
-    if (wheelchair) options.wheelchair = wheelchair;
-    if (category) options.category = category;
-    if (limit) options.limit = parseInt(limit);
-    
-    const places = accessibilityService.getPlacesInBounds(bboxArray, options);
-    
-    clearTimeout(timeout);
-    res.json({
-      success: true,
-      count: places.length,
-      places: places,
-      filters: options
+    // Cache the data
+    dataCache.set(cacheKey, {
+      data: parsedData,
+      timestamp: Date.now()
     });
     
+    return parsedData;
   } catch (error) {
-    clearTimeout(timeout);
-    console.error('Error fetching places:', error);
+    console.error(`Error loading ${datasetName} data:`, error);
+    throw error;
+  }
+}
+
+/**
+ * GET /api/accessibility-data/:dataset
+ * Get specific Halifax municipal dataset
+ */
+router.get('/:dataset', async (req, res) => {
+  try {
+    const { dataset } = req.params;
+    const data = await loadHalifaxData(dataset);
+    
+    res.json({
+      success: true,
+      dataset: dataset,
+      data: data,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error serving accessibility data:', error);
     res.status(500).json({
-      error: 'Failed to fetch places',
-      message: error.message
+      success: false,
+      error: error.message
     });
   }
 });
 
 /**
- * GET /api/accessibility/nearby
- * Get places near a specific coordinate
+ * GET /api/accessibility-data/combined/core
+ * Get combined core accessibility datasets for routing
  */
-router.get('/nearby', ensureServiceInitialized, (req, res) => {
+router.get('/combined/core', async (req, res) => {
   try {
-    const { lat, lon, radius, wheelchair, limit } = req.query;
+    const [travelways, steps, closures] = await Promise.all([
+      loadHalifaxData('travelways'),
+      loadHalifaxData('steps'),
+      loadHalifaxData('closures')
+    ]);
     
-    if (!lat || !lon) {
-      return res.status(400).json({
-        error: 'Missing required parameters: lat, lon',
-        example: '/api/accessibility/nearby?lat=44.6475&lon=-63.5756'
-      });
-    }
-    
-    const coordinates = [parseFloat(lon), parseFloat(lat)];
-    const searchRadius = radius ? parseInt(radius) : 1000;
-    const options = {};
-    if (limit) options.limit = parseInt(limit);
-    
-    let places = accessibilityService.getNearbyPlaces(coordinates, searchRadius, options);
-    
-    // Filter by wheelchair accessibility if specified
-    if (wheelchair) {
-      places = places.filter(place => place.wheelchair === wheelchair);
-    }
+    const combinedData = {
+      type: 'FeatureCollection',
+      features: [
+        ...travelways.features.map(f => ({ ...f, dataset: 'travelways' })),
+        ...steps.features.map(f => ({ ...f, dataset: 'steps' })),
+        ...closures.features.map(f => ({ ...f, dataset: 'closures' }))
+      ],
+      metadata: {
+        travelways: travelways.features.length,
+        steps: steps.features.length,
+        closures: closures.features.length,
+        total: travelways.features.length + steps.features.length + closures.features.length
+      }
+    };
     
     res.json({
       success: true,
-      count: places.length,
-      center: { lat: parseFloat(lat), lon: parseFloat(lon) },
-      radius: searchRadius,
-      places: places
+      dataset: 'combined_core',
+      data: combinedData,
+      timestamp: new Date().toISOString()
     });
-    
   } catch (error) {
-    console.error('Error fetching nearby places:', error);
+    console.error('Error serving combined accessibility data:', error);
     res.status(500).json({
-      error: 'Failed to fetch nearby places',
-      message: error.message
+      success: false,
+      error: error.message
     });
   }
 });
 
 /**
- * GET /api/accessibility/search
- * Search places by name or category
+ * GET /api/accessibility-data/amenities
+ * Get accessibility amenities (parking, washrooms, etc.)
  */
-router.get('/search', ensureServiceInitialized, (req, res) => {
+router.get('/amenities', async (req, res) => {
   try {
-    const { q, wheelchair, limit } = req.query;
+    const [parking, washrooms, transitStops] = await Promise.all([
+      loadHalifaxData('accessible-parking'),
+      loadHalifaxData('public-washrooms'),
+      loadHalifaxData('transit-stops')
+    ]);
     
-    if (!q) {
-      return res.status(400).json({
-        error: 'Missing required parameter: q (query)',
-        example: '/api/accessibility/search?q=library'
-      });
-    }
-    
-    const options = {};
-    if (limit) options.limit = parseInt(limit);
-    
-    let places = accessibilityService.searchPlaces(q, options);
-    
-    // Filter by wheelchair accessibility if specified
-    if (wheelchair) {
-      places = places.filter(place => place.wheelchair === wheelchair);
-    }
+    const amenities = {
+      type: 'FeatureCollection',
+      features: [
+        ...parking.features.map(f => ({ ...f, amenity_type: 'parking' })),
+        ...washrooms.features.map(f => ({ ...f, amenity_type: 'washroom' })),
+        ...transitStops.features.map(f => ({ ...f, amenity_type: 'transit' }))
+      ],
+      metadata: {
+        parking: parking.features.length,
+        washrooms: washrooms.features.length,
+        transit: transitStops.features.length,
+        total: parking.features.length + washrooms.features.length + transitStops.features.length
+      }
+    };
     
     res.json({
       success: true,
-      query: q,
-      count: places.length,
-      places: places
+      dataset: 'amenities',
+      data: amenities,
+      timestamp: new Date().toISOString()
     });
-    
   } catch (error) {
-    console.error('Error searching places:', error);
+    console.error('Error serving amenities data:', error);
     res.status(500).json({
-      error: 'Failed to search places',
-      message: error.message
+      success: false,
+      error: error.message
     });
   }
 });
 
 /**
- * GET /api/accessibility/categories
- * Get places by category
+ * GET /api/accessibility-data/analysis/:dataset
+ * Get accessibility analysis for a specific dataset
  */
-router.get('/categories/:category', ensureServiceInitialized, (req, res) => {
+router.get('/analysis/:dataset', async (req, res) => {
   try {
-    const { category } = req.params;
-    const { wheelchair, limit } = req.query;
+    const { dataset } = req.params;
+    const data = await loadHalifaxData(dataset);
     
-    const options = {};
-    if (limit) options.limit = parseInt(limit);
+    let analysis = {};
     
-    let places = accessibilityService.getPlacesByCategory(category, options);
-    
-    // Filter by wheelchair accessibility if specified
-    if (wheelchair) {
-      places = places.filter(place => place.wheelchair === wheelchair);
+    if (dataset === 'travelways') {
+      // Analyze travelways for accessibility metrics
+      const features = data.features || [];
+      const widthStats = features
+        .map(f => f.properties?.WIDTH)
+        .filter(w => w !== null && w !== undefined);
+      
+      const materialStats = features
+        .map(f => f.properties?.MAT)
+        .filter(m => m !== null && m !== undefined);
+      
+      const winterMaintained = features
+        .filter(f => f.properties?.WINT_PLOW === 'Y').length;
+      
+      analysis = {
+        total_features: features.length,
+        width_stats: {
+          min: Math.min(...widthStats),
+          max: Math.max(...widthStats),
+          avg: widthStats.reduce((a, b) => a + b, 0) / widthStats.length,
+          wheelchair_accessible: features.filter(f => (f.properties?.WIDTH || 0) >= 1.5).length
+        },
+        material_breakdown: materialStats.reduce((acc, mat) => {
+          acc[mat] = (acc[mat] || 0) + 1;
+          return acc;
+        }, {}),
+        winter_maintenance: {
+          maintained: winterMaintained,
+          not_maintained: features.length - winterMaintained,
+          percentage: (winterMaintained / features.length) * 100
+        }
+      };
+    } else if (dataset === 'steps') {
+      // Analyze steps data
+      const features = data.features || [];
+      const materialStats = features
+        .map(f => f.properties?.MAT)
+        .filter(m => m !== null && m !== undefined);
+      
+      analysis = {
+        total_steps: features.length,
+        material_breakdown: materialStats.reduce((acc, mat) => {
+          acc[mat] = (acc[mat] || 0) + 1;
+          return acc;
+        }, {}),
+        locations: features.map(f => ({
+          id: f.properties?.ASSETID,
+          location: f.properties?.LOCATION,
+          coordinates: f.geometry?.coordinates
+        }))
+      };
     }
     
     res.json({
       success: true,
-      category: category,
-      count: places.length,
-      places: places
+      dataset: dataset,
+      analysis: analysis,
+      timestamp: new Date().toISOString()
     });
-    
   } catch (error) {
-    console.error('Error fetching category places:', error);
+    console.error('Error analyzing accessibility data:', error);
     res.status(500).json({
-      error: 'Failed to fetch category places',
-      message: error.message
+      success: false,
+      error: error.message
     });
   }
-});
-
-/**
- * GET /api/accessibility/stats
- * Get dataset statistics
- */
-router.get('/stats', ensureServiceInitialized, (req, res) => {
-  try {
-    const stats = accessibilityService.getStatistics();
-    
-    if (!stats) {
-      return res.status(503).json({
-        error: 'Accessibility data not available',
-        suggestion: 'Run "npm run download:accessibility" to download data'
-      });
-    }
-    
-    res.json({
-      success: true,
-      statistics: stats,
-      serviceReady: accessibilityService.isReady()
-    });
-    
-  } catch (error) {
-    console.error('Error fetching statistics:', error);
-    res.status(500).json({
-      error: 'Failed to fetch statistics',
-      message: error.message
-    });
-  }
-});
-
-/**
- * GET /api/accessibility/health
- * Health check endpoint
- */
-router.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    serviceReady: accessibilityService.isReady(),
-    initialized: serviceInitialized,
-    timestamp: new Date().toISOString()
-  });
 });
 
 module.exports = router;
-
-
-
-
-
-
-

@@ -147,7 +147,6 @@ const MobileRoutingVerification = ({ isVisible = false, onClose }) => {
     
     const modes = [
       { mode: 'walking', description: 'ORS routing with step-avoidance and slope restrictions' },
-      { mode: 'wheelchair', description: 'ORS wheelchair profile with avoidances and accessibility constraints' },
       { mode: 'driving', description: 'Mapbox Directions with traffic' },
       { mode: 'transit', description: 'GeoJSON-based local transit routing' }
     ];

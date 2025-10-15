@@ -8,7 +8,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import wheelmapApiService from '../services/wheelmapApiService';
-import overpassApiService from '../services/overpassApiService';
 
 const EnhancedAccessibilityLayer = ({ 
   isVisible, 
@@ -72,8 +71,11 @@ const EnhancedAccessibilityLayer = ({
       // Load Overpass data if requested
       if (dataSource === 'overpass' || dataSource === 'combined') {
         promises.push(
-          overpassApiService.getAccessibilityData(bbox)
-            .then(data => ({ source: 'overpass', data }))
+          (async () => {
+            const { default: overpassApiService } = await import('../services/overpassApiService.js');
+            const data = await overpassApiService.getAccessibilityData(bbox);
+            return { source: 'overpass', data };
+          })()
         );
       }
 

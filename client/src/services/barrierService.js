@@ -202,7 +202,7 @@ class BarrierService {
         }
       );
       
-      this.userReportedBarriers = data || [];
+      this.userReportedBarriers = Array.isArray(data) ? data : [];
       console.log(`Loaded ${this.userReportedBarriers.length} user-reported barriers`);
     } catch (error) {
       console.warn('Failed to load user-reported barriers:', error);

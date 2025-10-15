@@ -1,0 +1,314 @@
+/**
+ * Accessibility Styles
+ * Following WCAG 2.1 AA guidelines
+ */
+
+/* Screen reader only content - visually hidden but accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip link - visible when focused */
+.skip-link {
+  position: absolute;
+  top: -100vh;
+  left: 0;
+  background: #000;
+  color: #fff;
+  padding: 8px 16px;
+  text-decoration: none;
+  z-index: 10000;
+  font-weight: bold;
+  border-radius: 0 0 4px 0;
+  transition: top 0.2s ease-in-out;
+  /* Ensure completely hidden when not focused */
+  clip: rect(0, 0, 0, 0);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.skip-link:focus {
+  top: 0;
+  outline: 3px solid #4A90E2;
+  outline-offset: 2px;
+  /* Remove clip when focused to make visible */
+  clip: auto;
+  overflow: visible;
+  white-space: normal;
+}
+
+/* Focus visible styles - enhanced focus indicators */
+*:focus-visible {
+  outline: 3px solid #4A90E2;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Remove focus outline for mouse users (only show for keyboard) */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Ensure focus is always visible on interactive elements */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #4A90E2;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  *:focus-visible {
+    outline: 4px solid;
+    outline-offset: 3px;
+  }
+  
+  button,
+  a {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Keyboard navigation indicators */
+.keyboard-user *:focus {
+  outline: 3px solid #4A90E2;
+  outline-offset: 2px;
+}
+
+/* Accessible button states */
+button:disabled,
+input:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+button[aria-pressed="true"] {
+  background-color: #2c5aa0;
+}
+
+/* Color contrast helpers for dark mode */
+.dark-mode {
+  /* Ensure sufficient contrast in dark mode */
+}
+
+.dark-mode *:focus-visible {
+  outline-color: #61AFEF;
+}
+
+/* Skip navigation container */
+.skip-nav-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+}
+
+/* Focus trap container - for modals and panels */
+.focus-trap-active {
+  /* Ensures focus stays within the element */
+}
+
+/* Accessible link styles */
+a {
+  text-decoration: underline;
+}
+
+a:hover,
+a:focus {
+  text-decoration: none;
+}
+
+/* Ensure touch targets are large enough (minimum 44x44px) */
+button,
+a,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+.clickable {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile touch targets */
+@media (max-width: 768px) {
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  .clickable {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+/* ARIA live region styles */
+[role="status"],
+[role="alert"],
+[aria-live] {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Visually show live regions in debug mode (add .debug-accessibility to body) */
+.debug-accessibility [role="status"],
+.debug-accessibility [role="alert"],
+.debug-accessibility [aria-live] {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: auto;
+  height: auto;
+  background: yellow;
+  color: black;
+  padding: 10px;
+  border: 2px solid black;
+  z-index: 99999;
+}
+
+/* Loading and disabled states */
+[aria-busy="true"] {
+  cursor: wait;
+  pointer-events: none;
+}
+
+/* Invalid form fields */
+[aria-invalid="true"],
+input:invalid {
+  border: 2px solid #d32f2f;
+}
+
+[aria-invalid="true"]:focus,
+input:invalid:focus {
+  outline-color: #d32f2f;
+}
+
+/* Required fields indicator */
+[aria-required="true"]::after,
+[required]::after {
+  content: " *";
+  color: #d32f2f;
+  font-weight: bold;
+}
+
+/* Expanded/collapsed states for accordions and panels */
+[aria-expanded="false"] .expand-indicator {
+  transform: rotate(0deg);
+}
+
+[aria-expanded="true"] .expand-indicator {
+  transform: rotate(90deg);
+}
+
+/* Modal and dialog overlay */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.dark-mode .modal-overlay {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Ensure modals are announced properly */
+[role="dialog"],
+[role="alertdialog"] {
+  /* Styles handled by components */
+}
+
+/* Tooltip accessibility */
+[role="tooltip"] {
+  position: absolute;
+  z-index: 9999;
+  background: #000;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Progress bar accessibility */
+[role="progressbar"] {
+  position: relative;
+}
+
+/* Tab navigation */
+[role="tablist"] {
+  display: flex;
+}
+
+[role="tab"][aria-selected="true"] {
+  font-weight: bold;
+  border-bottom: 3px solid #4A90E2;
+}
+
+/* Landmark regions - ensure proper spacing */
+header[role="banner"],
+nav[role="navigation"],
+main[role="main"],
+aside[role="complementary"],
+footer[role="contentinfo"] {
+  /* Styles handled by components */
+}
+
+/* Error messages */
+.error-message,
+[role="alert"].error {
+  color: #d32f2f;
+  font-weight: bold;
+}
+
+.dark-mode .error-message,
+.dark-mode [role="alert"].error {
+  color: #ff6b6b;
+}
+
+/* Success messages */
+.success-message {
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+.dark-mode .success-message {
+  color: #81c784;
+}
+
+/* Print styles for accessibility */
+@media print {
+  .skip-link,
+  .sr-only,
+  [aria-hidden="true"] {
+    display: none !important;
+  }
+}
+

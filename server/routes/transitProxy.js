@@ -126,8 +126,18 @@ router.get('/nearby_routes', async (req, res) => {
       radius: radius || 500
     };
     
-    const data = await makeTransitAPIRequest('/public/stops_near_me', params);
-    res.json(data);
+    try {
+      const data = await makeTransitAPIRequest('/public/stops_near_me', params);
+      res.json(data);
+    } catch (apiError) {
+      // Return empty result instead of error to prevent console spam
+      console.warn('Transit API unavailable, returning empty result');
+      res.json({
+        stops: [],
+        routes: [],
+        message: 'Transit API currently unavailable'
+      });
+    }
   } catch (error) {
     console.error('Error in /nearby_routes:', error);
     res.status(500).json({ 

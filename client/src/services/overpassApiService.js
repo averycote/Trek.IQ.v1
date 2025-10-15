@@ -4,8 +4,6 @@
  * Provides access to OpenStreetMap accessibility data via Overpass API
  */
 
-import fallbackDataService from './fallbackDataService.js';
-
 class OverpassApiService {
   constructor() {
     // Use a reliable Overpass API endpoint
@@ -360,6 +358,8 @@ out geom;
   async getFallbackData(bounds) {
     try {
       console.log('🔄 Loading fallback accessibility data...');
+      // Lazy load fallbackDataService to avoid circular dependency
+      const { default: fallbackDataService } = await import('./fallbackDataService.js');
       const result = await fallbackDataService.getAccessibilityPlaces(bounds);
       
       return {

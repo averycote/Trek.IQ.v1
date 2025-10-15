@@ -12,9 +12,9 @@ COPY package*.json ./
 COPY server/package*.json ./server/
 COPY client/package*.json ./client/
 
-# Install dependencies
-RUN npm install
-RUN cd server && npm install
+# Install dependencies (ignoring scripts for better-sqlite3)
+RUN npm install --ignore-scripts
+RUN cd server && npm install --ignore-scripts
 RUN cd client && npm install
 
 # Copy application code

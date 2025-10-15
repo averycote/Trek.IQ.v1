@@ -307,7 +307,9 @@ class EnhancedSearchService {
       console.error('❌ Error reverse geocoding:', error);
       
       // Fallback to mock reverse geocoding
-      const address = `Location at ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      const latNum = typeof lat === 'number' ? lat : parseFloat(lat) || 0;
+      const lngNum = typeof lng === 'number' ? lng : parseFloat(lng) || 0;
+      const address = `Location at ${latNum.toFixed(4)}, ${lngNum.toFixed(4)}`;
       return address;
     }
   }

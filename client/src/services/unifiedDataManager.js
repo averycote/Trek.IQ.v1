@@ -764,13 +764,26 @@ class UnifiedDataManager {
     if (data.features) {
       data.features.forEach((feature, i) => {
         if (feature.geometry && feature.geometry.coordinates) {
-          const [lng, lat] = feature.geometry.coordinates[0];
-          const key = `${Math.floor(lat * 100)}_${Math.floor(lng * 100)}`;
+          let lng, lat;
           
-          if (!index.has(key)) {
-            index.set(key, []);
+          // Handle different geometry types
+          if (feature.geometry.type === 'Point') {
+            [lng, lat] = feature.geometry.coordinates;
+          } else if (Array.isArray(feature.geometry.coordinates[0])) {
+            [lng, lat] = feature.geometry.coordinates[0];
+          } else {
+            return; // Skip invalid geometries
           }
-          index.get(key).push(i);
+          
+          // Ensure lng and lat are numbers
+          if (typeof lng === 'number' && typeof lat === 'number' && !isNaN(lng) && !isNaN(lat)) {
+            const key = `${Math.floor(lat * 100)}_${Math.floor(lng * 100)}`;
+            
+            if (!index.has(key)) {
+              index.set(key, []);
+            }
+            index.get(key).push(i);
+          }
         }
       });
     }
