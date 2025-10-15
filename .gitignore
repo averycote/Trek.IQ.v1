@@ -104,10 +104,18 @@ playwright/.cache/
 .jest/
 
 # Server data - exclude large files for Railway deployment
-server/data/*.geojson
-!server/data/sample*.geojson
+# Core data files are included for app functionality
+!server/data/Accessible_Parking.geojson
+!server/data/Active_Travelways.geojson
 !server/data/accessibility/*.geojson
 !server/data/optimized/*.geojson
+!server/data/dynamic/*.geojson
+!server/data/static/*.geojson
+!server/data/Street_Lights*.geojson
+!server/data/HRM_Public_Washrooms*.geojson
+!server/data/Bus_Stops*.geojson
+!server/data/Transit_Bus*.geojson
+server/data/*.geojson
 
 # Large backup files - exclude from deployment
 server/data/backup/**/*.geojson
