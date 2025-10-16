@@ -714,11 +714,13 @@ const AppShell = () => {
           
           if (isDrivingRoute) {
             try {
+              console.log('🅿️ ENRICHING DRIVING ROUTE WITH PARKING DATA...');
               const accessibleParkingService = (await import('../services/accessibleParkingService')).default;
               await accessibleParkingService.initialize();
               result.route = await accessibleParkingService.enrichRoute(result.route, routeMode);
+              console.log('🅿️ Route enrichment complete. Parking data:', result.route?.features?.[0]?.properties?.accessibleParking);
             } catch (parkingError) {
-              console.warn('⚠️ Failed to enrich route with parking data:', parkingError);
+              console.error('❌ FAILED to enrich route with parking data:', parkingError);
             }
           }
           

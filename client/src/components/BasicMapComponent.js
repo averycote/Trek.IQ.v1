@@ -429,9 +429,10 @@ const BasicMapComponent = ({
     // Check if we're in driving mode with a route
     const isDrivingRoute = route && (routeMode === 'driving' || routeMode === 'driving-traffic');
 
-    // Remove old accessible parking layer in driving mode (we use parkingMarkersService instead)
-    if (isDrivingRoute && map.current.getSource("accessible-parking")) {
-      console.log('🚗 Driving mode: Removing old accessible parking layer (using parkingMarkersService instead)');
+    // ALWAYS remove old accessible parking layer (green circles) in ALL cases
+    // We'll use parkingMarkersService for proper markers
+    if (map.current.getSource("accessible-parking")) {
+      console.log('🧹 Removing old accessible parking layer (green circles)');
       if (map.current.getLayer("accessible-parking-layer")) {
         map.current.removeLayer("accessible-parking-layer");
       }
@@ -440,7 +441,8 @@ const BasicMapComponent = ({
       }
     }
 
-    // Load accessible parking spots (hide in driving mode - we use parkingMarkersService instead)
+    // Load accessible parking spots ONLY in non-driving modes
+    // In driving mode, we use parkingMarkersService for blue 🅿️ markers instead
     if (activeLayers.includes("accessibleParking") && !isDrivingRoute) {
       safeFetchJSON("/api/data/Accessible_Parking.geojson", "Accessible parking")
         .then((data) => {
@@ -600,7 +602,7 @@ const BasicMapComponent = ({
           });
         });
     }
-  }, [activeLayers, mapInitialized, styleLoaded, mapFullyReady]);
+  }, [activeLayers, mapInitialized, styleLoaded, mapFullyReady, route, routeMode]);
 
   // Render route
   useEffect(() => {
