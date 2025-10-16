@@ -759,49 +759,61 @@ const AppShell = () => {
                 routeDebugger.log('Route rendering completed successfully');
               }
 
-              // DRIVING MODE ENHANCEMENTS: Add parking markers and hide wheelmap layers
+              // DRIVING MODE ENHANCEMENTS: Add parking markers and hide ALL accessibility layers
               if (isDrivingRoute) {
                 
-                // Hide wheelmap layers during driving
+                // Hide ALL accessibility layers during driving (save them first)
                 if (!layersBeforeDriving) {
                   setLayersBeforeDriving(new Set(activeLayers));
                 }
                 
                 const drivingLayers = new Set(activeLayers);
-                // Remove wheelmap layers
+                // Remove ALL accessibility-related layers that show markers
                 drivingLayers.delete('wheelmap_food');
                 drivingLayers.delete('wheelmap_shopping');
                 drivingLayers.delete('wheelmap_other');
+                drivingLayers.delete('accessibleParking'); // Remove old parking layer
+                drivingLayers.delete('wheelchair_accessible_bathrooms');
+                drivingLayers.delete('wheelchair_accessible_places');
+                drivingLayers.delete('limited_accessibility_places');
+                drivingLayers.delete('not_accessible_places');
+                drivingLayers.delete('accessible_transit_stops');
+                drivingLayers.delete('accessible_parking'); // accessibility.cloud version
+                drivingLayers.delete('accessibility_equipment');
                 setActiveLayers(drivingLayers);
-                console.log('✅ Wheelmap layers removed from active layers');
+                console.log('✅ ALL accessibility marker layers removed from active layers');
                 
                 // Add parking markers
                 const parkingSpots = result.route?.features?.[0]?.properties?.accessibleParking || [];
-                console.log('🅿️ Parking spots data:', {
+                console.log('🅿️ DRIVING MODE - Parking spots data:', {
                   count: parkingSpots.length,
                   hasMapInstance: !!mapInstance,
+                  routeMode: routeMode,
+                  routeProperties: result.route?.features?.[0]?.properties,
                   spots: parkingSpots
                 });
                 
                 if (parkingSpots.length > 0 && mapInstance) {
+                  console.log('🅿️ ADDING PARKING MARKERS TO MAP...');
                   parkingMarkersService.setMap(mapInstance);
                   parkingMarkersService.addParkingMarkers(parkingSpots, routeMode);
-                  console.log(`✅ Added ${parkingSpots.length} parking markers to map`);
+                  console.log(`✅ SUCCESSFULLY Added ${parkingSpots.length} parking markers to map`);
                 } else if (parkingSpots.length === 0) {
-                  console.warn('⚠️ No parking spots found in route data');
+                  console.error('❌ CRITICAL: No parking spots found in route data - parking enrichment may have failed!');
+                  console.error('Route feature properties:', result.route?.features?.[0]?.properties);
                 } else if (!mapInstance) {
-                  console.warn('⚠️ Map instance not available for parking markers');
+                  console.error('❌ CRITICAL: Map instance not available for parking markers');
                 }
               } else {
-                console.log('🚶 Walking mode - clearing parking markers and restoring wheelmap layers');
+                console.log('🚶 Walking mode - clearing parking markers and restoring accessibility layers');
                 // Not driving mode - clear parking markers if any
                 parkingMarkersService.clearMarkers();
                 
-                // Restore wheelmap layers if they were hidden
+                // Restore ALL accessibility layers if they were hidden
                 if (layersBeforeDriving) {
                   setActiveLayers(layersBeforeDriving);
                   setLayersBeforeDriving(null);
-                  console.log('✅ Wheelmap layers restored');
+                  console.log('✅ All accessibility layers restored');
                 }
               }
               
