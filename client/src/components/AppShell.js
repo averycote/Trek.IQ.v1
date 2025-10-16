@@ -783,6 +783,29 @@ const AppShell = () => {
                 setActiveLayers(drivingLayers);
                 console.log('✅ ALL accessibility marker layers removed from active layers');
                 
+                // CRITICAL: Manually remove ALL existing Mapbox markers from the map
+                // (they persist even when components are unmounted)
+                // BUT preserve origin/destination/user location markers
+                if (mapInstance && mapInstance.getContainer) {
+                  const mapContainer = mapInstance.getContainer();
+                  const existingMarkers = mapContainer.querySelectorAll('.mapboxgl-marker');
+                  console.log(`🧹 Found ${existingMarkers.length} existing markers on map`);
+                  let removedCount = 0;
+                  existingMarkers.forEach(marker => {
+                    // Check if this is NOT an origin/destination/user location marker
+                    // Those markers typically contain specific emojis or have parent containers with specific IDs
+                    const markerHTML = marker.innerHTML || '';
+                    const isOriginDestMarker = markerHTML.includes('📍') || markerHTML.includes('🎯');
+                    const isUserLocationMarker = marker.classList.contains('user-location-marker');
+                    
+                    if (!isOriginDestMarker && !isUserLocationMarker) {
+                      marker.remove();
+                      removedCount++;
+                    }
+                  });
+                  console.log(`✅ Removed ${removedCount} accessibility markers (kept origin/destination/user location)`);
+                }
+                
                 // Add parking markers
                 const parkingSpots = result.route?.features?.[0]?.properties?.accessibleParking || [];
                 console.log('🅿️ DRIVING MODE - Parking spots data:', {
