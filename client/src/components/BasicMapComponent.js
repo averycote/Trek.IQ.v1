@@ -426,8 +426,22 @@ const BasicMapComponent = ({
     )
       return;
 
-    // Load accessible parking spots
-    if (activeLayers.includes("accessibleParking")) {
+    // Check if we're in driving mode with a route
+    const isDrivingRoute = route && (routeMode === 'driving' || routeMode === 'driving-traffic');
+
+    // Remove old accessible parking layer in driving mode (we use parkingMarkersService instead)
+    if (isDrivingRoute && map.current.getSource("accessible-parking")) {
+      console.log('🚗 Driving mode: Removing old accessible parking layer (using parkingMarkersService instead)');
+      if (map.current.getLayer("accessible-parking-layer")) {
+        map.current.removeLayer("accessible-parking-layer");
+      }
+      if (map.current.getSource("accessible-parking")) {
+        map.current.removeSource("accessible-parking");
+      }
+    }
+
+    // Load accessible parking spots (hide in driving mode - we use parkingMarkersService instead)
+    if (activeLayers.includes("accessibleParking") && !isDrivingRoute) {
       safeFetchJSON("/api/data/Accessible_Parking.geojson", "Accessible parking")
         .then((data) => {
           if (!data) {
@@ -1173,7 +1187,8 @@ const BasicMapComponent = ({
       )}
 
       {/* Accessibility Layer Manager - Handles accessibility.cloud integration */}
-      {mapInitialized && styleLoaded && mapFullyReady && map.current && (
+      {/* Hidden when driving route is active */}
+      {mapInitialized && styleLoaded && mapFullyReady && map.current && !((routeMode === 'driving' || routeMode === 'driving-traffic') && route) && (
         <AccessibilityLayerManager
           map={map.current}
           activeLayers={new Set(activeLayers)}
@@ -1183,7 +1198,8 @@ const BasicMapComponent = ({
       )}
 
       {/* Wheelmap Layer - Shows accessibility markers based on active layers */}
-      {mapInitialized && styleLoaded && mapFullyReady && map.current && (
+      {/* Hidden when driving route is active */}
+      {mapInitialized && styleLoaded && mapFullyReady && map.current && !((routeMode === 'driving' || routeMode === 'driving-traffic') && route) && (
         <WheelmapLayer
           isVisible={activeLayers.some(layer => layer.startsWith('wheelmap_'))}
           map={map.current}
