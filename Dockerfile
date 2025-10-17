@@ -23,7 +23,7 @@ COPY . .
 # Create data directory
 RUN mkdir -p server/data
 
-# Build the client with proper error handling
+# Build the client with proper error handling (v1.0.1 - driving mode fixes)
 RUN cd client && npm run build
 
 # Copy build files to public directory
