@@ -118,7 +118,7 @@ const AppShell = () => {
   // Map and layer state - Start with a simplified set
   const [activeLayers, setActiveLayers] = useState(
     new Set([
-      "accessibleParking",
+      // Note: accessibleParking removed from defaults - only shown in driving mode via parkingMarkersService
       "transitRoutes",
       "wheelmap_food"
     ])
