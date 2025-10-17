@@ -787,15 +787,23 @@ app.get('/api/data/dynamic/:filename', async (req, res) => {
 
 // Optimized static file serving (only in production)
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build'), {
+  // Serve from public directory (where build script copies files)
+  const publicPath = path.join(__dirname, '../public');
+  
+  app.use(express.static(publicPath, {
     maxAge: '1d',
     etag: true,
     lastModified: true
   }));
 
   // Catch-all handler for SPA (only in production)
+  // IMPORTANT: Only serve index.html for non-API routes
   app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+    // Don't intercept API routes
+    if (req.url.startsWith('/api/')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    res.sendFile(path.join(publicPath, 'index.html'));
   });
 } else {
   // In development, just return a message for non-API routes
