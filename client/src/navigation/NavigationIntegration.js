@@ -288,27 +288,28 @@ const NavigationIntegration = ({
                  </div>
                </div>
 
-               {/* Comprehensive Accessibility Information */}
-               <div className="comprehensive-accessibility">
-                 <div className="accessibility-header">
-                   <span className="accessibility-icon">♿</span>
-                   <span className="accessibility-title">Route Accessibility</span>
-                 </div>
-
-                 <div className="accessibility-content">
-                   {/* Route Score */}
-               <div className="accessibility-score">
-                 <div className="score-info">
-                   <span className="score-icon">{accessibilityScore.icon}</span>
-                   <div className="score-details">
-                         <span className="score-label">Overall Score</span>
-                     <span className={`score-level ${accessibilityScore.color}`}>{accessibilityScore.level}</span>
+               {/* Comprehensive Accessibility Information - Only for walking/transit */}
+               {routeMode !== 'driving' && routeMode !== 'driving-traffic' && (
+                 <div className="comprehensive-accessibility">
+                   <div className="accessibility-header">
+                     <span className="accessibility-icon">♿</span>
+                     <span className="accessibility-title">Route Accessibility</span>
                    </div>
-                 </div>
-                 <div className="score-value">
-                   <span className="score-number">{accessibility.score || accessibility.accessibilityScore || 85}%</span>
-                 </div>
-               </div>
+
+                   <div className="accessibility-content">
+                     {/* Route Score */}
+                     <div className="accessibility-score">
+                       <div className="score-info">
+                         <span className="score-icon">{accessibilityScore.icon}</span>
+                         <div className="score-details">
+                           <span className="score-label">Overall Score</span>
+                           <span className={`score-level ${accessibilityScore.color}`}>{accessibilityScore.level}</span>
+                         </div>
+                       </div>
+                       <div className="score-value">
+                         <span className="score-number">{accessibility.score || accessibility.accessibilityScore || 85}%</span>
+                       </div>
+                     </div>
 
                    {/* Route Conditions */}
                    <div className="route-conditions">
@@ -357,7 +358,7 @@ const NavigationIntegration = ({
                    )}
                  </div>
                </div>
-
+               )}
 
                <div className="route-points">
                  <div className="point origin">

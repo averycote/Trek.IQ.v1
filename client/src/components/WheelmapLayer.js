@@ -98,6 +98,20 @@ const WheelmapLayer = ({
     }
   }, [isVisible, map, bounds, selectedCategory, wheelchairFilter, dataSource]);
 
+  // Cleanup all markers on unmount
+  useEffect(() => {
+    return () => {
+      console.log(`🧹 WheelmapLayer: Cleaning up ${markers.length} markers on unmount`);
+      markers.forEach(marker => {
+        try {
+          marker.remove();
+        } catch (e) {
+          // Marker may already be removed
+        }
+      });
+    };
+  }, [markers]);  // Re-create cleanup function when markers change
+
   // Load accessible places using local API (bypassing widget issues)
   const loadAccessiblePlaces = useCallback(async () => {
     if (!map || !bounds) return;

@@ -101,11 +101,15 @@ class BarrierReportingService {
 
   getBarrierIcon(type) {
     const icons = {
-      'steps': '🪜',
-      'construction': '🚧',
-      'curb': '🛑',
-      'icy': '🧊',
-      'other': '⚠️'
+      'steps_stairs': '🪜',
+      'steep_slope': '📈',
+      'obstructed_path': '🚧',
+      'inaccessible_entrance': '🚪',
+      'no_curb_cut': '♿',
+      'poor_lighting': '💡',
+      'construction': '🏗️',
+      'snow_ice': '❄️',
+      'other': '❓'
     };
     return icons[type] || '⚠️';
   }

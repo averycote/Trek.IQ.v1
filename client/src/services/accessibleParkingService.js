@@ -117,7 +117,7 @@ class AccessibleParkingService {
    */
   async enrichRoute(route, mode = 'walking') {
     // Only enrich driving routes
-    if (mode !== 'driving') {
+    if (mode !== 'driving' && mode !== 'driving-traffic') {
       return route;
     }
 

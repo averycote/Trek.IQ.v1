@@ -54,7 +54,17 @@ const upload = multer({
 const barrierReportSchema = z.object({
   lat: z.coerce.number().min(44.6).max(44.7),
   lng: z.coerce.number().min(-63.7).max(-63.5),
-  type: z.enum(['steps', 'construction', 'curb', 'icy', 'other']),
+  type: z.enum([
+    'steps_stairs',
+    'steep_slope',
+    'obstructed_path',
+    'inaccessible_entrance',
+    'no_curb_cut',
+    'poor_lighting',
+    'construction',
+    'snow_ice',
+    'other'
+  ]),
   severity: z.enum(['low', 'medium', 'high']),
   notes: z.string().optional(),
   description: z.string().optional(),

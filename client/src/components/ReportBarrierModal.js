@@ -273,7 +273,9 @@ const ReportBarrierModal = React.memo(
         });
 
         if (!response.ok) {
-          throw new Error("Failed to submit barrier report");
+          const errorData = await response.json().catch(() => ({}));
+          console.error("Server error:", errorData);
+          throw new Error(errorData.error || errorData.message || "Failed to submit barrier report");
         }
 
         const result = await response.json();
@@ -295,7 +297,7 @@ const ReportBarrierModal = React.memo(
         setCurrentStep(1);
       } catch (error) {
         console.error("Failed to submit report:", error);
-        toast.error("Failed to submit report. Please try again.");
+        toast.error(error.message || "Failed to submit report. Please try again.");
       } finally {
         setIsSubmitting(false);
       }

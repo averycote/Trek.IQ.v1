@@ -114,21 +114,23 @@ const RouteDetailsPanel = ({
           </div>
         </div>
 
-        {/* Accessibility Score */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-            <div className="flex items-center gap-3">
-              <CheckCircleIcon className="w-5 h-5 text-green-500" />
-              <div>
-                <div className="font-medium">Accessibility Score</div>
-                <div className="text-sm opacity-75">{accessibilityScore.level}</div>
+        {/* Accessibility Score - Only show for walking/transit modes */}
+        {routeMode !== 'driving' && routeMode !== 'driving-traffic' && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+              <div className="flex items-center gap-3">
+                <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                <div>
+                  <div className="font-medium">Accessibility Score</div>
+                  <div className="text-sm opacity-75">{accessibilityScore.level}</div>
+                </div>
+              </div>
+              <div className={`text-2xl font-bold ${accessibilityScore.color}`}>
+                {accessibility.accessibilityScore || 95}%
               </div>
             </div>
-            <div className={`text-2xl font-bold ${accessibilityScore.color}`}>
-              {accessibility.accessibilityScore || 95}%
-            </div>
           </div>
-        </div>
+        )}
 
         {/* Mode-Specific Information */}
         {routeMode === 'walking' && (
