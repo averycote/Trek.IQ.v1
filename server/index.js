@@ -613,19 +613,35 @@ app.get('/api/data/:filename', async (req, res) => {
     
     // Decode URL-encoded filename
     const decodedFilename = decodeURIComponent(filename);
-    const filePath = path.join(__dirname, 'data', decodedFilename);
+    
+    // Try multiple locations for the file
+    const possiblePaths = [
+      path.join(__dirname, 'data', decodedFilename),
+      path.join(__dirname, 'data', 'dynamic', decodedFilename)
+    ];
     
     // Create promise for this request
     const loadPromise = (async () => {
       console.log(`Loading dataset: ${decodedFilename}`);
       
-      // Check if file exists
-      try {
-        await fs.promises.access(filePath);
-      } catch (accessError) {
-        console.error(`File not found: ${filePath}`);
-        throw new Error(`Dataset not found: ${filePath}`);
+      // Find which path exists
+      let filePath = null;
+      for (const testPath of possiblePaths) {
+        try {
+          await fs.promises.access(testPath);
+          filePath = testPath;
+          break;
+        } catch (err) {
+          // File not at this location, try next
+        }
       }
+      
+      if (!filePath) {
+        console.error(`File not found in any location: ${decodedFilename}`);
+        throw new Error(`Dataset not found: ${decodedFilename}`);
+      }
+      
+      console.log(`Found file at: ${filePath}`);
       
       // Read file with timeout
       const data = await Promise.race([
@@ -692,8 +708,8 @@ app.use('/api/geocoding', geocodingRoutes);
 // Wheelmap proxy routes
 app.use('/api/wheelmap', wheelmapRoutes);
 
-// Accessibility data routes
-app.use('/api/accessibility', accessibilityRoutes);
+// Accessibility data routes (FIXED: frontend expects /api/accessibility-data)
+app.use('/api/accessibility-data', accessibilityRoutes);
 
 // Transit API proxy routes
 app.use('/api/transit', transitProxyRoutes);
