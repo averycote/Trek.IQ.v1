@@ -52,8 +52,9 @@ const upload = multer({
 
 // Validation schemas
 const barrierReportSchema = z.object({
-  lat: z.coerce.number().min(44.6).max(44.7),
-  lng: z.coerce.number().min(-63.7).max(-63.5),
+  // Halifax Regional Municipality bounds (expanded to cover entire HRM)
+  lat: z.coerce.number().min(44.3).max(45.1),
+  lng: z.coerce.number().min(-64.3).max(-62.9),
   type: z.enum([
     'steps_stairs',
     'steep_slope',
