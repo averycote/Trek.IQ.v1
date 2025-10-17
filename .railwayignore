@@ -1,45 +1,45 @@
-# Ignore development and build artifacts
+# Railway Deployment - Ignore unnecessary files
+
+# Development files
 node_modules/
 .git/
-.gitignore
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+.vscode/
+.cursor/
 
-# Ignore client source files (we only need the built version)
+# Client source (we only need the built files in public/)
 client/src/
 client/public/
-client/node_modules/
 
-# Ignore server development files
-server/node_modules/
+# Test files
+**/*.test.js
+**/*.spec.js
+__tests__/
+coverage/
 
-# Ignore test files
-tests/
-*.test.js
-*.spec.js
-
-# Ignore documentation
-docs/
+# Documentation (not needed in production)
 *.md
-README.md
+!README.md
 
-# Ignore local environment files
-.env.local
-.env.development
-.env.test
+# Development configs
+.eslintrc*
+.prettierrc*
+jest.config.js
 
-# Ignore IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
+# Large data backups
+server/data/accessibility/wheelmap-backup-*.json
 
-# Ignore OS files
+# Logs
+*.log
+logs/
+
+# OS files
 .DS_Store
 Thumbs.db
 
-# Ignore build artifacts we don't need
-client/build/static/js/*.map
-client/build/static/css/*.map
+# Environment files (use Railway env vars instead)
+.env
+.env.local
+.env.production
+
+# Build artifacts that aren't needed
+client/build/static/**/*.map

@@ -463,7 +463,8 @@ const UnifiedRoutePanel = ({
           </div>
         )}
 
-        {/* Comprehensive Accessibility Information */}
+        {/* Comprehensive Accessibility Information - Only for walking/transit modes */}
+        {routeMode !== 'driving' && routeMode !== 'driving-traffic' && (
         <div className="mb-4">
           <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 border border-blue-200 dark:border-blue-800">
             <div className="flex items-center gap-2 mb-3">
@@ -660,6 +661,117 @@ const UnifiedRoutePanel = ({
                 </div>
               </div>
         </div>
+        )}
+
+        {/* Driving Mode - Accessible Parking Information */}
+        {(routeMode === 'driving' || routeMode === 'driving-traffic') && (
+          <div className="mb-4">
+            <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-700">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-2xl">🅿️</span>
+                <span className="font-semibold text-lg text-gray-800 dark:text-gray-200">Accessible Parking Near Destination</span>
+              </div>
+
+              {routeData.accessibleParking && routeData.accessibleParking.length > 0 ? (
+                <>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Found {routeData.accessibleParking.length} accessible parking {routeData.accessibleParking.length === 1 ? 'spot' : 'spots'} within 500m of your destination
+                  </p>
+
+                  <div className="space-y-3">
+                    {routeData.accessibleParking.slice(0, 3).map((spot, index) => (
+                      <div 
+                        key={spot.id || index}
+                        className="p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold">
+                                {index + 1}
+                              </span>
+                              <h4 className="font-medium text-gray-800 dark:text-gray-200">
+                                {spot.name}
+                              </h4>
+                            </div>
+                            {spot.address && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 ml-8">
+                                {spot.address}
+                              </p>
+                            )}
+                          </div>
+                          <div className="px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-sm font-semibold">
+                            {spot.distance}m
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 text-sm mb-2 ml-8">
+                          <div>
+                            <span className="block text-xs text-gray-500 dark:text-gray-400">Time Limit</span>
+                            <span className="font-medium text-gray-800 dark:text-gray-200">{spot.timeLimit || 'No limit'}</span>
+                          </div>
+                          <div>
+                            <span className="block text-xs text-gray-500 dark:text-gray-400">Cost</span>
+                            <span className="font-medium text-gray-800 dark:text-gray-200">{spot.cost || 'Unknown'}</span>
+                          </div>
+                          {spot.capacity && (
+                            <div>
+                              <span className="block text-xs text-gray-500 dark:text-gray-400">Total Spaces</span>
+                              <span className="font-medium text-gray-800 dark:text-gray-200">{spot.capacity}</span>
+                            </div>
+                          )}
+                          {spot.available !== null && spot.available !== undefined && (
+                            <div>
+                              <span className="block text-xs text-gray-500 dark:text-gray-400">Available Now</span>
+                              <span className={`font-medium ${
+                                spot.available > 0 
+                                  ? 'text-green-600 dark:text-green-400'
+                                  : 'text-red-600 dark:text-red-400'
+                              }`}>
+                                {spot.available}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {spot.features && spot.features.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2 ml-8">
+                            {spot.features.map((feature, featureIndex) => (
+                              <span
+                                key={featureIndex}
+                                className="px-2 py-1 rounded-full text-xs bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700"
+                              >
+                                {feature}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {spot.notes && (
+                          <p className="text-xs mt-2 ml-8 italic text-gray-600 dark:text-gray-400">
+                            ℹ️ {spot.notes}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {routeData.accessibleParking.length > 3 && (
+                    <p className="text-sm text-center text-gray-600 dark:text-gray-400 mt-3">
+                      +{routeData.accessibleParking.length - 3} more parking {routeData.accessibleParking.length - 3 === 1 ? 'spot' : 'spots'} available nearby
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                    ⚠️ No accessible parking spots found within 500m of the destination. You may need to search for parking options in the area.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Transit API Attribution */}
         {routeMode === 'transit' && (route?.properties?.poweredByTransit || route?.features?.some(f => f.properties?.poweredByTransit)) && (

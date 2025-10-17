@@ -1,0 +1,12 @@
+warning: in the working copy of 'client/src/components/ReportBarrierModal.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'client/src/components/RouteDetailsPanel.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'client/src/components/WheelmapLayer.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'server/routes/barriers.js', LF will be replaced by CRLF the next time Git touches it
+client/src/components/BasicMapComponent.js
+client/src/components/ReportBarrierModal.js
+client/src/components/RouteDetailsPanel.js
+client/src/components/WheelmapLayer.js
+client/src/navigation/NavigationIntegration.js
+client/src/services/accessibleParkingService.js
+client/src/services/barrierReportingService.js
+server/routes/barriers.js

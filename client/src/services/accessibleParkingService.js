@@ -136,8 +136,8 @@ class AccessibleParkingService {
     const destination = coordinates[coordinates.length - 1];
 
     try {
-      // Find parking near destination (within 500m)
-      const parkingSpots = await this.findNearDestination(destination, 500, 5);
+      // Find ALL parking near destination (within 500m)
+      const parkingSpots = await this.findNearDestination(destination, 500, 50);
 
       console.log(`🅿️ Found ${parkingSpots.length} accessible parking spots near destination`);
 
