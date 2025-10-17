@@ -443,37 +443,9 @@ const BasicMapComponent = ({
       return;
     }
 
-    // Load accessible parking spots ONLY in non-driving modes (walking/transit)
-    if (activeLayers.includes("accessibleParking") && !isDrivingRoute) {
-      safeFetchJSON("/api/data/Accessible_Parking.geojson", "Accessible parking")
-        .then((data) => {
-          if (!data) {
-            console.log("No accessible parking data available, skipping layer");
-            return;
-          }
-          
-          if (map.current.getSource("accessible-parking")) {
-            map.current.removeLayer("accessible-parking-layer");
-            map.current.removeSource("accessible-parking");
-          }
-
-          map.current.addSource("accessible-parking", {
-            type: "geojson",
-            data: data,
-          });
-
-          map.current.addLayer({
-            id: "accessible-parking-layer",
-            type: "circle",
-            source: "accessible-parking",
-            paint: {
-              "circle-radius": 6,
-              "circle-color": "#10b981",
-              "circle-opacity": 0.8,
-            },
-          });
-        });
-    }
+    // NOTE: Green circle parking layer REMOVED - only use blue P markers in driving mode
+    // Parking markers are now handled by parkingMarkersService in AppShell.js
+    // This prevents green circles from appearing on initial load
 
     // Load transit routes
     if (activeLayers.includes("transitRoutes")) {
